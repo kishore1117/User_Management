@@ -1,12 +1,12 @@
 const { Pool } = require('pg');
+require('dotenv').config(); // Load environment variables from .env file
 
-// PostgreSQL connection
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'userInfo',
-  password: 'admin',
-  port: 5433,
+  user: process.env.IP_USER,
+  host: process.env.IP_HOST,
+  database: process.env.IP_DATABASE,
+  password: process.env.IP_PASSWORD,
+  port: process.env.IP_PORT,
 });
 
 // SQL to create users table if it doesn't exist
