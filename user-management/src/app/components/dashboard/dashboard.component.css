@@ -1,0 +1,170 @@
+.dashboard-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-section select {
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.clear-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #6e7781;
+  color: white;
+  cursor: pointer;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #d0d7de;
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #d0d7de;
+}
+
+th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+tr:hover {
+  background: #f6f8fa;
+}
+
+.loading, .no-data {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+
+.action-icons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.icon {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.icon:hover {
+  opacity: 1;
+}
+
+.icon-edit { color: #0078d4; }
+.icon-save { color: #28a745; }
+.icon-delete { color: #d73a49; }
+.icon-cancel { color: #6e7781; }
+
+.table-container input,
+.table-container select {
+  width: 90%;
+  padding: 4px 8px;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 160px); /* Adjust height accounting for margins and header */
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  /* Keep header fixed */
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  padding-bottom: 20px;
+}
+
+.table-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f6f8fa;
+}
+
+th {
+  background: #f6f8fa;
+  border-bottom: 2px solid #d0d7de;
+  padding: 12px 16px;
+}
+
+/* Add horizontal scroll shadows */
+.table-container::before,
+.table-container::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.table-container::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9), transparent);
+}
+
+.table-container::after {
+  right: 0;
+  background: linear-gradient(-90deg, rgba(255,255,255,0.9), transparent);
+}

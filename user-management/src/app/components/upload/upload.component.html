@@ -1,0 +1,45 @@
+<div class="form-container">
+  <h3>Upload Excel / CSV</h3>
+
+  <div class="upload-area">
+    <input 
+      type="file" 
+      (change)="onFileSelected($event)" 
+      accept=".xlsx,.xls,.csv" 
+      [disabled]="uploading"
+    />
+    
+    <div class="file-info" *ngIf="selectedFile">
+      <strong>Selected:</strong> {{ selectedFile.name }} 
+      ({{ formatFileSize(selectedFile.size) }})
+    </div>
+
+    <div class="actions">
+      <button 
+        type="button" 
+        (click)="upload()" 
+        [disabled]="uploading || !selectedFile"
+      >
+        {{ uploading ? 'Uploading...' : 'Upload' }}
+      </button>
+      <button 
+        type="button" 
+        (click)="clear()" 
+        [disabled]="uploading"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div class="progress" *ngIf="uploading">
+      <div class="progress-bar" [style.width.%]="progress"></div>
+      <div class="progress-label">{{ progress }}%</div>
+    </div>
+
+    <p class="note">
+      Supported formats: Excel (.xlsx, .xls) and CSV (.csv)
+      <br>
+      Required columns: name, hostname, ip_address, department
+    </p>
+  </div>
+</div>

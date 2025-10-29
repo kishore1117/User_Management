@@ -1,0 +1,77 @@
+<div class="form-container">
+  <h3>Find Users</h3>
+  <form (ngSubmit)="searchUsers()" class="search-form">
+    <div class="form-inputs">
+      <input type="text" placeholder="Name" [(ngModel)]="search.name" name="name" />
+      <input type="text" placeholder="Hostname" [(ngModel)]="search.hostname" name="hostname" />
+      <input type="text" placeholder="IP Address" [(ngModel)]="search.ipAddress" name="ipAddress" />
+    </div>
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+<div class="results-section" *ngIf="users.length > 0 && !hideResults">
+ <div class="results-header">
+    <h3>Search Results</h3>
+    <i class="fas fa-times close-icon" (click)="hideResultsSection()" title="Close results"></i>
+  </div>
+  <div class="results-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Hostname</th>
+          <th>IP Address</th>
+          <th>Department</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>
+            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.name" name="name{{user.id}}" />
+            <span *ngIf="user.id !== editingId">{{ user.name }}</span>
+          </td>
+          <td>
+            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.hostname"
+              name="hostname{{user.id}}" />
+            <span *ngIf="user.id !== editingId">{{ user.hostname }}</span>
+          </td>
+          <td>
+            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.ip_address"
+              name="ip{{user.id}}" />
+            <span *ngIf="user.id !== editingId">{{ user.ip_address }}</span>
+          </td>
+          <td>
+            <select *ngIf="user.id === editingId" [(ngModel)]="selectedUser!.department" name="dept{{user.id}}">
+              <option *ngFor="let dept of departments" [value]="dept">
+                {{ dept }}
+              </option>
+            </select>
+            <span *ngIf="user.id !== editingId">{{ user.department }}</span>
+          </td>
+          <td>
+            <div class="action-icons">
+              <ng-container *ngIf="user.id !== editingId">
+                <i class="fas fa-edit icon icon-edit" (click)="editUser(user)" title="Edit"></i>
+                <i class="fas fa-trash-alt icon icon-delete" (click)="deleteUser(user.id)" title="Delete"></i>
+              </ng-container>
+              <ng-container *ngIf="user.id === editingId">
+                <i class="fas fa-save icon icon-save" (click)="updateUser()" title="Save"></i>
+                <i class="fas fa-times icon icon-cancel" (click)="cancelEdit()" title="Cancel"></i>
+                <i class="fas fa-trash-alt icon icon-delete" (click)="deleteUser(user.id)" title="Delete"></i>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- <div *ngIf="toastMessage" [@fade]="fadeState" [ngClass]="{
+    'alert-success': messageType === 'success',
+    'alert-error': messageType === 'error'
+  }" class="alert-box">
+  {{ toastMessage }}
+</div> -->

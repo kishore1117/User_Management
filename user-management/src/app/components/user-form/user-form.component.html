@@ -1,0 +1,13 @@
+<div class="form-container">
+  <h3>Add User</h3>
+  <form (ngSubmit)="addUser()">
+    <input type="text" placeholder="Name" [(ngModel)]="user.name" name="name" required />
+    <input type="text" placeholder="Hostname" [(ngModel)]="user.hostname" name="hostname" required />
+    <input type="text" placeholder="IP Address" [(ngModel)]="user.ipAddress" name="ipAddress" required />
+    <select [(ngModel)]="user.department" name="department" required>
+      <option value="">Select Department</option>
+      <option *ngFor="let dept of departments">{{ dept }}</option>
+    </select>
+    <button type="submit">Add User</button>
+  </form>
+</div>
