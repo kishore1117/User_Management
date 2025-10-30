@@ -37,7 +37,7 @@ export class UploadComponent {
   selectedFile: File | null = null;
   uploading = false;
   progress = 0;
-  private baseUrl = 'http://localhost:3000/api/users/bulk'; // Updated endpoint
+  private baseUrl = 'http://192.168.1.247:3000/api/users/bulk'; // Updated endpoint
 
   constructor(private http: HttpClient, private toastService: ToastService) {}
 

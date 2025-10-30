@@ -40,7 +40,7 @@ export class DashboardComponent implements OnInit {
 
  fetchUsers() {
     this.loading = true;
-    this.http.get<User[]>('http://localhost:3000/api/users').subscribe({
+    this.http.get<User[]>('http://192.168.1.247:3000/api/users').subscribe({
       next: (users) => {
         this.users = users;
         this.filteredUsers = users;
@@ -75,7 +75,7 @@ export class DashboardComponent implements OnInit {
     }
 
     const id = this.selectedUser.id;
-    this.http.put<User>(`http://localhost:3000/api/users/${id}`, this.selectedUser).subscribe({
+    this.http.put<User>(`http://192.168.1.247:3000/api/users/${id}`, this.selectedUser).subscribe({
       next: (updatedUser) => {
         this.users = this.users.map(u => u.id === id ? updatedUser : u);
         // Refresh departments list in case department was changed
@@ -92,7 +92,7 @@ export class DashboardComponent implements OnInit {
   }
 
   deleteUser(id: number) {
-    this.http.delete(`http://localhost:3000/api/users/${id}`).subscribe({
+    this.http.delete(`http://192.168.1.247:3000/api/users/${id}`).subscribe({
       next: () => {
         this.users = this.users.filter(u => u.id !== id);
         this.filterByDepartment(); // Refresh filtered list
