@@ -1,121 +1,150 @@
-<div class="dashboard-container">
-  <div class="header">
-    <h2>User Dashboard</h2>
-    <div class="filter-section">
-      <select [(ngModel)]="selectedDepartment" (change)="filterByDepartment()">
-        <option value="">All Departments</option>
-        <option *ngFor="let dept of departments" [value]="dept">
-          {{ dept }}
-        </option>
-      </select>
-      <button *ngIf="selectedDepartment" (click)="clearFilter()" class="clear-btn">
-        Clear Filter
-      </button>
+<div class="dashboard-wrapper">
+  <!-- LEFT: Charts -->
+  <div class="charts-section">
+    <div class="header">
+      <h3>📊Insights</h3>
     </div>
-  </div>
+    <div class="chart-body">
+      <div class="chart-container">
+        <span><b>Department Distribution</b></span>
+        <canvas id="deptPieChart"></canvas>
+      </div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th (click)="sortBy('name')">
-            Name
-            <span *ngIf="sortColumn === 'name'">
-              {{ sortDirection === 'asc' ? '▲' : '▼' }}
-            </span>
-          </th>
-          <th (click)="sortBy('status')">Status
-            <span *ngIf="sortColumn === 'status'">
-              {{ sortDirection === 'asc' ? '▲' : '▼' }}
-            </span>
-          </th>
-          <th (click)="sortBy('hostname')">
-            Hostname
-            <span *ngIf="sortColumn === 'hostname'">
-              {{ sortDirection === 'asc' ? '▲' : '▼' }}
-            </span>
-          </th>
-          <th (click)="sortBy('ip_address')">
-            IP Address
-            <span *ngIf="sortColumn === 'ip_address'">
-              {{ sortDirection === 'asc' ? '▲' : '▼' }}
-            </span>
-          </th>
-          <th (click)="sortBy('department')">
-            Department
-            <span *ngIf="sortColumn === 'department'">
-              {{ sortDirection === 'asc' ? '▲' : '▼' }}
-            </span>
-          </th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="loading">
-          <td colspan="6" class="loading">Loading users...</td>
-        </tr>
-        <tr *ngIf="!loading && filteredUsers.length === 0">
-          <td colspan="6" class="no-data">No users found</td>
-        </tr>
-        <tr *ngFor="let user of filteredUsers">
-          <td>
-            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.name" name="name{{user.id}}" />
-            <span *ngIf="user.id !== editingId">{{ user.name }}</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-dot" [ngClass]="{
-      'available': user.status === 'Available',
-      'taken': user.status === 'Taken'
-    }">
-            </span>
-            <span class="status-label">{{ user.status }}</span>
-          </td>
-          <td>
-            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.hostname"
-              name="hostname{{user.id}}" />
-            <span *ngIf="user.id !== editingId">{{ user.hostname }}</span>
-          </td>
-          <td>
-            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.ip_address"
-              name="ip{{user.id}}" />
-            <span *ngIf="user.id !== editingId">{{ user.ip_address }}</span>
-          </td>
-          <td>
-            <select *ngIf="user.id === editingId" [(ngModel)]="selectedUser!.department" name="dept{{user.id}}">
-              <option *ngFor="let dept of departments" [value]="dept">
-                {{ dept }}
-              </option>
-            </select>
-            <span *ngIf="user.id !== editingId">{{ user.department }}</span>
-          </td>
-          <td>
-            <div class="action-icons">
-              <ng-container *ngIf="user.id !== editingId">
-                <i class="fas fa-edit icon icon-edit" (click)="editUser(user)" title="Edit"></i>
-                <i class="fas fa-trash-alt icon icon-delete" (click)="openDeleteModal(user)" title="Delete"></i>
-              </ng-container>
-              <ng-container *ngIf="user.id === editingId">
-                <i class="fas fa-save icon icon-save" (click)="updateUser()" title="Save"></i>
-                <i class="fas fa-times icon icon-cancel" (click)="cancelEdit()" title="Cancel"></i>
-              </ng-container>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showDeleteModal">
-    <div class="modal-content">
-      <h3>Confirm Delete</h3>
-      <p>
-        Are you sure you want to delete
-        <strong>{{ selectedUserToDelete?.name || 'this user' }}</strong>?
-      </p>
-
-      <div class="modal-buttons">
-        <button class="btn btn-confirm" (click)="confirmDelete()">Yes, Delete</button>
-        <button class="btn btn-cancel" (click)="cancelDelete()">Cancel</button>
+      <div class="chart-container">
+        <span><b>IP Status Overview</b></span>
+        <canvas id="ipStatusBarChart"></canvas>
       </div>
     </div>
+
   </div>
+  <div class="dashboard-container">
+    <div class="header">
+      <h3>🌐IP List</h3>
+      <div class="filter-section">
+        <select [(ngModel)]="selectedDepartment" (change)="filterByDepartment()">
+          <option value="">All Departments</option>
+          <option *ngFor="let dept of departments" [value]="dept">
+            {{ dept }}
+          </option>
+        </select>
+        <select [(ngModel)]="selectedStatus" (change)="filterByDepartment()">
+          <option value="">All Statuses</option>
+          <option *ngFor="let status of statuses" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+        <button *ngIf="selectedDepartment  || selectedStatus" (click)="clearFilter()" class="clear-btn">
+          Clear Filter
+        </button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th (click)="sortBy('name')">
+              Name
+              <span *ngIf="sortColumn === 'name'">
+                {{ sortDirection === 'asc' ? '▲' : '▼' }}
+              </span>
+            </th>
+            <th (click)="sortBy('status')">Status
+              <span *ngIf="sortColumn === 'status'">
+                {{ sortDirection === 'asc' ? '▲' : '▼' }}
+              </span>
+            </th>
+            <th (click)="sortBy('hostname')">
+              Hostname
+              <span *ngIf="sortColumn === 'hostname'">
+                {{ sortDirection === 'asc' ? '▲' : '▼' }}
+              </span>
+            </th>
+            <th (click)="sortBy('ip_address')">
+              IP Address
+              <span *ngIf="sortColumn === 'ip_address'">
+                {{ sortDirection === 'asc' ? '▲' : '▼' }}
+              </span>
+            </th>
+            <th (click)="sortBy('department')">
+              Department
+              <span *ngIf="sortColumn === 'department'">
+                {{ sortDirection === 'asc' ? '▲' : '▼' }}
+              </span>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="6" class="loading">Loading users...</td>
+          </tr>
+          <tr *ngIf="!loading && filteredUsers.length === 0">
+            <td colspan="6" class="no-data">No users found</td>
+          </tr>
+          <tr *ngFor="let user of filteredUsers">
+            <td>
+              <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.name"
+                name="name{{user.id}}" />
+              <span *ngIf="user.id !== editingId">{{ user.name }}</span>
+            </td>
+            <td class="status-cell">
+              <span class="status-dot" [ngClass]="{
+      'available': user.status === 'Available IP',
+      'reserved': user.status === 'Reserved IP'
+    }">
+              </span>
+              <span class="status-label">{{ user.status }}</span>
+            </td>
+            <td>
+              <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.hostname"
+                name="hostname{{user.id}}" />
+              <span *ngIf="user.id !== editingId">{{ user.hostname }}</span>
+            </td>
+            <td>
+              <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.ip_address"
+                name="ip{{user.id}}" />
+              <span *ngIf="user.id !== editingId">{{ user.ip_address }}</span>
+            </td>
+            <td>
+              <select *ngIf="user.id === editingId" [(ngModel)]="selectedUser!.department" name="dept{{user.id}}">
+                <option *ngFor="let dept of departments" [value]="dept">
+                  {{ dept }}
+                </option>
+              </select>
+              <span *ngIf="user.id !== editingId">{{ user.department }}</span>
+            </td>
+            <td>
+              <div class="action-icons">
+                <ng-container *ngIf="user.id !== editingId">
+                  <i class="fas fa-edit icon icon-edit" (click)="editUser(user)" title="Edit"></i>
+                  <i class="fas fa-trash-alt icon icon-delete" (click)="openDeleteModal(user)" title="Delete"></i>
+                </ng-container>
+                <ng-container *ngIf="user.id === editingId">
+                  <i class="fas fa-save icon icon-save" (click)="updateUser()" title="Save"></i>
+                  <i class="fas fa-times icon icon-cancel" (click)="cancelEdit()" title="Cancel"></i>
+                </ng-container>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" *ngIf="showDeleteModal">
+  <div class="modal-content">
+    <h3>Confirm Delete</h3>
+    <p>
+      Are you sure you want to delete
+      <strong>{{ selectedUserToDelete?.name || 'this user' }}</strong>?
+    </p>
+
+    <div class="modal-buttons">
+      <button class="btn btn-confirm" (click)="confirmDelete()">Yes, Delete</button>
+      <button class="btn btn-cancel" (click)="cancelDelete()">Cancel</button>
+    </div>
+  </div>
+</div>

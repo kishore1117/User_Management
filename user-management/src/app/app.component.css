@@ -1,5 +1,6 @@
 .container {
-  padding: 20px 0px;
+  margin-top: 0.4em;
+  max-width: 130em;
 }
 
 .login-container {
@@ -47,7 +48,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-left: 5em;
+  margin-top: 1.2em;
+  margin-right: 1em;
 }
 
 .logout-btn {

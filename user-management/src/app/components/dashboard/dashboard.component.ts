@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastService } from '../../services/toastMessage.service';
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 
 interface User {
   id: number;
@@ -11,7 +13,7 @@ interface User {
   ip_address: string;
   department: string;
   created_at: string;
-   status?: string;
+  status?: string;
 }
 
 @Component({
@@ -25,6 +27,8 @@ export class DashboardComponent implements OnInit {
   baseUrl = 'http://localhost:3000/api/users';
   users: User[] = [];
   filteredUsers: User[] = [];
+  selectedStatus: string = '';
+  statuses: string[] = ['Reserved IP', 'Available IP'];
   showDeleteModal = false;
   selectedUserToDelete: any = null;
   departments: string[] = ['IT', 'Finance', 'HR', 'Pharma', 'Cidis', 'Skinnova', 'Herbal', 'YVO', 'Sales admin', 'Data analysis', 'Regulatory'];
@@ -70,47 +74,68 @@ export class DashboardComponent implements OnInit {
     this.selectedUserToDelete = null;
   }
 
+  // loadUsers() {
+  //   this.loading = true;
 
-//   loadUsers() {
-//   this.loading = true;
-//   this.http.get<User[]>(`${this.baseUrl}`).subscribe({
-//     next: (users) => {
-//       // ✅ Normalize fields to remove accidental spaces
-//       this.users = users.map(u => ({
-//         ...u,
-//         name: u.name?.trim(),
-//         hostname: u.hostname?.trim(),
-//         ip_address: u.ip_address?.trim(),
-//         department: u.department?.trim()
-//       }));
+  //   this.http.get<User[]>(`${this.baseUrl}`).subscribe({
+  //     next: (users) => {
+  //       this.users = users.map((u) => {
+  //         // Trim all values
+  //         const trimmed = {
+  //           ...u,
+  //           name: u.name?.trim() || '',
+  //           hostname: u.hostname?.trim() || '',
+  //           ip_address: u.ip_address?.trim() || '',
+  //           department: u.department?.trim() || ''
+  //         };
 
-//       // ✅ Extract unique, non-empty departments dynamically
-//       const departmentSet = new Set<string>();
-//       this.users.forEach(user => {
-//         if (user.department && user.department !== '') {
-//           departmentSet.add(user.department);
-//         }
-//       });
-//       this.departments = Array.from(departmentSet).sort();
+  //         // Determine if IP is available
+  //         const isAvailable =
+  //           (!trimmed.name || trimmed.name.toLowerCase() === 'na') &&
+  //           (!trimmed.hostname || trimmed.hostname.toLowerCase() === 'na');
 
-//       // ✅ Apply sorting and filtering after load
-//       this.filteredUsers = [...this.users];
-//       this.applySorting();
+  //         return {
+  //           ...trimmed,
+  //           status: isAvailable ? 'Available IP' : 'Reserved IP'
+  //         };
+  //       });
 
-//       this.loading = false;
-//     },
-//     error: (err) => {
-//       console.error('Failed to load users:', err);
-//       this.loading = false;
-//     }
-//   });
-// }
+  //       // ✅ Build department list (including "NA")
+  //       const departmentSet = new Set<string>();
+  //       this.users.forEach(user => {
+  //         const dept =
+  //           user.department && user.department.trim() !== ''
+  //             ? user.department
+  //             : 'NA'; // 👈 include NA for empty departments
+  //         departmentSet.add(dept);
+  //       });
 
+  //       this.departments = Array.from(departmentSet).sort((a, b) =>
+  //         a.localeCompare(b)
+  //       );
+
+  //       // ✅ Apply sorting and filtering
+  //       this.filteredUsers = [...this.users];
+  //       this.applySorting();
+
+  //       // ✅ Initialize charts after data load
+  //       this.initCharts();
+
+  //       this.loading = false;
+  //     },
+  //     error: (err) => {
+  //       console.error('❌ Failed to load users:', err);
+  //       this.loading = false;
+  //     }
+  //   });
+  // }
 loadUsers() {
   this.loading = true;
+
   this.http.get<User[]>(`${this.baseUrl}`).subscribe({
     next: (users) => {
-      this.users = users.map(u => {
+      this.users = users.map((u) => {
+        // Normalize and trim all string fields
         const trimmed = {
           ...u,
           name: u.name?.trim() || '',
@@ -119,39 +144,49 @@ loadUsers() {
           department: u.department?.trim() || ''
         };
 
-        // ✅ Add status property dynamically
+        // Compute availability based on name + hostname
         const isAvailable =
           (!trimmed.name || trimmed.name.toLowerCase() === 'na') &&
-          (!trimmed.hostname || trimmed.hostname.toLowerCase() === 'na') &&
-          (!trimmed.department || trimmed.department.toLowerCase() === 'na');
+          (!trimmed.hostname || trimmed.hostname.toLowerCase() === 'na');
 
         return {
           ...trimmed,
-          status: isAvailable ? 'Available' : 'Taken'
+          status: isAvailable ? 'Available IP' : 'Reserved IP'
         };
       });
 
-      // ✅ Extract unique departments
-      const departmentSet = new Set<string>();
-      this.users.forEach(user => {
-        if (user.department && user.department !== '') {
-          departmentSet.add(user.department);
-        }
-      });
-      this.departments = Array.from(departmentSet).sort();
+      // ✅ Extract unique department names (including 'NA' for unassigned)
+      this.departments = Array.from(
+        new Set(
+          this.users.map(u => u.department || 'NA')
+        )
+      )
+      .filter((dept): dept is string => !!dept)
+      .sort((a, b) => a.localeCompare(b));
 
-      // ✅ Filter + Sort
+      // ✅ Extract unique statuses
+      this.statuses = Array.from(
+        new Set(
+          this.users
+            .map(u => u.status)
+            .filter((status): status is string => !!status)
+        )
+      ).sort((a, b) => a.localeCompare(b));
+
+      // ✅ Apply sorting, filtering, and initialize charts
       this.filteredUsers = [...this.users];
       this.applySorting();
+      this.initCharts();
 
       this.loading = false;
     },
     error: (err) => {
-      console.error('Failed to load users:', err);
+      console.error('❌ Failed to load users:', err);
       this.loading = false;
     }
   });
 }
+
 
 
   editUser(user: User) {
@@ -171,21 +206,44 @@ loadUsers() {
     }
 
     const id = this.selectedUser.id;
-    this.http.put<User>(`${this.baseUrl}/${id}`, this.selectedUser).subscribe({
-      next: (updatedUser) => {
-        this.users = this.users.map(u => u.id === id ? updatedUser : u);
-        // Refresh departments list in case department was changed
-        this.departments = [...new Set(this.users.map(user => user.department))]
-          .filter(dept => dept)
-          .sort((a, b) => a.localeCompare(b));
+
+    // ✅ Trim and normalize fields
+    const updatedUser = {
+      ...this.selectedUser,
+      name: this.selectedUser.name?.trim() || '',
+      hostname: this.selectedUser.hostname?.trim() || '',
+      ip_address: this.selectedUser.ip_address?.trim() || '',
+      department: this.selectedUser.department?.trim() || ''
+    };
+
+    const isAvailable =
+      (!updatedUser.name || updatedUser.name.toLowerCase() === 'na') &&
+      (!updatedUser.hostname || updatedUser.hostname.toLowerCase() === 'na');
+
+    updatedUser.status = isAvailable ? 'Available IP' : 'Reserved IP';
+
+    this.http.put<User>(`${this.baseUrl}/${id}`, updatedUser).subscribe({
+      next: () => {
+        this.users = this.users.map(u => (u.id === id ? { ...updatedUser } : u));
+        this.filteredUsers = [...this.users];
+        this.applySorting();
         this.filterByDepartment();
-        this.selectedUser = null;
+        this.departments = [...new Set(
+          this.users.map(user => user.department?.trim() || 'NA')
+        )].sort((a, b) => a.localeCompare(b));
         this.editingId = null;
+        this.initCharts();
+        this.selectedUser = null;
+        this.editingId = null; // 👈 This disables input fields in UI
+        // ✅ Success message
         this.toastService.show('User updated successfully!', 'success');
       },
-      error: () => this.toastService.show('Failed to update user.', 'error')
+      error: () => {
+        this.toastService.show('Failed to update user.', 'error');
+      }
     });
   }
+
 
   deleteUser(id: number) {
     this.http.delete(`${this.baseUrl}/${id}`).subscribe({
@@ -202,28 +260,43 @@ loadUsers() {
     });
   }
 
+
   // filterByDepartment() {
   //   if (!this.selectedDepartment) {
-  //     this.filteredUsers = this.users;
+  //     this.filteredUsers = [...this.users];
+  //   } else if (this.selectedDepartment === 'NA') {
+  //     this.filteredUsers = this.users.filter(
+  //       (u) => !u.department || u.department.toLowerCase() === 'na'
+  //     );
   //   } else {
   //     this.filteredUsers = this.users.filter(
-  //       user => user.department === this.selectedDepartment
+  //       (u) => u.department === this.selectedDepartment
   //     );
   //   }
+
+  //   this.applySorting();
   // }
 
-    filterByDepartment() {
-    if (this.selectedDepartment) {
-      this.filteredUsers = this.users.filter(
-        (u) => u.department === this.selectedDepartment
-      );
-    } else {
-      this.filteredUsers = this.users;
-    }
+  filterByDepartment() {
+    this.filteredUsers = this.users.filter(user => {
+    const departmentMatch =
+      !this.selectedDepartment ||
+      user.department === this.selectedDepartment ||
+      (this.selectedDepartment === 'NA' && !user.department);
+
+    const statusMatch =
+      !this.selectedStatus ||
+      user.status === this.selectedStatus;
+
+    return departmentMatch && statusMatch;
+  });
+
+  this.applySorting();
   }
 
   clearFilter() {
     this.selectedDepartment = '';
+    this.selectedStatus = '';
     this.filteredUsers = this.users;
   }
 
@@ -270,6 +343,47 @@ loadUsers() {
       if (valueA < valueB) return this.sortDirection === 'asc' ? -1 : 1;
       if (valueA > valueB) return this.sortDirection === 'asc' ? 1 : -1;
       return 0;
+    });
+  }
+
+  initCharts() {
+    this.renderDepartmentPie();
+    this.renderStatusBar();
+  }
+
+  renderDepartmentPie() {
+    const deptCount: any = {};
+    this.users.forEach(u => {
+      deptCount[u.department] = (deptCount[u.department] || 0) + 1;
+    });
+
+    new Chart('deptPieChart', {
+      type: 'pie',
+      data: {
+        labels: Object.keys(deptCount),
+        datasets: [{
+          data: Object.values(deptCount),
+          backgroundColor: ['#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c']
+        }]
+      }
+    });
+  }
+
+  renderStatusBar() {
+    const reserved = this.users.filter(u => u.status === 'Reserved IP').length;
+    const available = this.users.filter(u => u.status === 'Available IP').length;
+
+    new Chart('ipStatusBarChart', {
+      type: 'bar',
+      data: {
+        labels: ['Reserved', 'Available IP'],
+        datasets: [{
+          label: 'IP Usage',
+          data: [reserved, available],
+          backgroundColor: ['#e74c3c', '#2ecc71']
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
     });
   }
 

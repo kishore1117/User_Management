@@ -1,6 +1,6 @@
 import {
   InjectionToken
-} from "./chunk-OLJ2W2BP.js";
+} from "./chunk-KQGXHOHP.js";
 
 // node_modules/@angular/common/fesm2022/dom_tokens-rA0ACyx7.mjs
 var DOCUMENT = new InjectionToken(ngDevMode ? "DocumentToken" : "");
@@ -47,4 +47,4 @@ export {
    * License: MIT
    *)
 */
-//# sourceMappingURL=chunk-CVVAAMXL.js.map
+//# sourceMappingURL=chunk-VENVQU6J.js.map

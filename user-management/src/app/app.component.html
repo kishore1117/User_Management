@@ -1,7 +1,7 @@
 <div class="container">
  
   <div *ngIf="!isAuthenticated" class="login-container">
-    <div class="header">  
+    <div class="header_login">  
       <h3>IP Management System</h3>
     </div>
     <h2>Login</h2>
@@ -14,7 +14,8 @@
 
 <div *ngIf="isAuthenticated">
   <div class="header">
-    <h2>User Management System</h2>
+    <img src="../assets/logo/apex-logo.png"  class="logo"/>
+    <h2>Apex IP Management System</h2>
     <nav>
       <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a> |
       <a routerLink="/add" routerLinkActive="active">Add User</a> |
