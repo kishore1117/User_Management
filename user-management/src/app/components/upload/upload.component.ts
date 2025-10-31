@@ -37,9 +37,25 @@ export class UploadComponent {
   selectedFile: File | null = null;
   uploading = false;
   progress = 0;
-  private baseUrl = 'http://192.168.1.247:3000/api/users/bulk'; // Updated endpoint
+  private baseUrl = 'http://localhost:3000/api/users/bulk';
+  departments: string[] = [];
+  selectedDepartment: string = '';
+  showBulkDeleteModal = false; // Updated endpoint
 
   constructor(private http: HttpClient, private toastService: ToastService) {}
+
+  ngOnInit() {
+    this.loadDepartments();
+  }
+
+   loadDepartments() {
+    this.http.get<any[]>('http://localhost:3000/api/users').subscribe({
+      next: (users) => {
+        this.departments = [...new Set(users.map((u) => u.department))];
+      },
+      error: (err) => console.error('Error fetching departments:', err)
+    });
+  }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -124,4 +140,32 @@ export class UploadComponent {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
+
+  openBulkDeleteModal() {
+    if (!this.selectedDepartment) return;
+    this.showBulkDeleteModal = true;
+  }
+
+  confirmBulkDelete() {
+    const dept = this.selectedDepartment;
+
+    this.http.delete(`http://localhost:3000/api/users/department/${dept}`).subscribe({
+      next: (res) => {
+        console.log('Deleted all users from:', dept);
+        this.showBulkDeleteModal = false;
+        this.selectedDepartment = '';
+        this.loadDepartments(); // Refresh department list after deletion
+      },
+      error: (err) => {
+        console.error('Error deleting users:', err);
+        this.showBulkDeleteModal = false;
+      }
+    });
+  }
+
+  cancelBulkDelete() {
+    this.showBulkDeleteModal = false;
+  }
+
+
 }

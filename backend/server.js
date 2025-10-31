@@ -28,7 +28,7 @@ initDB();
 const angularDistPath = path.join(__dirname, 'dist', 'user-management', 'browser');
 const indexPath = path.join(angularDistPath, 'index.html');
 
-// Validate Angular build exists
+//Validate Angular build exists
 if (!fs.existsSync(angularDistPath)) {
   console.warn('⚠️ Angular dist folder not found at:', angularDistPath);
 }
@@ -48,21 +48,46 @@ app.use(express.static(angularDistPath, {
 // ========================
 
 // ✅ Add new user
-app.post("/api/users", (req, res) => {
+app.post("/api/users", async (req, res) => {
   const { name, hostname, ipAddress, department } = req.body;
+
   if (!name || !hostname || !ipAddress || !department) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  const query =
-    "INSERT INTO users (name, hostname, ip_address, department) VALUES ($1, $2, $3, $4)";
-  pool.query(query, [name, hostname, ipAddress, department], (err) => {
-    if (err) {
-      console.error("Error inserting user:", err);
-      return res.status(500).json({ message: "Database error while adding user" });
+  try {
+    // Step 1: Check if IP exists in DB
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE ip_address = $1",
+      [ipAddress]
+    );
+
+    // Step 2: If IP not found → Invalid IP
+    if (existingUser.rows.length === 0) {
+      return res.status(400).json({ message: "Invalid IP" });
     }
-    res.status(201).json({ message: "User added successfully" });
-  });
+
+    const user = existingUser.rows[0];
+
+    // Step 3: If IP found but name != 'NA' → IP already taken
+    if (user.name !== "NA") {
+      return res.status(400).json({ message: "IP already taken" });
+    }
+
+    // Step 4: If IP found and name = 'NA' → Update record
+    const updateQuery = `
+      UPDATE users
+      SET name = $1, hostname = $2, department = $3
+      WHERE ip_address = $4
+    `;
+
+    await pool.query(updateQuery, [name, hostname, department, ipAddress]);
+
+    return res.status(200).json({ message: "User added successfully" });
+  } catch (err) {
+    console.error("Error processing request:", err);
+    return res.status(500).json({ message: "Database error while adding user" });
+  }
 });
 
 // 🔍 Search users
@@ -216,6 +241,24 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
+app.delete("/api/users/department/:dept", (req, res) => {
+  const { dept } = req.params;
+  const query = "DELETE FROM users WHERE department = $1";
+
+  pool.query(query, [dept], (err, result) => {
+    if (err) {
+      console.error("Error deleting users by department:", err);
+      return res.status(500).json({ message: "Database error while deleting users" });
+    }
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: `No users found in ${dept} department.` });
+    }
+
+    res.status(200).json({ message: `All users in ${dept} department deleted successfully.` });
+  });
+});
+
 app.get('*', (req, res) => {
   res.sendFile(indexPath);
 })
@@ -227,7 +270,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📂 Serving Angular from: ${angularDistPath}`);
 });
 
-// Error handling for uncaught exceptions
+//Error handling for uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
   // Graceful shutdown

@@ -1,17 +1,31 @@
 <div class="form-container">
   <h3>Find Users</h3>
-  <form (ngSubmit)="searchUsers()" class="search-form">
+  <form #searchForm="ngForm" (ngSubmit)="searchUsers()" class="search-form">
     <div class="form-inputs">
-      <input type="text" placeholder="Name" [(ngModel)]="search.name" name="name" />
-      <input type="text" placeholder="Hostname" [(ngModel)]="search.hostname" name="hostname" />
-      <input type="text" placeholder="IP Address" [(ngModel)]="search.ipAddress" name="ipAddress" />
+      <input type="text" placeholder="Name" name="name" [(ngModel)]="search.name" #nameInput="ngModel" />
+
+      <input type="text" placeholder="Hostname" name="hostname" [(ngModel)]="search.hostname" #hostInput="ngModel" />
+
+      <input type="text" placeholder="IP Address" name="ipAddress" [(ngModel)]="search.ipAddress" #ipInput="ngModel"
+        pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" />
+      <div class="error-message" *ngIf="ipInput.invalid && ipInput.touched">
+        <small *ngIf="ipInput.errors?.['required']">IP Address is required.</small>
+        <small *ngIf="ipInput.errors?.['pattern']">Enter a valid IPv4 address (e.g., 192.168.1.10).</small>
+      </div>
     </div>
-    <button type="submit">Search</button>
+
+    <!-- Error messages -->
+    <div class="error-message" *ngIf="errorMessage">
+      <small>{{ errorMessage }}</small>
+    </div>
+
+    <button class="submit" type="submit" [disabled]="!isFormValid(search, ipInput)">Search</button>
   </form>
+
 </div>
 
 <div class="results-section" *ngIf="users.length > 0 && !hideResults">
- <div class="results-header">
+  <div class="results-header">
     <h3>Search Results</h3>
     <i class="fas fa-times close-icon" (click)="hideResultsSection()" title="Close results"></i>
   </div>
@@ -68,10 +82,3 @@
     </table>
   </div>
 </div>
-
-<!-- <div *ngIf="toastMessage" [@fade]="fadeState" [ngClass]="{
-    'alert-success': messageType === 'success',
-    'alert-error': messageType === 'error'
-  }" class="alert-box">
-  {{ toastMessage }}
-</div> -->

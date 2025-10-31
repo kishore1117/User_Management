@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgModel } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { ToastService } from '../../services/toastMessage.service';
@@ -28,6 +28,7 @@ interface User {
   ],
 })
 export class UserSearchComponent {
+  errorMessage = '';
   search = { name: '', hostname: '', ipAddress: '' };
   users: User[] = [];
   selectedUser: User | null = null;
@@ -44,8 +45,22 @@ export class UserSearchComponent {
 
   constructor(private http: HttpClient, private toastService: ToastService) {}
 
+     isFormValid(search: any, ipInput: NgModel): boolean {
+    const { name, hostname, ipAddress } = search;
+
+    // Case 1: All fields empty → invalid
+    if (!name && !hostname && !ipAddress) return false;
+
+    // Case 2: IP entered but invalid pattern → invalid
+    if (ipAddress && ipInput.invalid) return false;
+
+    // ✅ Otherwise → valid
+    return true;
+  }
   searchUsers() {
+    this.errorMessage = '';
     const body: any = {};
+
      this.hideResults = false;
     if (this.search.name?.trim()) body.name = this.search.name.trim();
     if (this.search.hostname?.trim()) body.hostname = this.search.hostname.trim();

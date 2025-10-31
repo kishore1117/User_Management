@@ -18,11 +18,35 @@
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Hostname</th>
-          <th>IP Address</th>
-          <th>Department</th>
-          <th>Created Date</th>
+          <th (click)="sortBy('name')">
+            Name
+            <span *ngIf="sortColumn === 'name'">
+              {{ sortDirection === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th (click)="sortBy('status')">Status
+            <span *ngIf="sortColumn === 'status'">
+              {{ sortDirection === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th (click)="sortBy('hostname')">
+            Hostname
+            <span *ngIf="sortColumn === 'hostname'">
+              {{ sortDirection === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th (click)="sortBy('ip_address')">
+            IP Address
+            <span *ngIf="sortColumn === 'ip_address'">
+              {{ sortDirection === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th (click)="sortBy('department')">
+            Department
+            <span *ngIf="sortColumn === 'department'">
+              {{ sortDirection === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -35,54 +59,44 @@
         </tr>
         <tr *ngFor="let user of filteredUsers">
           <td>
-            <input *ngIf="user.id === editingId" 
-                   type="text" 
-                   [(ngModel)]="selectedUser!.name" 
-                   name="name{{user.id}}" />
+            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.name" name="name{{user.id}}" />
             <span *ngIf="user.id !== editingId">{{ user.name }}</span>
           </td>
+          <td class="status-cell">
+            <span class="status-dot" [ngClass]="{
+      'available': user.status === 'Available',
+      'taken': user.status === 'Taken'
+    }">
+            </span>
+            <span class="status-label">{{ user.status }}</span>
+          </td>
           <td>
-            <input *ngIf="user.id === editingId" 
-                   type="text" 
-                   [(ngModel)]="selectedUser!.hostname" 
-                   name="hostname{{user.id}}" />
+            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.hostname"
+              name="hostname{{user.id}}" />
             <span *ngIf="user.id !== editingId">{{ user.hostname }}</span>
           </td>
           <td>
-            <input *ngIf="user.id === editingId" 
-                   type="text" 
-                   [(ngModel)]="selectedUser!.ip_address" 
-                   name="ip{{user.id}}" />
+            <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.ip_address"
+              name="ip{{user.id}}" />
             <span *ngIf="user.id !== editingId">{{ user.ip_address }}</span>
           </td>
           <td>
-            <select *ngIf="user.id === editingId" 
-                    [(ngModel)]="selectedUser!.department" 
-                    name="dept{{user.id}}">
+            <select *ngIf="user.id === editingId" [(ngModel)]="selectedUser!.department" name="dept{{user.id}}">
               <option *ngFor="let dept of departments" [value]="dept">
                 {{ dept }}
               </option>
             </select>
             <span *ngIf="user.id !== editingId">{{ user.department }}</span>
           </td>
-          <td>{{ user.created_at | date:'medium' }}</td>
           <td>
             <div class="action-icons">
               <ng-container *ngIf="user.id !== editingId">
-                <i class="fas fa-edit icon icon-edit" 
-                   (click)="editUser(user)" 
-                   title="Edit"></i>
-                <i class="fas fa-trash-alt icon icon-delete" 
-                   (click)="deleteUser(user.id)" 
-                   title="Delete"></i>
+                <i class="fas fa-edit icon icon-edit" (click)="editUser(user)" title="Edit"></i>
+                <i class="fas fa-trash-alt icon icon-delete" (click)="openDeleteModal(user)" title="Delete"></i>
               </ng-container>
               <ng-container *ngIf="user.id === editingId">
-                <i class="fas fa-save icon icon-save" 
-                   (click)="updateUser()" 
-                   title="Save"></i>
-                <i class="fas fa-times icon icon-cancel" 
-                   (click)="cancelEdit()" 
-                   title="Cancel"></i>
+                <i class="fas fa-save icon icon-save" (click)="updateUser()" title="Save"></i>
+                <i class="fas fa-times icon icon-cancel" (click)="cancelEdit()" title="Cancel"></i>
               </ng-container>
             </div>
           </td>
@@ -90,4 +104,18 @@
       </tbody>
     </table>
   </div>
-</div>
+
+  <div class="modal-overlay" *ngIf="showDeleteModal">
+    <div class="modal-content">
+      <h3>Confirm Delete</h3>
+      <p>
+        Are you sure you want to delete
+        <strong>{{ selectedUserToDelete?.name || 'this user' }}</strong>?
+      </p>
+
+      <div class="modal-buttons">
+        <button class="btn btn-confirm" (click)="confirmDelete()">Yes, Delete</button>
+        <button class="btn btn-cancel" (click)="cancelDelete()">Cancel</button>
+      </div>
+    </div>
+  </div>
