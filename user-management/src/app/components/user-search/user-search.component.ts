@@ -34,6 +34,9 @@ export class UserSearchComponent {
   selectedUser: User | null = null;
   editingId: number | null = null;
   hideResults = false;
+  selectedUserToDelete: any = null;
+  showDeleteModal = false;
+  searchedUsers: User[] = [];
 
   departments = ['IT', 'Finance', 'HR','Pharma','Cidis','Skinnova','Herbal','YVO','Sales admin','Data analysis','Regulatory'];
 
@@ -119,6 +122,8 @@ export class UserSearchComponent {
       this.clearSearch();
 
       this.toastService.show('User updated successfully!', 'success');
+
+      this.hideResults = true;
     },
     error: () => this.toastService.show('Failed to update user. Please try again.', 'error')
   });
@@ -141,5 +146,34 @@ export class UserSearchComponent {
       },
       error: () => this.toastService.show('Failed to delete user. Please try again.', 'error')
     });
+  }
+
+  openDeleteModal(user: any) {
+    this.selectedUserToDelete = user;
+    this.showDeleteModal = true;
+  }
+
+    confirmDelete() {
+    const userId = this.selectedUserToDelete.id;
+
+    this.http.delete(`http://localhost:3000/api/users/${userId}`).subscribe({
+      next: (res) => {
+        this.toastService.show('🗑️ User deleted successfully', 'success');
+        this.searchedUsers = this.searchedUsers.filter(u => u.id !== userId);
+        this.showDeleteModal = false;
+        this.selectedUserToDelete = null;
+        this.hideResults = true;
+      },
+      error: (err) => {
+        console.error('Error deleting user:', err);
+        this.showDeleteModal = false;
+      }
+    });
+  }
+
+  
+  cancelDelete() {
+    this.showDeleteModal = false;
+    this.selectedUserToDelete = null;
   }
 }
