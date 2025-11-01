@@ -24,7 +24,7 @@ interface User {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-  baseUrl = 'http://localhost:3000/api/users';
+  baseUrl = 'http://192.168.1.247:3000/api/users';
   users: User[] = [];
   filteredUsers: User[] = [];
   selectedStatus: string = '';
@@ -56,7 +56,7 @@ export class DashboardComponent implements OnInit {
   confirmDelete() {
     const userId = this.selectedUserToDelete.id;
 
-    this.http.delete(`http://localhost:3000/api/users/${userId}`).subscribe({
+    this.http.delete(`http://192.168.1.247:3000/api/users/${userId}`).subscribe({
       next: () => {
         this.filteredUsers = this.filteredUsers.filter(u => u.id !== userId);
         this.showDeleteModal = false;
@@ -260,22 +260,6 @@ loadUsers() {
     });
   }
 
-
-  // filterByDepartment() {
-  //   if (!this.selectedDepartment) {
-  //     this.filteredUsers = [...this.users];
-  //   } else if (this.selectedDepartment === 'NA') {
-  //     this.filteredUsers = this.users.filter(
-  //       (u) => !u.department || u.department.toLowerCase() === 'na'
-  //     );
-  //   } else {
-  //     this.filteredUsers = this.users.filter(
-  //       (u) => u.department === this.selectedDepartment
-  //     );
-  //   }
-
-  //   this.applySorting();
-  // }
 
   filterByDepartment() {
     this.filteredUsers = this.users.filter(user => {

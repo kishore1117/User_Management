@@ -44,7 +44,7 @@ export class UserSearchComponent {
   messageType: 'success' | 'error' | null = null;
   fadeState: 'visible' | 'hidden' = 'hidden';
 
-  private baseUrl = 'http://localhost:3000/api/users';
+  private baseUrl = 'http://192.168.1.247:3000/api/users';
 
   constructor(private http: HttpClient, private toastService: ToastService) {}
 
@@ -156,7 +156,7 @@ export class UserSearchComponent {
     confirmDelete() {
     const userId = this.selectedUserToDelete.id;
 
-    this.http.delete(`http://localhost:3000/api/users/${userId}`).subscribe({
+    this.http.delete(`http://192.168.1.247:3000/api/users/${userId}`).subscribe({
       next: (res) => {
         this.toastService.show('🗑️ User deleted successfully', 'success');
         this.searchedUsers = this.searchedUsers.filter(u => u.id !== userId);
