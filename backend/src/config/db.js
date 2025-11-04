@@ -1,5 +1,13 @@
 import pkg from "pg";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const { Pool } = pkg;
+
+// Get __dirname equivalent in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const pool = new Pool({
   user: 'postgres',
@@ -9,25 +17,17 @@ const pool = new Pool({
   port: 5433,
 });
 
-// SQL to create users table if it doesn't exist
-const createTableQuery = `
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    hostname VARCHAR(100) NOT NULL,
-    ip_address VARCHAR(45) NOT NULL,
-    department VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-`;
-
-// Function to initialize DB
-async function initDB() {
+export async function initDB() {
   try {
-    await pool.query(createTableQuery);
-    console.log('✅ Users table is ready (or already exists)');
+    // Read schema.sql content
+    const schemaPath = path.join(__dirname, "schema.sql");
+    const schemaSQL = fs.readFileSync(schemaPath, "utf8");
+
+    // Run the entire schema file
+    await pool.query(schemaSQL);
+    console.log("✅ All tables are ready (or already exist)");
   } catch (err) {
-    console.error('❌ Error creating users table:', err);
+    console.error("❌ Error initializing database:", err.message);
   }
 }
 

@@ -1,4 +1,5 @@
-import pool from "../config/db.js";
+import db from '../config/db.js';
+const { pool, initDB } = db; 
 
 const addUser = async(data) =>{
     const { name, hostname, ip_address, department } = data;
@@ -10,4 +11,9 @@ const addUser = async(data) =>{
     return result.rows[0];
 }
 
-export default { addUser };
+export const getAllUsers = async () => {
+  const result = await pool.query("SELECT * FROM users");
+  return result.rows;
+};
+
+export default { addUser, getAllUsers };

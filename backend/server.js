@@ -7,7 +7,9 @@
 // const xlsx = require("xlsx");
 // const helmet = require("helmet");
 // const compression = require("compression");
-// const { initDB, pool } = require("./db");
+import db from "./src/config/db.js";
+const { pool, initDB } = db; 
+
 
 // const app = express();
 
@@ -281,9 +283,12 @@
 import dotenv from "dotenv";
 import app from "./src/app.js";
 
-dotenv.config();
+// dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT =3000;
+
+//Initialize database connection
+await initDB();
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
