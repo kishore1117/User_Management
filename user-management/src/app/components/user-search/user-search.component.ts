@@ -44,7 +44,7 @@ export class UserSearchComponent {
   messageType: 'success' | 'error' | null = null;
   fadeState: 'visible' | 'hidden' = 'hidden';
 
-  private baseUrl = 'http://192.168.1.247:3000/api/users';
+  private baseUrl = 'http://localhost:3000/api/users';
 
   constructor(private http: HttpClient, private toastService: ToastService) {}
 

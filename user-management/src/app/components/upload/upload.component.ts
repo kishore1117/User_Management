@@ -37,7 +37,7 @@ export class UploadComponent {
   selectedFile: File | null = null;
   uploading = false;
   progress = 0;
-  private baseUrl = 'http://192.168.1.247:3000/api/users/bulk';
+  private baseUrl = 'http://localhost:3000/api/users/bulk';
   departments: string[] = [];
   selectedDepartment: string = '';
   showBulkDeleteModal = false; // Updated endpoint
@@ -49,7 +49,7 @@ export class UploadComponent {
   }
 
    loadDepartments() {
-    this.http.get<any[]>('http://192.168.1.247:3000/api/users').subscribe({
+    this.http.get<any[]>('http://localhost:3000/api/users').subscribe({
       next: (users) => {
         this.departments = [...new Set(users.map((u) => u.department))];
       },
@@ -149,7 +149,7 @@ export class UploadComponent {
   confirmBulkDelete() {
     const dept = this.selectedDepartment;
 
-    this.http.delete(`http://192.168.1.247:3000/api/users/department/${dept}`).subscribe({
+    this.http.delete(`http://localhost:3000/api/users/department/${dept}`).subscribe({
       next: (res) => {
         console.log('Deleted all users from:', dept);
         this.showBulkDeleteModal = false;

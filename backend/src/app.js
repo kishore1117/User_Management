@@ -1,0 +1,19 @@
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import userRoutes from "./router/userrouter.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+
+const app = express();
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// Routes
+app.use("/api/users", userRoutes);
+// app.use("/api/auth", authRoutes);
+
+// Error handling middleware
+app.use(errorHandler);
+
+export default app;

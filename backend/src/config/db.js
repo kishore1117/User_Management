@@ -1,4 +1,5 @@
-const { Pool } = require('pg');// Load environment variables from .env file
+import pkg from "pg";
+const { Pool } = pkg;
 
 const pool = new Pool({
   user: 'postgres',
@@ -30,4 +31,4 @@ async function initDB() {
   }
 }
 
-module.exports = { pool, initDB };
+export default { pool, initDB };

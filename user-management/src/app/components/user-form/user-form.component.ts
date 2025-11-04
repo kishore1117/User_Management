@@ -33,7 +33,7 @@ export class UserFormComponent {
   }
 
   addUser() {
-    this.http.post('http://192.168.1.247:3000/api/users', this.user).subscribe({
+    this.http.post('http://localhost:3000/api/users', this.user).subscribe({
       next: () => {
         this.toastService.show('User added successfully!', 'success');
         this.clearForm();
