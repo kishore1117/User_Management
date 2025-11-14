@@ -1,0 +1,79 @@
+<p-card *ngIf="!loading" header="User Details" styleClass="p-4 shadow-3">
+
+    <h2 class="text-xl font-bold mb-3">Edit User: {{ user.name }}</h2>
+
+    <p-divider></p-divider>
+
+    <div class="grid">
+
+        <!-- Name -->
+        <div class="col-6">
+            <label><strong>Name</strong></label>
+            <input pInputText [(ngModel)]="user.name" class="w-full" />
+        </div>
+
+        <!-- Hostname -->
+        <div class="col-6">
+            <label><strong>Hostname</strong></label>
+            <input pInputText [(ngModel)]="user.hostname" class="w-full" />
+        </div>
+
+        <!-- Department -->
+        <div class="col-6 mt-3">
+            <label><strong>Department</strong></label>
+            <p-select [options]="departments" [(ngModel)]="user.department_name" optionLabel="label" optionValue="value"
+                class="w-full">
+            </p-select>
+        </div>
+
+        <!-- Category -->
+        <div class="col-6 mt-3">
+            <label><strong>Category</strong></label>
+            <p-select [options]="categories" [(ngModel)]="user.category_name" optionLabel="label" optionValue="value"
+                class="w-full">
+            </p-select>
+        </div>
+
+        <!-- Location -->
+        <div class="col-6 mt-3">
+            <label><strong>Location</strong></label>
+            <input pInputText [(ngModel)]="user.location_name" class="w-full" />
+        </div>
+
+        <!-- IP Address 1 -->
+        <div class="col-6 mt-3">
+            <label><strong>IP Address 1</strong></label>
+            <input pInputText [(ngModel)]="user.ip_address1" class="w-full" />
+        </div>
+
+        <!-- IP Address 2 -->
+        <div class="col-6 mt-3">
+            <label><strong>IP Address 2</strong></label>
+            <input pInputText [(ngModel)]="user.ip_address2" class="w-full" />
+        </div>
+
+        <!-- Status (Read only, computed) -->
+        <div class="col-6 mt-3">
+            <strong>Status</strong>
+            <p-tag [value]="user.name === 'NA' ? 'Available IP' : 'Reserved IP'"
+                [severity]="user.name === 'NA' ? 'success' : 'danger'">
+            </p-tag>
+        </div>
+
+    </div>
+
+    <p-divider></p-divider>
+
+    <div class="flex gap-2">
+        <p-button label="Save Changes" icon="pi pi-check" (click)="saveUser()" class="p-button-success">
+        </p-button>
+
+        <p-button label="Back to Users" icon="pi pi-arrow-left" class="p-button-secondary" (click)="goBack()">
+        </p-button>
+    </div>
+
+</p-card>
+
+<p-card *ngIf="loading">
+    Loading user details...
+</p-card>

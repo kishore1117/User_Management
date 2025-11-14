@@ -6,9 +6,13 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class UserService {
-  private baseUrl = 'http://192.168.1.247:3000/api/users';
+  private baseUrl = 'http://localhost:3000/api/users';
 
   constructor(private http: HttpClient) {}
+
+  getAllUsers(): Observable<any> {
+    return this.http.get(`${this.baseUrl}`);
+  }
 
   addUser(userData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}`, userData);
@@ -21,4 +25,8 @@ export class UserService {
     });
     return this.http.get(`${this.baseUrl}/find`, { params });
   }
+
+  // getUserById(): Observable<any>{
+
+  // }
 }

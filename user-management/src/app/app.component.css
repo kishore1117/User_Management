@@ -1,6 +1,5 @@
 .container {
-  margin-top: 0.4em;
-  max-width: 130em;
+  max-width: 100% !important;
 }
 
 .login-container {
@@ -11,7 +10,35 @@
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
+.p-megamenu {
+  position: relative;
+   display: inline-block !important;
+  z-index: 1000;
+}
+.custom-mega-menu .p-megamenu-panel {
+  width: auto !important;
+  min-width: 220px;
+  max-width: 400px;
+}
 
+.p-megamenu-panel {
+  width: auto !important;
+  min-width: 220px !important; /* optional for consistency */
+  max-width: 400px !important; /* optional if you have many columns */
+}
+
+.p-megamenu-panel {
+  z-index: 1100 !important;
+}
+
+.card {
+  /* background: var(--card-bg); */
+  /* height: 8vh;
+  border: var(--card-border);
+  padding: 0.8rem 0.2em;
+  border-radius: 10px; */
+  /* margin-bottom: 1rem; */
+}
 .login-form {
   display: flex;
   flex-direction: column;
