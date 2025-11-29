@@ -1,150 +1,207 @@
 <div class="dashboard-wrapper">
-  <!-- LEFT: Charts -->
-  <div class="charts-section">
-    <div class="header">
-      <h3>📊Insights</h3>
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Dashboard</h1>
+      <p class="subtitle">System Overview & Analytics</p>
     </div>
-    <div class="chart-body">
-      <div class="chart-container">
-        <span><b>Department Distribution</b></span>
+    <div class="header-stats">
+      <div class="stat-card">
+        <div class="stat-icon total">
+          <i class="pi pi-users"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Users</span>
+          <span class="stat-value">{{ users.length }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon available">
+          <i class="pi pi-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Available IPs</span>
+          <span class="stat-value">{{ getAvailableCount() }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon reserved">
+          <i class="pi pi-lock"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Reserved IPs</span>
+          <span class="stat-value">{{ getReservedCount() }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon departments">
+          <i class="pi pi-building"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Departments</span>
+          <span class="stat-value">{{ departments.length }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-grid">
+    <!-- Department Distribution - Pie Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>
+          <i class="pi pi-chart-pie"></i>
+          Department Distribution
+        </h3>
+        <p class="chart-description">Users per department</p>
+      </div>
+      <div class="chart-body">
         <canvas id="deptPieChart"></canvas>
       </div>
+    </div>
 
-      <div class="chart-container">
-        <span><b>IP Status Overview</b></span>
+    <!-- IP Status Overview - Doughnut Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>
+          <i class="pi pi-chart-bar"></i>
+          IP Status Overview
+        </h3>
+        <p class="chart-description">Available vs Reserved</p>
+      </div>
+      <div class="chart-body">
         <canvas id="ipStatusBarChart"></canvas>
       </div>
     </div>
 
-  </div>
-  <div class="dashboard-container">
-    <div class="header">
-      <h3>🌐IP List</h3>
-      <div class="filter-section">
-        <select [(ngModel)]="selectedDepartment" (change)="filterByDepartment()">
-          <option value="">All Departments</option>
-          <option *ngFor="let dept of departments" [value]="dept">
-            {{ dept }}
-          </option>
-        </select>
-        <select [(ngModel)]="selectedStatus" (change)="filterByDepartment()">
-          <option value="">All Statuses</option>
-          <option *ngFor="let status of statuses" [value]="status">
-            {{ status }}
-          </option>
-        </select>
-        <button *ngIf="selectedDepartment  || selectedStatus" (click)="clearFilter()" class="clear-btn">
-          Clear Filter
-        </button>
+    <!-- Top Departments - Horizontal Bar Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>
+          <i class="pi pi-bars"></i>
+          Top Departments by User Count
+        </h3>
+        <p class="chart-description">Department breakdown</p>
+      </div>
+      <div class="chart-body">
+        <canvas id="topDeptChart"></canvas>
       </div>
     </div>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th (click)="sortBy('name')">
-              Name
-              <span *ngIf="sortColumn === 'name'">
-                {{ sortDirection === 'asc' ? '▲' : '▼' }}
-              </span>
-            </th>
-            <th (click)="sortBy('status')">Status
-              <span *ngIf="sortColumn === 'status'">
-                {{ sortDirection === 'asc' ? '▲' : '▼' }}
-              </span>
-            </th>
-            <th (click)="sortBy('hostname')">
-              Hostname
-              <span *ngIf="sortColumn === 'hostname'">
-                {{ sortDirection === 'asc' ? '▲' : '▼' }}
-              </span>
-            </th>
-            <th (click)="sortBy('ip_address')">
-              IP Address
-              <span *ngIf="sortColumn === 'ip_address'">
-                {{ sortDirection === 'asc' ? '▲' : '▼' }}
-              </span>
-            </th>
-            <th (click)="sortBy('department')">
-              Department
-              <span *ngIf="sortColumn === 'department'">
-                {{ sortDirection === 'asc' ? '▲' : '▼' }}
-              </span>
-            </th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="loading">
-            <td colspan="6" class="loading">Loading users...</td>
-          </tr>
-          <tr *ngIf="!loading && filteredUsers.length === 0">
-            <td colspan="6" class="no-data">No users found</td>
-          </tr>
-          <tr *ngFor="let user of filteredUsers">
-            <td>
-              <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.name"
-                name="name{{user.id}}" />
-              <span *ngIf="user.id !== editingId">{{ user.name }}</span>
-            </td>
-            <td class="status-cell">
-              <span class="status-dot" [ngClass]="{
-      'available': user.status === 'Available IP',
-      'reserved': user.status === 'Reserved IP'
-    }">
-              </span>
-              <span class="status-label">{{ user.status }}</span>
-            </td>
-            <td>
-              <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.hostname"
-                name="hostname{{user.id}}" />
-              <span *ngIf="user.id !== editingId">{{ user.hostname }}</span>
-            </td>
-            <td>
-              <input *ngIf="user.id === editingId" type="text" [(ngModel)]="selectedUser!.ip_address"
-                name="ip{{user.id}}" />
-              <span *ngIf="user.id !== editingId">{{ user.ip_address }}</span>
-            </td>
-            <td>
-              <select *ngIf="user.id === editingId" [(ngModel)]="selectedUser!.department" name="dept{{user.id}}">
-                <option *ngFor="let dept of departments" [value]="dept">
-                  {{ dept }}
-                </option>
-              </select>
-              <span *ngIf="user.id !== editingId">{{ user.department }}</span>
-            </td>
-            <td>
-              <div class="action-icons">
-                <ng-container *ngIf="user.id !== editingId">
-                  <i class="fas fa-edit icon icon-edit" (click)="editUser(user)" title="Edit"></i>
-                  <i class="fas fa-trash-alt icon icon-delete" (click)="openDeleteModal(user)" title="Delete"></i>
-                </ng-container>
-                <ng-container *ngIf="user.id === editingId">
-                  <i class="fas fa-save icon icon-save" (click)="updateUser()" title="Save"></i>
-                  <i class="fas fa-times icon icon-cancel" (click)="cancelEdit()" title="Cancel"></i>
-                </ng-container>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Device Distribution - Radar Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>
+          <i class="pi pi-search"></i>
+          Device Status Distribution
+        </h3>
+        <p class="chart-description">Hardware availability</p>
+      </div>
+      <div class="chart-body">
+        <canvas id="deviceStatusChart"></canvas>
+      </div>
     </div>
   </div>
 
-</div>
+  <!-- Key Metrics Section -->
+  <div class="metrics-section">
+    <div class="metrics-header">
+      <h2>
+        <i class="pi pi-info-circle"></i>
+        Key Metrics
+      </h2>
+    </div>
 
-<div class="modal-overlay" *ngIf="showDeleteModal">
-  <div class="modal-content">
-    <h3>Confirm Delete</h3>
-    <p>
-      Are you sure you want to delete
-      <strong>{{ selectedUserToDelete?.name || 'this user' }}</strong>?
-    </p>
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <div class="metric-icon">
+          <i class="pi pi-server"></i>
+        </div>
+        <div class="metric-content">
+          <span class="metric-label">Active Devices</span>
+          <span class="metric-value">{{ getActiveDevices() }}</span>
+          <span class="metric-percent">{{ getActiveDevicePercent() }}% of total</span>
+        </div>
+      </div>
 
-    <div class="modal-buttons">
-      <button class="btn btn-confirm" (click)="confirmDelete()">Yes, Delete</button>
-      <button class="btn btn-cancel" (click)="cancelDelete()">Cancel</button>
+      <div class="metric-item">
+        <div class="metric-icon">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="metric-content">
+          <span class="metric-label">Last Updated</span>
+          <span class="metric-value">{{ getLastUpdate() }}</span>
+          <span class="metric-percent">Real-time sync</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">
+          <i class="pi pi-map-marker"></i>
+        </div>
+        <div class="metric-content">
+          <span class="metric-label">Locations</span>
+          <span class="metric-value">{{ getUniqueLocations() }}</span>
+          <span class="metric-percent">Tracked across system</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <div class="metric-content">
+          <span class="metric-label">Offline Devices</span>
+          <span class="metric-value">{{ getOfflineDevices() }}</span>
+          <span class="metric-percent">Requires attention</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity Section -->
+  <div class="recent-section">
+    <div class="section-header">
+      <h2>
+        <i class="pi pi-history"></i>
+        Quick Access
+      </h2>
+    </div>
+
+    <div class="recent-grid">
+      <div class="recent-card">
+        <div class="recent-icon">
+          <i class="pi pi-user-plus"></i>
+        </div>
+        <div class="recent-content">
+          <h4>New Users</h4>
+          <p>{{ getNewUsersCount() }} added this week</p>
+          <a href="/users" class="recent-link">View All →</a>
+        </div>
+      </div>
+
+      <div class="recent-card">
+        <div class="recent-icon">
+          <i class="pi pi-wifi"></i>
+        </div>
+        <div class="recent-content">
+          <h4>IP Allocation</h4>
+          <p>{{ getIPUtilization() }}% utilized</p>
+          <a href="/users" class="recent-link">Manage IPs →</a>
+        </div>
+      </div>
+
+      <div class="recent-card">
+        <div class="recent-icon">
+          <i class="pi pi-chart-line"></i>
+        </div>
+        <div class="recent-content">
+          <h4>System Health</h4>
+          <p>All systems operational</p>
+          <a href="/users" class="recent-link">View Details →</a>
+        </div>
+      </div>
     </div>
   </div>
 </div>
