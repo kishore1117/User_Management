@@ -1,0 +1,435 @@
+/* Clean, responsive layout and styling */
+
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #222;
+  overflow-x: hidden; /* prevent component causing page horizontal scroll */
+}
+
+/* header */
+.menu-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Form layout */
+.user-form {
+  display: block;
+}
+.grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  min-height: 220px;
+}
+.panel h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+}
+
+/* form controls grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.col { display: flex; flex-direction: column; }
+.col.full { grid-column: 1 / -1; }
+
+/* labels and inputs */
+.label {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: #444;
+}
+.input {
+  width: 100%;
+}
+
+/* Software panel */
+.software-panel {
+  margin-top: 1rem;
+}
+.software-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.software-actions { display:flex; gap:0.5rem; align-items:center; }
+
+.card {
+  background: #fff;
+  padding: 0.75rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* software list */
+.software-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.software-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+.software-label { font-size: 0.9rem; }
+
+/* selected chips */
+.selected-software .chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f5f7fb;
+  border-radius: 16px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+.chip-remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+.chip-remove[disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .grid-layout { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; }
+  .software-list { grid-template-columns: 1fr 1fr; }
+}
+
+/* Hardware horizontal scroll styles - confined to hardware lane only */
+.hardware-panel {
+  overflow: scroll;
+  padding-bottom: 0.5rem;
+}
+.hardware-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;                   /* only horizontal scroll inside this container */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding: 0.5rem 0;
+  max-width: 100%;                      /* don't exceed parent width */
+  box-sizing: border-box;
+}
+.hardware-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding-bottom: 0.25rem;
+  flex-wrap: nowrap;                    /* keep cards in single horizontal line */
+  white-space: nowrap;
+  margin: 0;                            /* avoid extra horizontal margin */
+}
+.hardware-card {
+  flex: 0 0 320px;                      /* fixed card width to keep consistent scrolling */
+  min-width: 320px;
+  min-height: 220px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 1px 6px rgba(16, 24, 40, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-sizing: border-box;
+}
+.card-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* readonly fields inside hardware cards */
+.readonly {
+  background: #f8fafc;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  color: #333;
+  font-size: 0.9rem;
+}
+.readonly.small {
+  font-size: 0.82rem;
+  color: #555;
+}
+
+/* ensure labels and inputs look good inside cards */
+.hardware-card .label {
+  margin-top: 0.25rem;
+  margin-bottom: 0.15rem;
+  font-size: 0.82rem;
+  color: #4b5563;
+}
+
+/* responsive adjustments for hardware cards */
+@media (max-width: 900px) {
+  .hardware-row { gap: 0.5rem; }
+  .hardware-card { flex: 0 0 300px; min-width: 300px; min-height: 200px; }
+}
+
+/* small utility tweaks */
+.small { font-size: 0.85rem; color: #666; }
+/* Clean, responsive layout and styling */
+
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #222;
+  overflow-x: hidden; /* prevent component causing page horizontal scroll */
+}
+
+/* header */
+.menu-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Form layout */
+.user-form {
+  display: block;
+}
+.grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  min-height: 220px;
+}
+.panel h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+}
+
+/* form controls grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.col { display: flex; flex-direction: column; }
+.col.full { grid-column: 1 / -1; }
+
+/* labels and inputs */
+.label {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: #444;
+}
+.input {
+  width: 100%;
+}
+
+/* Software panel */
+.software-panel {
+  margin-top: 1rem;
+}
+.software-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.software-actions { display:flex; gap:0.5rem; align-items:center; }
+
+.card {
+  background: #fff;
+  padding: 0.75rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* software list */
+.software-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.software-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+.software-label { font-size: 0.9rem; }
+
+/* selected chips */
+.selected-software .chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f5f7fb;
+  border-radius: 16px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+.chip-remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+.chip-remove[disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .grid-layout { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; }
+  .software-list { grid-template-columns: 1fr 1fr; }
+}
+
+/* Hardware horizontal scroll styles - confined to hardware lane only */
+.hardware-panel {
+  padding-bottom: 0.5rem;
+}
+.hardware-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;                   /* only horizontal scroll inside this container */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding: 0.5rem 0;
+  max-width: 100%;                      /* don't exceed parent width */
+  box-sizing: border-box;
+}
+.hardware-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding-bottom: 0.25rem;
+  flex-wrap: nowrap;                    /* keep cards in single horizontal line */
+  white-space: nowrap;
+  margin: 0;                            /* avoid extra horizontal margin */
+}
+.hardware-card {
+  flex: 0 0 320px;                      /* fixed card width to keep consistent scrolling */
+  min-width: 320px;
+  min-height: 220px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 1px 6px rgba(16, 24, 40, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-sizing: border-box;
+}
+.card-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* readonly fields inside hardware cards */
+.readonly {
+  background: #f8fafc;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  color: #333;
+  font-size: 0.9rem;
+}
+.readonly.small {
+  font-size: 0.82rem;
+  color: #555;
+}
+
+/* ensure labels and inputs look good inside cards */
+.hardware-card .label {
+  margin-top: 0.25rem;
+  margin-bottom: 0.15rem;
+  font-size: 0.82rem;
+  color: #4b5563;
+}
+
+/* responsive adjustments for hardware cards */
+@media (max-width: 900px) {
+  .hardware-row { gap: 0.5rem; }
+  .hardware-card { flex: 0 0 300px; min-width: 300px; min-height: 200px; }
+}
+
+/* small utility tweaks */
+.small { font-size: 0.85rem; color: #666; }

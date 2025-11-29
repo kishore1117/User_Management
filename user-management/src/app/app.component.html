@@ -12,22 +12,6 @@
     </form>
   </div>
 
-<!-- <div *ngIf="isAuthenticated">
-  <div class="header">
-   <img src="assets/logo/apex-logo.png" style="width:6em" alt="Apex Logo">
-    <h2>Apex IP Management System</h2>
-    <nav>
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a> |
-      <a routerLink="/add" routerLinkActive="active">Add User</a> |
-      <a routerLink="/find" routerLinkActive="active">Find User</a> |
-      <a routerLink="/upload" routerLinkActive="active">Admin</a>
-    </nav>
-    <button (click)="logout()" class="logout-btn">Logout</button>
-  </div>
-  <router-outlet></router-outlet>
-</div> -->
-
-
 
 <div class="card" *ngIf="isAuthenticated">
   <p-megamenu [model]="items"   appendTo="body"  [style]="{'padding': '0.2rem !important', display: 'flex' }" class="p-4 bg-surface-0 dark:bg-surface-900">

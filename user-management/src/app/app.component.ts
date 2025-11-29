@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+// ...existing code...
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
@@ -20,114 +21,142 @@ import { AuthService } from './services/auth.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   items: MegaMenuItem[] | undefined;
   isAuthenticated = false;
   username = '';
   password = '';
   errorMessage = '';
-  constructor(private router: Router, 
+  userRole: string | null = null;
+
+  constructor(private router: Router,
     private authService: AuthService,
-    private messageService: MessageService) { 
-            this.items = [
+    private messageService: MessageService) {
+    // keep constructor minimal — menu built in ngOnInit after role is read
+  }
+
+  ngOnInit(): void {
+    this.isAuthenticated = (localStorage.getItem('isAuthenticated') === 'true');
+
+    // determine role from session/local storage (token or user object)
+    this.userRole = this.getRoleFromStorage();
+    const isAdmin = !!this.userRole && this.userRole.toLowerCase().includes('admin');
+
+    // build menu conditionally
+    this.items = [
+      {
+        label: 'Dashboard',
+        root: true,
+        command: () => { this.router.navigate(['/dashboard']); }
+      },
+      {
+        label: 'Users',
+        root: true,
+        command: () => { this.router.navigate(['/users']); }
+      },
+      // include Admin only for admin role
+      ...(isAdmin ? [{
+        label: 'Admin',
+        root: true,
+        items: [
+          [
             {
-                label: 'Dashboard',
-                root: true,
-                command:()=>{
-                                    this.router.navigate(['/dashboard']);
-               }
-            },
-            {
-                label: 'Users',
-                root: true,
-                command: () => {
-                    this.router.navigate(['/users']);
-                }
-            },
-            {
-                label: 'Admin',
-                root: true,
-                 items: [
-                    [
-                        {
-                            items: [
-                                { label: 'Settings', icon: 'pi pi-list', subtext: 'Settings' },
-                                { label: 'Upload', icon: 'pi pi-users', subtext: 'Subtext of item' ,command:()=>{
-                                    this.router.navigate(['/upload']);
-                                }},
-                                { label: 'Case Studies', icon: 'pi pi-file', subtext: 'Subtext of item' }
-                            ]
-                        }
-                    ]
-                ]
-            },
-            {
-                label: 'Logout',
-                root: true,
-                command:()=>{
-                                    this.logout();  
-                }
+              items: [
+                { label: 'Settings', icon: 'pi pi-list', subtext: 'Settings' },
+                {
+                  label: 'Upload',
+                  icon: 'pi pi-users',
+                  subtext: 'Subtext of item',
+                  command: () => { this.router.navigate(['/upload']); }
+                },
+                { label: 'Case Studies', icon: 'pi pi-file', subtext: 'Subtext of item' }
+              ]
             }
-        ];
-    }
+          ]
+        ]
+      }] : []),
+      {
+        label: 'Logout',
+        root: true,
+        command: () => { this.logout(); }
+      }
+    ];
+  }
 
-login() {
-  this.authService.login({ username: this.username, password: this.password }).subscribe({
-    next: () => {
-      this.isAuthenticated = true;
-      localStorage.setItem('isAuthenticated', 'true');
-      this.errorMessage = '';
-      // Navigate to dashboard after successful login
-      this.router.navigate(['/users']);
-      this.messageService.add({
-          severity: 'success',
-          summary: 'Login successful',
-          detail: 'Welcome back!'
-        });
-    },
-    error: () => {
-      this.messageService.add({
-          severity: 'error',
-          summary: 'Login failed',
-          detail: 'Invalid credentials'
-        });
-    }
-  });
-  // if (this.username === 'admin' && this.password === 'apex@123') {
-  //   this.isAuthenticated = true;
-  //   localStorage.setItem('isAuthenticated', 'true');
-  //   this.errorMessage = '';
-  //   // Navigate to dashboard after successful login
-  //   this.router.navigate(['/users']);
-  //   // this.toastService.show('Login successful!', 'success');
-  //   this.messageService.add({
-  //       severity: 'success',
-  //       summary: 'Login successful',
-  //       detail: 'Welcome back!'
-  //     });
-  // } else {
-  //   // this.errorMessage = 'Invalid credentials';
-  //   // this.toastService.show('Invalid credentials', 'error');
-  //    this.messageService.add({
-  //       severity: 'error',
-  //       summary: 'Login failed',
-  //       detail: 'Invalid credentials'
-  //     });
-  // }
-}
+  private getRoleFromStorage(): string | null {
+    try {
+      // Try JWT token in sessionStorage or localStorage under common keys
+      const tokenKeys = ['authToken', 'token', 'accessToken', 'jwt'];
+      let token: string | null = null;
+      for (const k of tokenKeys) {
+        token = sessionStorage.getItem(k) || localStorage.getItem(k);
+        if (token) break;
+      }
 
-logout() {
-  this.isAuthenticated = false;
-  localStorage.removeItem('isAuthenticated');
-  this.username = '';
-  this.password = '';
-  // Navigate to login route after logout
-  this.router.navigate(['/login']);
-  // this.toastService.show('Logged out successfully.', 'success');
-  this.messageService.add({
-      severity: 'info',
-      summary: 'Logout successful',
-      detail: 'You have been logged out.'
+      if (token) {
+        // Attempt to decode JWT payload
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = parts[1];
+          // base64url -> base64
+          let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+          while (b64.length % 4) b64 += '=';
+          const json = atob(b64);
+          const obj = JSON.parse(json);
+          if (obj && obj.role) return String(obj.role);
+          if (obj && (obj.roles || obj.roles === 0) && Array.isArray(obj.roles)) {
+            return String(obj.roles[0]);
+          }
+          if (obj && obj['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']) {
+            return String(obj['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']);
+          }
+        }
+      }
+
+      // fallback: look for a stored user object (sessionStorage or localStorage)
+      const userJson = sessionStorage.getItem('user') || localStorage.getItem('user');
+      if (userJson) {
+        const u = JSON.parse(userJson);
+        if (u && u.role) return String(u.role);
+        if (u && u.roles && Array.isArray(u.roles)) return String(u.roles[0]);
+      }
+    } catch (e) {
+      // ignore decode errors
+      console.warn('Failed to read role from storage', e);
+    }
+    return null;
+  }
+
+  login() {
+    this.authService.login({ username: this.username, password: this.password }).subscribe({
+      next: () => {
+        this.isAuthenticated = true;
+        localStorage.setItem('isAuthenticated', 'true');
+        this.errorMessage = '';
+        // refresh role and menu after login
+        this.userRole = this.getRoleFromStorage();
+        this.ngOnInit();
+
+        this.router.navigate(['/users']);
+        this.messageService.add({ severity: 'success', summary: 'Login successful', detail: 'Welcome back!' });
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Login failed', detail: 'Invalid credentials' });
+      }
     });
+  }
+
+  logout() {
+    this.isAuthenticated = false;
+    localStorage.removeItem('isAuthenticated');
+    // optional: clear token/user from storage
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    this.username = '';
+    this.password = '';
+    this.router.navigate(['/login']);
+    this.messageService.add({ severity: 'info', summary: 'Logout successful', detail: 'You have been logged out.' });
+  }
 }
-}
+// ...existing code...

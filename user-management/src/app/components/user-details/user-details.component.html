@@ -1,79 +1,170 @@
-<p-card *ngIf="!loading" header="User Details" styleClass="p-4 shadow-3">
+<!-- ...existing code... -->
+<!-- Improved structure for clarity and responsive layout -->
+<div class="menu-container">
+  <div class="header-left">
+    <h2 class="title">{{ user.name || 'Unknown User' }}</h2>
+    <p-tag
+      [value]="user.name === 'NA' ? 'Available IP' : 'Reserved IP'"
+      [severity]="user.name === 'NA' ? 'success' : 'danger'">
+    </p-tag>
+  </div>
 
-    <h2 class="text-xl font-bold mb-3">Edit User: {{ user.name }}</h2>
+  <div class="header-right">
+    <p-button *ngIf="!isEditing" label="Edit" severity="primary" icon="pi pi-pencil" (click)="enableEdit()"></p-button>
+    <p-button label="Save" [disabled]="!isEditing" (click)="updateUser()" severity="info" icon="pi pi-save"></p-button>
+    <p-button label="Back" severity="secondary" icon="pi pi-arrow-left" (click)="goBack()"></p-button>
+  </div>
+</div>
 
-    <p-divider></p-divider>
+<form [formGroup]="userForm" class="user-form">
+  <div class="grid-layout">
+    <section class="panel">
+      <h3>User Details</h3>
+      <p-scrollpanel [style]="{ width: '100%', height: '100%' }">
+        <div class="grid">
+          <div class="col">
+            <label class="label">Name</label>
+            <input pInputText formControlName="name" class="input" />
+          </div>
+          <div class="col">
+            <label class="label">Hostname</label>
+            <input pInputText formControlName="hostname" class="input" />
+          </div>
+          <div class="col">
+            <label class="label">Department</label>
+            <input pInputText formControlName="department_name" class="input" />
+          </div>
+          <div class="col">
+            <label class="label">Division</label>
+            <input pInputText formControlName="division_name" class="input" />
+          </div>
+          <div class="col">
+            <label class="label">IP Address</label>
+            <input pInputText formControlName="ip_address1" class="input" />
+          </div>
+          <div class="col">
+            <label class="label">IP Address 2</label>
+            <input pInputText formControlName="ip_address2" class="input" />
+          </div>
 
-    <div class="grid">
-
-        <!-- Name -->
-        <div class="col-6">
-            <label><strong>Name</strong></label>
-            <input pInputText [(ngModel)]="user.name" class="w-full" />
+          <div class="col full">
+            <label class="label">Location</label>
+            <p-autoComplete id="location" formControlName="location_name"
+              [suggestions]="this.locationsName"
+              (completeMethod)="locationName($event)"
+              (onSelect)="onSelectLocation($event)"
+              field="name" [dropdown]="true" appendTo="body" class="input">
+              <ng-template let-loc pTemplate="item">
+                <div>{{ loc.name }} <small *ngIf="loc.address">— {{ loc.address }}</small></div>
+              </ng-template>
+            </p-autoComplete>
+          </div>
         </div>
+      </p-scrollpanel>
+    </section>
 
-        <!-- Hostname -->
-        <div class="col-6">
-            <label><strong>Hostname</strong></label>
-            <input pInputText [(ngModel)]="user.hostname" class="w-full" />
+    <!-- Hardware section with horizontal scroll and multiple cards -->
+    <section class="panel hardware-panel">
+      <h3>Hardware Details</h3>
+
+      <!-- horizontal scroll container -->
+      <div class="hardware-scroll" role="region" aria-label="Hardware details horizontal scroll">
+        <div class="hardware-row">
+          <!-- Card 1 -->
+          <div class="hardware-card">
+            <h4 class="card-title">CPU & Model</h4>
+            <label class="label">Model</label>
+            <input pInputText formControlName="model" class="input" />
+            <label class="label">CPU Serial</label>
+            <input pInputText formControlName="cpu_serial" class="input" />
+            <label class="label">Processor</label>
+            <input pInputText formControlName="processor" class="input" />
+            <label class="label">CPU Speed</label>
+            <input pInputText formControlName="cpu_speed" class="input" />
+          </div>
+
+          <!-- Card 2 -->
+          <div class="hardware-card">
+            <h4 class="card-title">Memory & Storage</h4>
+            <label class="label">RAM</label>
+            <input pInputText formControlName="ram" class="input" />
+            <label class="label">HDD</label>
+            <input pInputText formControlName="hdd" class="input" />
+            <!-- asset-like read-only fields (use interpolation so no new form controls required) -->
+            <label class="label">Asset Tag</label>
+            <div class="readonly">{{ user.asset_tag || '—' }}</div>
+            <label class="label">Warranty</label>
+            <div class="readonly">{{ user.warranty || '—' }}</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="hardware-card">
+            <h4 class="card-title">Peripherals</h4>
+            <label class="label">Monitor</label>
+            <input pInputText formControlName="monitor" class="input" />
+            <label class="label">Monitor Serial</label>
+            <input pInputText formControlName="monitor_serial" class="input" />
+            <label class="label">Keyboard</label>
+            <input pInputText formControlName="keyboard" class="input" />
+            <label class="label">Mouse</label>
+            <input pInputText formControlName="mouse" class="input" />
+          </div>
+
+          <!-- Card 4 -->
+          <div class="hardware-card">
+            <h4 class="card-title">OS & Extras</h4>
+            <label class="label">CD / DVD</label>
+            <input pInputText formControlName="cd_dvd" class="input" />
+            <label class="label">OS</label>
+            <input pInputText formControlName="os" class="input" />
+            <label class="label">Last Maintenance</label>
+            <div class="readonly">{{ user.last_maintenance || '—' }}</div>
+            <label class="label">Vendor</label>
+            <div class="readonly">{{ user.vendor || '—' }}</div>
+          </div>
+
+          <!-- Card 5 (optional extra card, shows more read-only info) -->
+          <div class="hardware-card">
+            <h4 class="card-title">Additional Info</h4>
+            <label class="label">Monitor Type</label>
+            <div class="readonly">{{ user.monitor_type || '—' }}</div>
+            <label class="label">GPU</label>
+            <div class="readonly">{{ user.gpu || '—' }}</div>
+            <label class="label">Serials</label>
+            <div class="readonly small">{{ (user.extra_serials || []).join(', ') || '—' }}</div>
+          </div>
         </div>
+      </div>
+    </section>
+  </div>
 
-        <!-- Department -->
-        <div class="col-6 mt-3">
-            <label><strong>Department</strong></label>
-            <p-select [options]="departments" [(ngModel)]="user.department_name" optionLabel="label" optionValue="value"
-                class="w-full">
-            </p-select>
-        </div>
-
-        <!-- Category -->
-        <div class="col-6 mt-3">
-            <label><strong>Category</strong></label>
-            <p-select [options]="categories" [(ngModel)]="user.category_name" optionLabel="label" optionValue="value"
-                class="w-full">
-            </p-select>
-        </div>
-
-        <!-- Location -->
-        <div class="col-6 mt-3">
-            <label><strong>Location</strong></label>
-            <input pInputText [(ngModel)]="user.location_name" class="w-full" />
-        </div>
-
-        <!-- IP Address 1 -->
-        <div class="col-6 mt-3">
-            <label><strong>IP Address 1</strong></label>
-            <input pInputText [(ngModel)]="user.ip_address1" class="w-full" />
-        </div>
-
-        <!-- IP Address 2 -->
-        <div class="col-6 mt-3">
-            <label><strong>IP Address 2</strong></label>
-            <input pInputText [(ngModel)]="user.ip_address2" class="w-full" />
-        </div>
-
-        <!-- Status (Read only, computed) -->
-        <div class="col-6 mt-3">
-            <strong>Status</strong>
-            <p-tag [value]="user.name === 'NA' ? 'Available IP' : 'Reserved IP'"
-                [severity]="user.name === 'NA' ? 'success' : 'danger'">
-            </p-tag>
-        </div>
-
+  <section class="software-panel">
+    <div class="software-header">
+      <h4>Software Details</h4>
+      <div class="software-actions"></div>
     </div>
 
-    <p-divider></p-divider>
-
-    <div class="flex gap-2">
-        <p-button label="Save Changes" icon="pi pi-check" (click)="saveUser()" class="p-button-success">
-        </p-button>
-
-        <p-button label="Back to Users" icon="pi pi-arrow-left" class="p-button-secondary" (click)="goBack()">
-        </p-button>
+    <div class="selected-software">
+      <label class="label">Selected Software</label>
+      <div class="chips">
+        <span *ngFor="let s of userSoftware" class="chip">
+          {{ s }}
+          <button type="button" class="chip-remove" title="Remove" (click)="isEditing ? removeSoftware(s) : null" [disabled]="!isEditing">
+            <i class="pi pi-times"></i>
+          </button>
+        </span>
+      </div>
     </div>
 
-</p-card>
-
-<p-card *ngIf="loading">
-    Loading user details...
-</p-card>
+    <div class="card">
+      <div formArrayName="software" class="software-list">
+        <div *ngFor="let category of softwareList; let i = index" class="software-item">
+          <p-checkbox [binary]="true" [formControlName]="i" [disabled]="!isEditing"
+            (onChange)="onSoftwareCheckboxChange()"></p-checkbox>
+          <label class="software-label">{{ (category?.name) || category }}</label>
+        </div>
+      </div>
+    </div>
+  </section>
+</form>
+<!-- ...existing code... -->

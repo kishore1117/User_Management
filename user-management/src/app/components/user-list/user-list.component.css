@@ -16,3 +16,6 @@ p-table {
   flex: 1;
   height: 100%;
 }
+.p-datatable-thead > tr > th {
+  padding: 0.4em !important;
+}

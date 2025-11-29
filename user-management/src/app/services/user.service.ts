@@ -26,7 +26,11 @@ export class UserService {
     return this.http.get(`${this.baseUrl}/find`, { params });
   }
 
-  // getUserById(): Observable<any>{
+  getUserById(id:any): Observable<any>{
+    return this.http.get(`${this.baseUrl}/${id}`);
+  }
 
-  // }
+  updateUser(id:any,userData:any): Observable<any>{
+    return this.http.patch(`${this.baseUrl}/${id}`,userData);
+  }
 }

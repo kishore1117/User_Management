@@ -15,6 +15,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-user-list',
   templateUrl: './user-list.component.html',
+  styleUrls:["./user-list.component.css"],
   standalone: true,
   imports: [
     TableModule,
