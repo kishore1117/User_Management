@@ -1,8 +1,7 @@
-// ...existing code...
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { InputTextModule } from 'primeng/inputtext';
@@ -12,6 +11,7 @@ import { MegaMenuModule } from 'primeng/megamenu';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { AuthService } from './services/auth.service';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -22,17 +22,23 @@ import { AuthService } from './services/auth.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  items: MegaMenuItem[] | undefined;
+  items: (MegaMenuItem & { label: string; icon: string })[] = [];
   isAuthenticated = false;
   username = '';
   password = '';
   errorMessage = '';
   userRole: string | null = null;
+  currentRoute = '';
 
   constructor(private router: Router,
     private authService: AuthService,
     private messageService: MessageService) {
-    // keep constructor minimal — menu built in ngOnInit after role is read
+    // Track route changes
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.currentRoute = event.urlAfterRedirects || event.url;
+      });
   }
 
   ngOnInit(): void {
@@ -47,39 +53,59 @@ export class AppComponent implements OnInit {
       {
         label: 'Dashboard',
         root: true,
-        command: () => { this.router.navigate(['/dashboard']); }
+        icon: 'pi pi-home',
+        command: () => { 
+          this.currentRoute = '/dashboard';
+          this.router.navigate(['/dashboard']); 
+        }
       },
       {
         label: 'Users',
         root: true,
-        command: () => { this.router.navigate(['/users']); }
+        icon: 'pi pi-users',
+        command: () => { 
+          this.currentRoute = '/users';
+          this.router.navigate(['/users']); 
+        }
       },
       // include Admin only for admin role
       ...(isAdmin ? [{
         label: 'Admin',
         root: true,
+        icon: 'pi pi-cog',
         items: [
           [
             {
               items: [
-                { label: 'Settings', icon: 'pi pi-list', subtext: 'Settings' },
+                { 
+                  label: 'Settings', 
+                  icon: 'pi pi-sliders-v',
+                  command: () => {
+                    this.currentRoute = '/settings';
+                    this.router.navigate(['/settings']);
+                  }
+                },
                 {
                   label: 'Upload',
-                  icon: 'pi pi-users',
-                  subtext: 'Subtext of item',
-                  command: () => { this.router.navigate(['/upload']); }
+                  icon: 'pi pi-cloud-upload',
+                  command: () => { 
+                    this.currentRoute = '/upload';
+                    this.router.navigate(['/upload']); 
+                  }
                 },
-                { label: 'Case Studies', icon: 'pi pi-file', subtext: 'Subtext of item' }
+                { 
+                  label: 'Reports', 
+                  icon: 'pi pi-chart-bar',
+                  command: () => {
+                    this.currentRoute = '/reports';
+                    this.router.navigate(['/reports']);
+                  }
+                }
               ]
             }
           ]
         ]
-      }] : []),
-      {
-        label: 'Logout',
-        root: true,
-        command: () => { this.logout(); }
-      }
+      }] : [])
     ];
   }
 
@@ -127,6 +153,28 @@ export class AppComponent implements OnInit {
     return null;
   }
 
+  /**
+   * Check if a menu item is active based on the current route
+   * @param label - The label of the menu item (must be a string)
+   * @returns True if the menu item matches the current route
+   */
+  isMenuItemActive(label: string | undefined): boolean {
+    // Handle undefined label
+    if (!label) return false;
+
+    const routeMap: { [key: string]: string[] } = {
+      'Dashboard': ['/dashboard'],
+      'Users': ['/users', '/user-details'],
+      'Admin': ['/settings', '/upload', '/reports'],
+      'Settings': ['/settings'],
+      'Upload': ['/upload'],
+      'Reports': ['/reports']
+    };
+
+    const routes = routeMap[label] || [];
+    return routes.some(route => this.currentRoute.startsWith(route));
+  }
+
   login() {
     this.authService.login({ username: this.username, password: this.password }).subscribe({
       next: () => {
@@ -158,5 +206,18 @@ export class AppComponent implements OnInit {
     this.router.navigate(['/login']);
     this.messageService.add({ severity: 'info', summary: 'Logout successful', detail: 'You have been logged out.' });
   }
+
+  /**
+   * Generate initials from username for avatar
+   * @param username - The username to extract initials from
+   * @returns Two-letter initials in uppercase
+   */
+  getInitials(username: string): string {
+    if (!username) return 'U';
+    const parts = username.trim().split(/\s+/);
+    return parts
+      .map(part => part.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 2);
+  }
 }
-// ...existing code...

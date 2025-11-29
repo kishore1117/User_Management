@@ -121,13 +121,6 @@ import {
 } from "./chunk-AEHJ3HT3.js";
 import "./chunk-EPJ5A6YM.js";
 import {
-  animate,
-  state,
-  style,
-  transition,
-  trigger
-} from "./chunk-NUEDIEID.js";
-import {
   FormsModule,
   NG_VALUE_ACCESSOR,
   NgControl,
@@ -135,6 +128,13 @@ import {
   NgModel,
   RequiredValidator
 } from "./chunk-FPHGACWK.js";
+import {
+  animate,
+  state,
+  style,
+  transition,
+  trigger
+} from "./chunk-NUEDIEID.js";
 import {
   CommonModule,
   NgClass,

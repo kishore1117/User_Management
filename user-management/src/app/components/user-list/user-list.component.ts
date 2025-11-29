@@ -11,6 +11,8 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-user-list',
@@ -21,9 +23,11 @@ import { CommonModule } from '@angular/common';
     TableModule,
     IconFieldModule,
     InputIconModule,
+    ProgressSpinnerModule,
     MultiSelectModule,
     SelectModule,
     InputTextModule,
+    ButtonModule,
     FormsModule,
     TagModule,
     CommonModule

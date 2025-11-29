@@ -1,25 +1,120 @@
-<div class="container">
- 
+<div class="app-wrapper">
+  <!-- Login Section -->
   <div *ngIf="!isAuthenticated" class="login-container">
-    <div class="header_login">  
-      <h3>IP Management System</h3>
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo-section">
+          <i class="pi pi-shield"></i>
+          <h1>IP Management System</h1>
+        </div>
+        <p class="tagline">Secure Access to Your Infrastructure</p>
+      </div>
+
+      <form (ngSubmit)="login()" class="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrapper">
+            <i class="pi pi-user"></i>
+            <input 
+              id="username"
+              type="text" 
+              [(ngModel)]="username" 
+              name="username" 
+              placeholder="Enter your username"
+              class="form-input"
+              required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <i class="pi pi-lock"></i>
+            <input 
+              id="password"
+              type="password" 
+              [(ngModel)]="password" 
+              name="password" 
+              placeholder="Enter your password"
+              class="form-input"
+              required />
+          </div>
+        </div>
+
+        <button type="submit" class="login-button">
+          <i class="pi pi-sign-in"></i>
+          Sign In
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p><small>© 2025 IP Management System. All rights reserved.</small></p>
+      </div>
     </div>
-    <h2>Login</h2>
-    <form (ngSubmit)="login()" class="login-form">
-      <input type="text" [(ngModel)]="username" name="username" placeholder="Username" required />
-      <input type="password" [(ngModel)]="password" name="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
+
+    <!-- Decorative Background -->
+    <div class="login-background">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
   </div>
 
+  <!-- Main Application Section -->
+  <div *ngIf="isAuthenticated" class="app-main">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <div class="nav-left">
+        <div class="logo">
+          <i class="pi pi-shield"></i>
+          <span>IP Manager</span>
+        </div>
+      </div>
 
-<div class="card" *ngIf="isAuthenticated">
-  <p-megamenu [model]="items"   appendTo="body"  [style]="{'padding': '0.2rem !important', display: 'flex' }" class="p-4 bg-surface-0 dark:bg-surface-900">
-</p-megamenu>
-</div>
+      <div class="navbar-menu-wrapper">
+        <div class="menu-items">
+          <button 
+            *ngFor="let item of items" 
+            class="menu-item"
+            [class.active]="isMenuItemActive(item.label)"
+            (click)="item.command ? item.command() : null">
+            <i [ngClass]="item.icon" class="menu-icon"></i>
+            <span>{{ item.label }}</span>
+          </button>
+        </div>
+      </div>
 
-  <div *ngIf="isAuthenticated">
-    <router-outlet></router-outlet>
+      <div class="nav-right">
+        <div class="user-section">
+          <p-avatar 
+            [label]="getInitials(username)" 
+            shape="circle"
+            styleClass="user-avatar"
+            [style]="{'background': '#667eea', 'color': '#fff', 'font-weight': 'bold', 'cursor': 'pointer'}">
+          </p-avatar>
+          
+          <div class="user-info">
+            <div class="user-name">{{ username | titlecase }}</div>
+            <div class="user-role">{{ (userRole || 'User') | titlecase }}</div>
+          </div>
+
+          <button 
+            class="logout-button" 
+            (click)="logout()"
+            title="Logout">
+            <i class="pi pi-sign-out"></i>
+            <span class="logout-text">Logout</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
   </div>
 </div>
+
+<!-- Toast Notifications -->
 <p-toast></p-toast>
