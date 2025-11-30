@@ -9,6 +9,7 @@ import departmentRoutes from "./router/departmentRoutes.js";
 import divisionRoutes from "./router/divisionRoutes.js";
 import softwareRoutes from "./router/softwareRoutes.js";
 import uploadRouter from "./router/uploadDataRoutes.js"
+import lookupRouter from "./router/lookupRoutes.js";
 
 const app = express();
 
@@ -23,7 +24,8 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/divisions", divisionRoutes);
 app.use("/api/software", softwareRoutes);
 app.use("/api", uploadRouter);
-// app.use("/api/auth", authRoutes);
+app.use("/api/lookupData", lookupRouter);
+
 
 // Error handling middleware
 app.use(errorHandler);

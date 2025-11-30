@@ -13,7 +13,7 @@ router.use(authenticateJWT);
 router.post("/", authorizeRoles("admin"), createLocation);
 router.patch("/:id", authorizeRoles("admin"), updateLocation);
 router.delete("/:id", authorizeRoles("admin"), deleteLocation);
-router.get("/", authorizeRoles("admin"), getAllLocations);
+router.get("/", authorizeRoles("admin","user"), getAllLocations);
 router.get("/:id", authorizeRoles("admin"), getLocationById);
 
 export default router;

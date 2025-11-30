@@ -13,7 +13,7 @@ router.use(authenticateJWT);
 router.post("/", authorizeRoles("admin"), createSoftware);
 router.patch("/:id", authorizeRoles("admin"), updateSoftware);
 router.delete("/:id", authorizeRoles("admin"), deleteSoftware);
-router.get("/", authorizeRoles("admin"), getAllSoftware);
+router.get("/", authorizeRoles("admin","user"), getAllSoftware);
 router.get("/:id", authorizeRoles("admin"), getSoftwareById);
 
 export default router;

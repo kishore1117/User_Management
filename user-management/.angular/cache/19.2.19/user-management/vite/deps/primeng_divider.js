@@ -3,15 +3,15 @@ import {
   PARENT_INSTANCE
 } from "./chunk-KEMHOK64.js";
 import {
+  Bind,
+  BindModule
+} from "./chunk-5EZ2X5BI.js";
+import {
   BaseStyle
 } from "./chunk-R722F7PF.js";
 import {
   SharedModule
 } from "./chunk-ILA6IIAC.js";
-import {
-  Bind,
-  BindModule
-} from "./chunk-5EZ2X5BI.js";
 import "./chunk-AEHJ3HT3.js";
 import {
   CommonModule

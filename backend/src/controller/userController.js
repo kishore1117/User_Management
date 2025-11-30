@@ -33,10 +33,9 @@ export const addUser = async (req, res) => {
 
 export const getUserById = async (req, res) => {
   try {
-    const userId = req.params.id;
-
-    // Fetch the user
-    const user = await userService.getUserById(userId);
+   const { id } = req.params;
+   
+    const user = await userService.getUserById(id);
 
     if (!user) {
       return res.status(404).json({
@@ -59,7 +58,7 @@ export const getUserById = async (req, res) => {
     return res.json({
       success: true,
       message: "✅ User fetched successfully",
-      user
+      user:user
     });
 
   } catch (err) {
@@ -74,12 +73,12 @@ export const getUserById = async (req, res) => {
 
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await userService.getAllUsers();
+    const users = await userService.getAllUsers(req);
 
     res.json({
       success: true,
       total_users: users.rowCount,
-      users: users.rows
+      users: users
     });
 
   } catch (error) {
@@ -91,6 +90,7 @@ export const getAllUsers = async (req, res, next) => {
   }
 };
 
+
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -99,7 +99,7 @@ export const updateUser = async (req, res) => {
 
     // Decode JWT token
     const decoded = jwt.verify(token, 'apex_secret_2252524');
-    const userAccess = decoded.location_ids || []; // array of allowed location IDs
+    const userAccess = decoded.location_ids || []; 
     const { location_id, department_id, division_id, category_id } = req.body;
 
     // Check location access
@@ -110,22 +110,33 @@ export const updateUser = async (req, res) => {
     // Validate hierarchy
     await validateHierarchy(location_id, department_id, division_id, category_id);
 
+    // -----------------------------
+    // 🔥 SANITIZE PATCH INPUT HERE
+    // -----------------------------
+    const filteredBody = Object.fromEntries(
+      Object.entries(req.body).filter(([_, value]) => value !== null && value !== undefined)
+    );
+
     // Update user
-    const updatedUser = await userService.updateUser(id, req.body);
+    const updatedUser = await userService.updateUser(id, filteredBody);
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
     res.json({ message: "✅ User updated successfully", user: updatedUser });
+
   } catch (error) {
     console.error("❌ Error updating user:", error);
+
     if (error.name === "JsonWebTokenError") {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
+
     res.status(500).json({ error: error.message });
   }
-}
+};
+
 
   export const deleteUser = async (req, res) => {
   try {
@@ -155,5 +166,34 @@ export const updateUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const getLookupData = async (req, res) => {
+  try {
+    const data = await userService.getLookupData();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.log(req.params);
+    console.error('Error getting lookup data:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching lookup data',
+      error: error.message 
+    });
+  }
+};
+
+export const getDashboardData = async (req, res) => {
+  try {
+    const data = await userService.getDashboardData(req);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error('Error getting dashboard data:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching dashboard data',
+      error: error.message 
+    });
   }
 };

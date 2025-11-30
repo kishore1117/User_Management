@@ -11,6 +11,9 @@ import {
   PARENT_INSTANCE
 } from "./chunk-KEMHOK64.js";
 import {
+  Bind
+} from "./chunk-5EZ2X5BI.js";
+import {
   BaseStyle
 } from "./chunk-R722F7PF.js";
 import {
@@ -18,9 +21,6 @@ import {
   PrimeTemplate,
   SharedModule
 } from "./chunk-ILA6IIAC.js";
-import {
-  Bind
-} from "./chunk-5EZ2X5BI.js";
 import {
   P,
   W,
@@ -1082,4 +1082,4 @@ var OverlayModule = class _OverlayModule {
 export {
   Overlay
 };
-//# sourceMappingURL=chunk-2T5NJGPS.js.map
+//# sourceMappingURL=chunk-JHXSXL57.js.map

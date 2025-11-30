@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class UserService {
   private baseUrl = 'http://localhost:3000/api/users';
+  private lookupUrl = 'http://localhost:3000/api/lookupData';
 
   constructor(private http: HttpClient) {}
 
@@ -32,5 +33,13 @@ export class UserService {
 
   updateUser(id:any,userData:any): Observable<any>{
     return this.http.patch(`${this.baseUrl}/${id}`,userData);
+  }
+  
+  getDahsboardData(): Observable<any>{
+    return this.http.get(`${this.lookupUrl}/dashboard`);
+  }
+
+  getLookupData(): Observable<any> {
+    return this.http.get(`${this.lookupUrl}`);
   }
 }

@@ -15,6 +15,9 @@ import {
   PARENT_INSTANCE
 } from "./chunk-KEMHOK64.js";
 import {
+  Bind
+} from "./chunk-5EZ2X5BI.js";
+import {
   BaseStyle
 } from "./chunk-R722F7PF.js";
 import {
@@ -22,9 +25,6 @@ import {
   PrimeTemplate,
   SharedModule
 } from "./chunk-ILA6IIAC.js";
-import {
-  Bind
-} from "./chunk-5EZ2X5BI.js";
 import {
   _t,
   l,

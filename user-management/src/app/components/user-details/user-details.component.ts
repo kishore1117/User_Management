@@ -1,9 +1,9 @@
-// ...existing code...
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { FormBuilder, FormGroup, FormArray, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -16,8 +16,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { MessageService } from 'primeng/api';
-import { LocationService } from '../../services/location.service';
-import { SoftwareService } from '../../services/software.service';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -27,6 +25,7 @@ import { forkJoin } from 'rxjs';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     ScrollPanelModule,
     CardModule,
@@ -48,137 +47,158 @@ export class UserDetailsComponent implements OnInit {
   isEditing = false;
   user: any = {};
   loading = true;
-  locations: any[] = [];
-  locationId: any;
   originalUser: any = {};
-  locationsName: any[] = [];
-  selectedLocation: any;
-  allSoftware: any[] = [];
+  selectedSoftware: any[] = [];
+  softwareInputValue: string = '';
+
+  // Lookup data
+  departments: any[] = [];
+  divisions: any[] = [];
+  locations: any[] = [];
+  categories: any[] = [];
+  models: any[] = [];
+  cpuSerials: any[] = [];
+  processors: any[] = [];
+  cpuSpeeds: any[] = [];
+  rams: any[] = [];
+  hdds: any[] = [];
+  monitors: any[] = [];
+  monitorSerials: any[] = [];
+  keyboards: any[] = [];
+  mice: any[] = [];
+  cdDvds: any[] = [];
+  operatingSystems: any[] = [];
+  softwareList: any[] = [];
+
+  // For autocomplete
   filteredSoftware: any[] = [];
-  softwareOptions: any[] = [];
-  selectedSoftware: string[] = [];
-  softwareList: any[] = []; // API software list (array of names or objects with .name)
-  userSoftware: string[] = []; // selected software names
+  userSoftware: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private userService: UserService,
     private router: Router,
     private fb: FormBuilder,
-    private messageService: MessageService,
-    private locationService: LocationService,
-    private softwareService: SoftwareService
+    private messageService: MessageService
   ) { }
 
   ngOnInit() {
     this.initForm();
-
-    // get userId early
     this.userId = this.route.snapshot.paramMap.get('id');
 
-    // wait for both the software list and the user to load, then initialize formArray once
+    // Load lookup data and user data in parallel
     forkJoin({
-      software: this.softwareService.getAllSoftware(),
+      lookupRes: this.userService.getLookupData(),
       userRes: this.userService.getUserById(this.userId)
     }).subscribe({
-      next: ({ software, userRes }) => {
-        // normalize software list (array of strings or objects)
-        this.softwareList = software || [];
-        this.softwareOptions = this.softwareList;
+      next: ({ lookupRes, userRes }) => {
+        // Extract lookup data
+        if (lookupRes && lookupRes.data) {
+          this.departments = lookupRes.data.departments || [];
+          this.divisions = lookupRes.data.divisions || [];
+          this.locations = lookupRes.data.locations || [];
+          this.categories = lookupRes.data.categories || [];
+          this.models = lookupRes.data.models || [];
+          this.cpuSerials = lookupRes.data.cpu_serials || [];
+          this.processors = lookupRes.data.processors || [];
+          this.cpuSpeeds = lookupRes.data.cpu_speeds || [];
+          this.rams = lookupRes.data.rams || [];
+          this.hdds = lookupRes.data.hdds || [];
+          this.monitors = lookupRes.data.monitors || [];
+          this.monitorSerials = lookupRes.data.monitor_serials || [];
+          this.keyboards = lookupRes.data.keyboards || [];
+          this.mice = lookupRes.data.mice || [];
+          this.cdDvds = lookupRes.data.cd_dvds || [];
+          this.operatingSystems = lookupRes.data.operating_systems || [];
+          this.softwareList = lookupRes.data.software || [];
+        }
 
-        // normalize user object and selected software
+        // Extract user data
         this.user = (userRes && userRes.user) ? userRes.user : (userRes || {});
         this.userSoftware = Array.isArray(this.user.software) ? [...this.user.software] : [];
 
-        // patch primitive fields
+        // Populate form with user data
         this.populateForm();
 
-        // now sync formArray controls with master list and user selections
+        // Sync software checkboxes
         this.syncSoftwareControls();
 
-        // ensure controls reflect isEditing state (initially disabled)
+        // Ensure form state
         this.ensureFormState();
 
         this.originalUser = JSON.parse(JSON.stringify(this.user));
         this.loading = false;
-        this.selectedSoftware = [...(this.user.software || [])];
       },
       error: (err) => {
         console.error('Failed to load data:', err);
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load user details' });
         this.loading = false;
       }
     });
-
-    // locations can load independently
-    this.locationService.getLocations().subscribe(locations => {
-      this.locations = locations;
-      this.selectedLocation = this.locations.find(loc => loc.id === this.user?.location_id);
-      if (this.selectedLocation) {
-        this.userForm.patchValue({ location_name: this.selectedLocation.name });
-      }
-    });
   }
 
-  private initForm() {
-    this.userForm = this.fb.group({
-      name: [this.user.name],
-      hostname: [this.user.hostname],
-      department_name: [this.user.department_name],
-      division_name: [this.user.division_name],
-      location_name: [this.user.location_name],
-      location_id: [this.user.location_id],
-      category_name: [this.user.category_name],
-      ip_address1: [this.user.ip_address1],
-      ip_address2: [this.user.ip_address2],
-      model: [this.user.model],
-      cpu_serial: [this.user.cpu_serial],
-      processor: [this.user.processor],
-      cpu_speed: [this.user.cpu_speed],
-      ram: [this.user.ram],
-      hdd: [this.user.hdd],
-      monitor: [this.user.monitor],
-      monitor_serial: [this.user.monitor_serial],
-      keyboard: [this.user.keyboard],
-      mouse: [this.user.mouse],
-      cd_dvd: [this.user.cd_dvd],
-      os: [this.user.os],
-      software: this.fb.array([]), // initialize empty; will be synced after data loads
-    });
-    // keep the whole form disabled until user clicks Edit
-    this.userForm.disable();
-  }
+private initForm() {
+  this.userForm = this.fb.group({
+    name: [''],
+    hostname: [''],
+    department_id: [''],
+    division_id: [''],
+    location_id: [''],
+    category_id: [''],
+    ip_address1: [''],
+    ip_address2: [''],
+    model_id: [''],
+    cpu_serial_id: [''],
+    processor_id: [''],
+    cpu_speed_id: [''],
+    ram_id: [''],
+    hdd_id: [''],
+    monitor_id: [''],
+    monitor_serial_id: [''],
+    keyboard_id: [''],
+    mouse_id: [''],
+    cd_dvd_id: [''],
+    os_id: [''],
+    floor: [''],
+    usb: [''],
+    softwareInput: [''],  // Add this line
+    software: this.fb.array([])
+  });
+  this.userForm.disable();
+}
 
-  // keep the FormArray in sync with softwareList and userSoftware
+onSoftwareInputChange(value: string) {
+  this.softwareInputValue = value;
+  this.filterSoftware({ query: value });
+}
+
   private syncSoftwareControls() {
     const formArray = this.softwareFormArray;
     if (!formArray) return;
     formArray.clear();
 
     for (const sw of this.softwareList) {
-      const name = typeof sw === 'string' ? sw : (sw.name || '');
+      const name = sw.name || '';
       const isChecked = this.userSoftware.includes(name);
-      formArray.push(this.fb.control(isChecked));
+      formArray.push(new FormControl(isChecked));
     }
 
-    // ensure controls' enabled/disabled state matches isEditing
     this.ensureFormState();
   }
 
-  // enable/disable software controls (and entire form) based on isEditing
   private ensureFormState() {
     const enabled = !!this.isEditing;
-    // enable/disable entire form (primitive fields)
     if (enabled) {
       this.userForm.enable({ emitEvent: false });
     } else {
       this.userForm.disable({ emitEvent: false });
     }
 
-    // ensure each software checkbox control has correct disabled state
     const arr = this.softwareFormArray;
     if (!arr) return;
     arr.controls.forEach(ctrl => {
-      if (enabled) ctrl.enable({ emitEvent: false }); else ctrl.disable({ emitEvent: false });
+      if (enabled) ctrl.enable({ emitEvent: false });
+      else ctrl.disable({ emitEvent: false });
     });
   }
 
@@ -186,172 +206,303 @@ export class UserDetailsComponent implements OnInit {
     return this.userForm.get('software') as FormArray;
   }
 
-  // called when any checkbox changes (template uses (onChange)="onSoftwareCheckboxChange()")
+  private populateForm() {
+    const patch: any = {
+      name: this.user.name,
+      hostname: this.user.hostname,
+      ip_address1: this.user.ip_address1,
+      ip_address2: this.user.ip_address2,
+      floor: this.user.floor,
+      usb: this.user.usb
+    };
+
+    // Find IDs from names in lookup data
+    if (this.user.department_name) {
+      const dept = this.departments.find(d => d.name === this.user.department_name);
+      patch.department_id = dept?.id;
+    }
+
+    if (this.user.division_name) {
+      const div = this.divisions.find(d => d.name === this.user.division_name);
+      patch.division_id = div?.id;
+    }
+
+    if (this.user.location_name) {
+      const loc = this.locations.find(l => l.name === this.user.location_name);
+      patch.location_id = loc?.id;
+    }
+
+    if (this.user.category_name) {
+      const cat = this.categories.find(c => c.name === this.user.category_name);
+      patch.category_id = cat?.id;
+    }
+
+    if (this.user.model) {
+      const model = this.models.find(m => m.name === this.user.model);
+      patch.model_id = model?.id;
+    }
+
+    if (this.user.cpu_serial) {
+      const serial = this.cpuSerials.find(s => s.name === this.user.cpu_serial);
+      patch.cpu_serial_id = serial?.id;
+    }
+
+    if (this.user.processor) {
+      const proc = this.processors.find(p => p.name === this.user.processor);
+      patch.processor_id = proc?.id;
+    }
+
+    if (this.user.cpu_speed) {
+      const speed = this.cpuSpeeds.find(s => s.name === this.user.cpu_speed);
+      patch.cpu_speed_id = speed?.id;
+    }
+
+    if (this.user.ram) {
+      const ram = this.rams.find(r => r.name === this.user.ram);
+      patch.ram_id = ram?.id;
+    }
+
+    if (this.user.hdd) {
+      const hdd = this.hdds.find(h => h.name === this.user.hdd);
+      patch.hdd_id = hdd?.id;
+    }
+
+    if (this.user.monitor) {
+      const mon = this.monitors.find(m => m.name === this.user.monitor);
+      patch.monitor_id = mon?.id;
+    }
+
+    if (this.user.monitor_serial) {
+      const monSerial = this.monitorSerials.find(m => m.name === this.user.monitor_serial);
+      patch.monitor_serial_id = monSerial?.id;
+    }
+
+    if (this.user.keyboard) {
+      const kbd = this.keyboards.find(k => k.name === this.user.keyboard);
+      patch.keyboard_id = kbd?.id;
+    }
+
+    if (this.user.mouse) {
+      const m = this.mice.find(m => m.name === this.user.mouse);
+      patch.mouse_id = m?.id;
+    }
+
+    if (this.user.cd_dvd) {
+      const cd = this.cdDvds.find(c => c.name === this.user.cd_dvd);
+      patch.cd_dvd_id = cd?.id;
+    }
+
+    if (this.user.os) {
+      const os = this.operatingSystems.find(o => o.name === this.user.os);
+      patch.os_id = os?.id;
+    }
+
+    this.userForm.patchValue(patch);
+  }
+
   onSoftwareCheckboxChange() {
     const selected = this.softwareFormArray.controls
-      .map((ctrl, i) => ctrl.value ? (typeof this.softwareList[i] === 'string' ? this.softwareList[i] : this.softwareList[i].name) : null)
+      .map((ctrl, i) => (ctrl as FormControl).value ? this.softwareList[i]?.name : null)
       .filter(v => v !== null) as string[];
 
     this.userSoftware = selected;
-    // keep selectedSoftware in sync if used elsewhere
-    this.selectedSoftware = [...this.userSoftware];
   }
 
-  // convenience helpers to add/remove programmatically (also updates FormArray)
-  addSoftware(name: string) {
-    if (!name) return;
-    if (!this.userSoftware.includes(name)) {
-      this.userSoftware.push(name);
-    }
-    // find index in softwareList and set the corresponding control true
-    const idx = this.softwareList.findIndex(s => (typeof s === 'string' ? s : s.name) === name);
-    if (idx !== -1) {
-      const ctrl = this.softwareFormArray.at(idx);
-      if (ctrl) ctrl.setValue(true);
-    } else {
-      // If software not in master list, optionally push to softwareList and formArray
-      this.softwareList.push(name);
-      const c = this.fb.control(true);
-      if (!this.isEditing) c.disable({ emitEvent: false });
-      this.softwareFormArray.push(c);
-    }
-    this.selectedSoftware = [...this.userSoftware];
+addSoftware(software: any) {
+  if (!software || !software.name) return;
+  const name = software.name;
+  
+  if (!this.userSoftware.includes(name)) {
+    this.userSoftware.push(name);
   }
+
+  const idx = this.softwareList.findIndex(s => s.name === name);
+  if (idx !== -1) {
+    const ctrl = this.softwareFormArray.at(idx) as FormControl;
+    if (ctrl) ctrl.setValue(true);
+  }
+
+  // Clear the input
+  const softwareInputCtrl = this.userForm.get('softwareInput');
+  if (softwareInputCtrl) {
+    softwareInputCtrl.setValue('');
+  }
+  
+  this.softwareInputValue = '';
+  this.filteredSoftware = [];
+}
 
   removeSoftware(name: string) {
     if (!name) return;
     this.userSoftware = this.userSoftware.filter(x => x !== name);
-    const idx = this.softwareList.findIndex(s => (typeof s === 'string' ? s : s.name) === name);
+    const idx = this.softwareList.findIndex(s => s.name === name);
     if (idx !== -1) {
-      const ctrl = this.softwareFormArray.at(idx);
+      const ctrl = this.softwareFormArray.at(idx) as FormControl;
       if (ctrl) ctrl.setValue(false);
     }
-    this.selectedSoftware = [...this.userSoftware];
   }
 
-  // patch primitive fields into the form (software handled separately via syncSoftwareControls)
-  populateForm() {
-    const patch = { ...this.user };
-    patch.software = Array.isArray(this.user.software) ? [...this.user.software] : [];
-    this.userForm.patchValue(patch);
-    this.userSoftware = patch.software;
+    getSoftwareControl(index: number): FormControl {
+    return this.softwareFormArray.at(index) as FormControl;
+  }
+
+
+  // updateUser() {
+  //   const arraysEqual = (a: any[] = [], b: any[] = []) => {
+  //     if (a.length !== b.length) return false;
+  //     const sa = [...a].map(String).sort();
+  //     const sb = [...b].map(String).sort();
+  //     for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
+  //     return true;
+  //   };
+
+  //   const wasDisabled = this.userForm.disabled;
+  //   if (wasDisabled) this.userForm.enable();
+
+  //   const updatedFields: any = {};
+  //   const formValue = this.userForm.value;
+
+  //   // Compare primitive fields
+  //   Object.keys(formValue).forEach(key => {
+  //     if (key === 'software') return;
+  //     const newVal = formValue[key];
+  //     const oldVal = this.originalUser[key];
+  //     if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
+  //       updatedFields[key] = newVal;
+  //     }
+  //   });
+
+  //   // Compare software
+  //   const oldSoftware = Array.isArray(this.originalUser.software) ? [...this.originalUser.software] : [];
+  //   const newSoftware = Array.isArray(this.userSoftware) ? [...this.userSoftware] : [];
+  //   if (!arraysEqual(oldSoftware, newSoftware)) {
+  //     updatedFields['software'] = newSoftware;
+  //   }
+
+  //   if (Object.keys(updatedFields).length === 0) {
+  //     this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
+  //     if (wasDisabled) this.userForm.disable();
+  //     return;
+  //   }
+
+  //   this.userService.updateUser(this.userId, updatedFields).subscribe({
+  //     next: () => {
+  //       this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated successfully' });
+  //       this.originalUser = { ...this.originalUser, ...updatedFields };
+  //       this.userForm.markAsPristine();
+  //       this.isEditing = false;
+  //       this.ensureFormState();
+  //     },
+  //     error: () => {
+  //       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
+  //       if (wasDisabled) this.userForm.disable();
+  //     }
+  //   });
+  // }
+
+  updateUser() {
+  const arraysEqual = (a: any[] = [], b: any[] = []) => {
+    if (a.length !== b.length) return false;
+    const sa = [...a].map(String).sort();
+    const sb = [...b].map(String).sort();
+    for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
+    return true;
+  };
+
+  const wasDisabled = this.userForm.disabled;
+  if (wasDisabled) this.userForm.enable();
+
+  const updatedFields: any = {};
+  const formValue = this.userForm.value;
+
+  // Get current location_id from form
+  const currentLocationId = formValue.location_id;
+  const originalLocationId = this.originalUser.location_id;
+
+  // Flag to check if location was changed
+  let locationChanged = false;
+
+  // Compare primitive fields
+  Object.keys(formValue).forEach(key => {
+    if (key === 'software' || key === 'softwareInput') return;
+    
+    const newVal = formValue[key];
+    const oldVal = this.originalUser[key];
+    
+    // Track if location changed
+    if (key === 'location_id') {
+      if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
+        locationChanged = true;
+      }
+      return; // Don't add to updatedFields yet
+    }
+    
+    if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
+      updatedFields[key] = newVal;
+    }
+  });
+
+  // Handle location_id: always send it, but only if changed
+  if (locationChanged) {
+    // User explicitly changed location, send only the new location_id
+    updatedFields['location_id'] = currentLocationId;
+  } else if (currentLocationId) {
+    // No change in location, but send it as default
+    updatedFields['location_id'] = currentLocationId;
+  } else if (originalLocationId) {
+    // Fallback to original location_id if nothing selected
+    updatedFields['location_id'] = originalLocationId;
+  }
+
+  // Compare software
+  const oldSoftware = Array.isArray(this.originalUser.software) ? [...this.originalUser.software] : [];
+  const newSoftware = Array.isArray(this.userSoftware) ? [...this.userSoftware] : [];
+  if (!arraysEqual(oldSoftware, newSoftware)) {
+    updatedFields['software'] = newSoftware;
+  }
+
+  if (Object.keys(updatedFields).length === 0) {
+    this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
+    if (wasDisabled) this.userForm.disable();
+    return;
+  }
+
+  console.log('Updated Fields:', updatedFields); // Debug log
+
+  this.userService.updateUser(this.userId, updatedFields).subscribe({
+    next: () => {
+      this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated successfully' });
+      this.originalUser = { ...this.originalUser, ...updatedFields };
+      this.userForm.markAsPristine();
+      this.isEditing = false;
+      this.ensureFormState();
+    },
+    error: () => {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
+      if (wasDisabled) this.userForm.disable();
+    }
+  });
+}
+
+  filterSoftware(event: any) {
+    const query = event.query.toLowerCase();
+    this.filteredSoftware = this.softwareList.filter((sw: any) =>
+      sw.name.toLowerCase().includes(query) && !this.userSoftware.includes(sw.name)
+    );
   }
 
   enableEdit() {
     this.isEditing = true;
-    this.ensureFormState(); // enable form and checkboxes
-  }
-
-  updateUser() {
-    // Helper to compare arrays ignoring order
-    const arraysEqual = (a: any[] = [], b: any[] = []) => {
-      if (a.length !== b.length) return false;
-      const sa = [...a].map(String).sort();
-      const sb = [...b].map(String).sort();
-      for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
-      return true;
-    };
-
-    // Ensure form is enabled so values are current (the form may be disabled outside edit mode)
-    const wasDisabled = this.userForm.disabled;
-    if (wasDisabled) this.userForm.enable();
-
-    const updatedFields: any = {};
-    const formValue = this.userForm.value;
-
-    // Compare and collect changed primitive fields (exclude software here)
-    Object.keys(formValue).forEach(key => {
-      if (key === 'software') return;
-      const newVal = formValue[key];
-      const oldVal = this.originalUser[key];
-      if (
-        newVal !== oldVal &&
-        newVal !== null &&
-        newVal !== undefined &&
-        newVal !== ""
-      ) {
-        updatedFields[key] = newVal;
-      }
-    });
-
-    // Compare software arrays (userSoftware is maintained from the checkboxes)
-    const oldSoftware = Array.isArray(this.originalUser.software) ? [...this.originalUser.software] : [];
-    const newSoftware = Array.isArray(this.userSoftware) ? [...this.userSoftware] : [];
-    if (!arraysEqual(oldSoftware, newSoftware)) {
-      updatedFields['software'] = newSoftware;
-    }
-
-    // Always include location_id when any property (including software) is being updated.
-    const resolvedLocationId = (formValue && formValue.location_id !== undefined) ? formValue.location_id : this.originalUser.location_id;
-    if (Object.keys(updatedFields).length > 0) {
-      updatedFields['location_id'] = resolvedLocationId;
-    }
-
-    // Remove client-only fields
-    delete updatedFields.location_name;
-
-    // If nothing changed, notify and return
-    if (Object.keys(updatedFields).length === 0) {
-      this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
-      if (wasDisabled) this.userForm.disable();
-      return;
-    }
-
-    // Send patch to backend
-    this.userService.updateUser(this.userId, updatedFields).subscribe({
-      next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated successfully' });
-
-        // Merge updated fields into originalUser so future comparisons work
-        this.originalUser = { ...this.originalUser, ...updatedFields };
-
-        // keep UI state consistent
-        this.userForm.markAsPristine();
-        this.isEditing = false;
-        this.ensureFormState(); // disable after save
-      },
-      error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
-        // restore previous disabled state if needed
-        if (wasDisabled) this.userForm.disable();
-      }
-    });
-  }
-
-  // other helpers (autocomplete, location, etc.) remain the same
-  filterSoftware(event: any) {
-    const query = event.query.toLowerCase();
-    this.softwareOptions = this.softwareList.filter((sw: any) =>
-      (typeof sw === 'string' ? sw.toLowerCase() : (sw.name || '').toLowerCase()).includes(query)
-    );
-  }
-
-  locationName(event: any) {
-    const query = event.query.toLowerCase();
-    this.locationsName = this.locations.filter(loc =>
-      loc.name.toLowerCase().includes(query)
-    );
-  }
-
-  onSelectLocation(event: any) {
-    this.userForm.patchValue({ location_id: event.value.id, location_name: event.value.name });
-  }
-
-  onSoftwareSelect(event: any) {
-    const name = event && (event.name || event);
-    if (name) this.addSoftware(name);
-  }
-
-  onSoftwareCheckChange(sw: any) {
-    // used if you're wiring events from custom checkbox list; keep for compatibility
-    const name = sw && sw.name;
-    if (!name) return;
-    if (sw.checked) this.addSoftware(name);
-    else this.removeSoftware(name);
+    this.ensureFormState();
   }
 
   goBack() {
     this.router.navigate(['/users']);
   }
+
+  getNameById(list: any[], id: any): string {
+    if (!id) return '';
+    const item = list.find(l => l.id === id);
+    return item ? item.name : '';
+  }
 }
-// ...existing code...

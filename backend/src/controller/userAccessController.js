@@ -29,28 +29,88 @@ export const updateUserAccess = async (req, res) => {
   const { id } = req.params;
   const { username, password, role, location_ids } = req.body;
 
-  try {
-    const query = `
-      UPDATE user_access
-      SET 
-        username = COALESCE($1, username),
-        password = COALESCE($2, password),
-        role = COALESCE($3, role),
-        location_ids = COALESCE($4, location_ids),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5
-      RETURNING *;
-    `;
-    const result = await pool.query(query, [username, password, role, location_ids, id]);
+  // try {
+  //   const query = `
+  //     UPDATE user_access
+  //     SET 
+  //       username = COALESCE($1, username),
+  //       password = COALESCE($2, password),
+  //       role = COALESCE($3, role),
+  //       location_ids = COALESCE($4, location_ids),
+  //       updated_at = CURRENT_TIMESTAMP
+  //     WHERE id = $5
+  //     RETURNING *;
+  //   `;
+  //   const result = await pool.query(query, [username, password, role, location_ids, id]);
 
-    if (result.rowCount === 0)
+  //   if (result.rowCount === 0)
+  //     return res.status(404).json({ message: "User not found" });
+
+  //   res.json({ message: "User updated successfully", user: result.rows[0] });
+  // } catch (err) {
+  //   console.error("❌ Error updating user:", err);
+  //   res.status(500).json({ error: "Failed to update user" });
+  // }
+  try {
+  // Validate: location_ids should not be empty
+  if (Array.isArray(location_ids) && location_ids.length === 0) {
+    return res.status(400).json({ message: "User must have access to at least one location" });
+  }
+
+  let finalLocationIds = null;
+
+  if (Array.isArray(location_ids)) {
+    // 1️⃣ Validate incoming IDs
+    const check = await pool.query(
+      `SELECT id FROM locations WHERE id = ANY($1)`,
+      [location_ids]
+    );
+
+    if (check.rows.length !== location_ids.length) {
+      return res.status(400).json({ message: "One or more location IDs are invalid" });
+    }
+
+    // 2️⃣ Get previous location access
+    const prev = await pool.query(
+      `SELECT location_ids FROM user_access WHERE id = $1`,
+      [id]
+    );
+    if (prev.rowCount === 0)
       return res.status(404).json({ message: "User not found" });
 
-    res.json({ message: "User updated successfully", user: result.rows[0] });
-  } catch (err) {
-    console.error("❌ Error updating user:", err);
-    res.status(500).json({ error: "Failed to update user" });
+    const oldIds = prev.rows[0].location_ids || [];
+
+    // 3️⃣ Merge without duplicates
+    finalLocationIds = [...new Set([...oldIds, ...location_ids])];
   }
+
+  const query = `
+    UPDATE user_access
+    SET 
+      username = COALESCE($1, username),
+      password = COALESCE($2, password),
+      role = COALESCE($3, role),
+      location_ids = COALESCE($4, location_ids),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = $5
+    RETURNING *;
+  `;
+
+  const result = await pool.query(query, [
+    username,
+    password,
+    role,
+    finalLocationIds, // only passed if user provided
+    id,
+  ]);
+
+  res.json({ message: "User updated successfully", user: result.rows[0] });
+
+} catch (err) {
+  console.error("❌ Error updating user:", err);
+  res.status(500).json({ error: "Failed to update user" });
+}
+
 };
 
 
@@ -161,3 +221,20 @@ export const loginUserAccess = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+{/* <div class="col-6">
+                                <div class="input-field">
+                                    <label><strong>IP Address 1</strong></label>
+                                    <input pInputText formControlName="ip_address1" class="w-full" />
+                                </div>
+
+                            </div>
+
+                            <div class="col-6">
+                                <div class="input-field">
+                                    <label><strong>IP Address 2</strong></label>
+                                    <input pInputText formControlName="ip_address2" class="w-full" />
+                                </div>
+
+                            </div> */}

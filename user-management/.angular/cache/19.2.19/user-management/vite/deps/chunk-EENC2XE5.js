@@ -6,6 +6,9 @@ import {
   PARENT_INSTANCE
 } from "./chunk-KEMHOK64.js";
 import {
+  Bind
+} from "./chunk-5EZ2X5BI.js";
+import {
   BaseStyle
 } from "./chunk-R722F7PF.js";
 import {
@@ -13,9 +16,6 @@ import {
   SharedModule,
   TranslationKeys
 } from "./chunk-ILA6IIAC.js";
-import {
-  Bind
-} from "./chunk-5EZ2X5BI.js";
 import {
   CommonModule,
   NgClass,
@@ -633,4 +633,4 @@ var ChipModule = class _ChipModule {
 export {
   Chip
 };
-//# sourceMappingURL=chunk-7XAGZHK2.js.map
+//# sourceMappingURL=chunk-EENC2XE5.js.map

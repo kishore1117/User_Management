@@ -37,9 +37,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
    */
   loadDashboardData() {
     this.loading = true;
-    this.userService.getAllUsers().subscribe(
-      (data: any) => {
-        this.users = data || [];
+    this.userService.getDahsboardData().subscribe(
+      (val: any) => {
+        this.users = val.data || [];
+        console.log('Dashboard data loaded:', this.users);
         this.prepareDepartments();
         this.initCharts();
         this.loading = false;
