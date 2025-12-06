@@ -73,38 +73,42 @@ export class AppComponent implements OnInit {
         label: 'Admin',
         root: true,
         icon: 'pi pi-cog',
-        items: [
-          [
-            {
-              items: [
-                { 
-                  label: 'Settings', 
-                  icon: 'pi pi-sliders-v',
-                  command: () => {
-                    this.currentRoute = '/settings';
-                    this.router.navigate(['/settings']);
-                  }
-                },
-                {
-                  label: 'Upload',
-                  icon: 'pi pi-cloud-upload',
-                  command: () => { 
-                    this.currentRoute = '/upload';
-                    this.router.navigate(['/upload']); 
-                  }
-                },
-                { 
-                  label: 'Reports', 
-                  icon: 'pi pi-chart-bar',
-                  command: () => {
-                    this.currentRoute = '/reports';
-                    this.router.navigate(['/reports']);
-                  }
-                }
-              ]
-            }
-          ]
-        ]
+        command:()=>{
+          this.currentRoute = '/admin';
+          this.router.navigate(['/admin']);
+        }
+        // items: [
+        //   [
+        //     {
+        //       items: [
+        //         { 
+        //           label: 'Settings', 
+        //           icon: 'pi pi-sliders-v',
+        //           command: () => {
+        //             this.currentRoute = '/settings';
+        //             this.router.navigate(['/settings']);
+        //           }
+        //         },
+        //         {
+        //           label: 'Upload',
+        //           icon: 'pi pi-cloud-upload',
+        //           command: () => { 
+        //             this.currentRoute = '/upload';
+        //             this.router.navigate(['/upload']); 
+        //           }
+        //         },
+        //         { 
+        //           label: 'Reports', 
+        //           icon: 'pi pi-chart-bar',
+        //           command: () => {
+        //             this.currentRoute = '/reports';
+        //             this.router.navigate(['/reports']);
+        //           }
+        //         }
+        //       ]
+        //     }
+        //   ]
+        // ]
       }] : [])
     ];
   }
@@ -183,6 +187,7 @@ export class AppComponent implements OnInit {
         this.errorMessage = '';
         // refresh role and menu after login
         this.userRole = this.getRoleFromStorage();
+        localStorage.setItem('userRole', this.userRole || '');
         this.ngOnInit();
 
         this.router.navigate(['/users']);
@@ -201,6 +206,7 @@ export class AppComponent implements OnInit {
     sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
+    localStorage.removeItem('userRole');
     this.username = '';
     this.password = '';
     this.router.navigate(['/login']);

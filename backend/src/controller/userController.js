@@ -1,6 +1,10 @@
 import userService from "../services/userService.js";
+import * as tableService  from '../services/adminService.js';
 import { validateHierarchy } from "../utils/validateHierarchy.js"; 
 import jwt from "jsonwebtoken";
+import db from '../config/db.js';
+const { pool, initDB } = db;
+
 
 export const addUser = async (req, res) => {
   try {
@@ -197,3 +201,108 @@ export const getDashboardData = async (req, res) => {
     });
   }
 };
+
+// export const getTableDetails = async (req, res) => {
+//   const tableName = req.query.tableName;
+//   try {
+//     const result = await pool.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}'`);
+//     res.json(result.rows);
+
+//   } catch (err) {
+//     console.error("❌ Error fetching department columns:", err);
+//     res.status(500).json({ error: "Failed to fetch department columns" });
+//   }
+// };
+
+  // GET /api/users/tableSchema?tableName=...
+export const getTableDetails = async (req, res) => {
+  const tableName = req.query.tableName;
+  try {
+    if (!tableName) return res.status(400).json({ success: false, message: 'Missing tableName' });
+
+    // validate table exists
+    const exists = await tableService.tableExists(tableName);
+    if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
+
+    const columns = await tableService.getTableColumns(tableName);
+    // return simple array as your frontend expects OR include rows when requested
+    return res.json({ success: true, columns, rows: [] });
+  } catch (err) {
+    console.error('Error fetching table schema:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  }
+};
+
+// GET /api/users/tableData?tableName=...
+export const getTableRows = async (req, res) => {
+  const tableName = req.query.tableName;
+  try {
+    if (!tableName) return res.status(400).json({ success: false, message: 'Missing tableName' });
+    const exists = await tableService.tableExists(tableName);
+    if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
+
+    const rows = await tableService.getTableRows(tableName, 1000); // limit configurable
+    return res.json({ success: true, rows });
+  } catch (err) {
+    console.error('Error fetching table rows:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  }
+};
+
+// POST /api/users/table
+// body: { tableName, data }
+export const createTableRecord = async (req, res) => {
+  try {
+    const { tableName, data } = req.body;
+    if (!tableName || !data) return res.status(400).json({ success: false, message: 'Missing tableName or data' });
+
+    const exists = await tableService.tableExists(tableName);
+    if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
+
+    const created = await tableService.createTableRecord(tableName, data);
+    return res.json({ success: true, row: created });
+  } catch (err) {
+    console.error('Error creating table record:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  }
+};
+
+// PUT /api/users/table/:id
+// body: { tableName, data }
+export const updateTableRecord = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { tableName, data } = req.body;
+    if (!tableName || !data) return res.status(400).json({ success: false, message: 'Missing tableName or data' });
+
+    const exists = await tableService.tableExists(tableName);
+    if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
+
+    const updated = await tableService.updateTableRecord(tableName, id, data);
+    if (!updated) return res.status(404).json({ success: false, message: 'Record not found or nothing updated' });
+    return res.json({ success: true, row: updated });
+  } catch (err) {
+    console.error('Error updating table record:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  }
+};
+
+// DELETE /api/users/table/:id  (body can include tableName or pass tableName as query param)
+export const deleteTableRecord = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const tableName = req.body.tableName || req.query.tableName;
+    if (!tableName) return res.status(400).json({ success: false, message: 'Missing tableName' });
+
+    const exists = await tableService.tableExists(tableName);
+    if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
+
+    const deleted = await tableService.deleteTableRecord(tableName, id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Record not found' });
+
+    return res.json({ success: true, row: deleted });
+  } catch (err) {
+    console.error('Error deleting table record:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  }
+}
