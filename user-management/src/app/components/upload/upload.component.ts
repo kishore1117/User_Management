@@ -22,7 +22,7 @@ interface UploadResponse {
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './upload.component.html',
   styleUrls: ['./upload.component.css'],
   animations: [
@@ -37,7 +37,7 @@ export class UploadComponent {
   selectedFile: File | null = null;
   uploading = false;
   progress = 0;
-  private baseUrl = 'http://localhost:3000/api/users/bulk';
+  private baseUrl = 'http://localhost:3000/api/upload';
   departments: string[] = [];
   selectedDepartment: string = '';
   showBulkDeleteModal = false; // Updated endpoint

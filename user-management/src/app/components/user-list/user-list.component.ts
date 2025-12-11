@@ -78,6 +78,13 @@ export class UserListComponent implements OnInit {
 
     console.log('Department Options:', this.departments);
   }
+  addUser(){
+     this.router.navigate(['/add']);
+  }
+
+  uploadUsers(){
+    this.router.navigate(['/upload']);
+  }
 
   prepareStatuses() {
     const unique = new Set<string>();

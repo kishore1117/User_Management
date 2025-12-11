@@ -16,6 +16,18 @@ export class UserService {
     return this.http.get(`${this.baseUrl}`);
   }
 
+  addUserAccess(userData:any): Observable<any>{
+    return this.http.post(`${this.userAccessUrl}`,userData);
+  }
+
+  updateUserAccess(id:any,userData:any): Observable<any>{
+    return this.http.patch(`${this.userAccessUrl}/${id}`,userData);
+  }
+
+  deleteUserAccess(id:any): Observable<any>{
+    return this.http.delete(`${this.userAccessUrl}/${id}`);
+  }
+
   addUser(userData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}`, userData);
   }

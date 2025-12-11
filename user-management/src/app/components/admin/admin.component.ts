@@ -10,12 +10,13 @@ import { forkJoin } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { UserService } from '../../services/user.service';
 import { TabsModule } from 'primeng/tabs';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule,TabsModule],
+  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule,TabsModule, ProgressSpinnerModule],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css'],
   providers: [MessageService]
@@ -56,7 +57,8 @@ export class AdminComponent implements OnInit {
     { label: 'Division', value: 'divisions' },
     { label: 'Category', value: 'categories' },
     { label: 'Location', value: 'locations' },
-    { label: 'Model', value: 'models' }
+    { label: 'Model', value: 'models' },
+    { label: "Processor", value: 'processors' }
   ];
 
   constructor(
@@ -83,6 +85,7 @@ setActiveSection(section: 'lookup' | 'users') {
   this.activeSection = section;
 
   if (section === 'lookup') {
+    console.log('Selected lookup section');
     if (this.selectedTable) this.loadLookupForSelectedTable();
   } else {
     this.loadUserSection();
@@ -98,6 +101,7 @@ setActiveSection(section: 'lookup' | 'users') {
   }
 
   loadLookupForSelectedTable() {
+    console.log('Loading lookup for table:', this.selectedTable);
     if (!this.selectedTable) return;
     this.loading = true;
     forkJoin({
@@ -241,6 +245,7 @@ setActiveSection(section: 'lookup' | 'users') {
           };
         });
         console.log('User Columns:', this.userColumns);
+        this.editingUser= true;
 
         // rows normalization - support different shapes returned by getAllUsers()
         if (!rows) this.users = [];
@@ -279,7 +284,7 @@ setActiveSection(section: 'lookup' | 'users') {
   private buildUserFormFromColumns() {
     const group: any = {};
     // create controls for common user columns only (avoid sensitive or computed columns)
-    const ignored = new Set(['created_at','updated_at','id','password_hash','password']);
+    const ignored = new Set(['created_at','updated_at','id','password_hash']);
     this.userColumns.forEach(col => {
       if (ignored.has(col.name)) return;
       const validators = [];
@@ -290,6 +295,7 @@ setActiveSection(section: 'lookup' | 'users') {
       else if (t.includes('bool')) initial = false;
       group[col.name] = [initial, validators];
     });
+    console.log('Building user form with controls:', Object.keys(group));
     this.userForm = this.fb.group(group);
     this.userFormVisible = false;
     this.editingUser = false;
@@ -297,6 +303,7 @@ setActiveSection(section: 'lookup' | 'users') {
   }
 
   openUserAddInline() {
+    console.log('Opening user add inline form');
     this.userFormVisible = true;
     this.editingUser = false;
     this.editingUserId = null;
@@ -328,8 +335,18 @@ setActiveSection(section: 'lookup' | 'users') {
       return;
     }
     const payload = { ...this.userForm.value };
+    console.log('Submitting user form, payload:', payload);
+    const convertpayload=(input:any)=>{
+        return {
+          username: input.username,
+          role: input.role,
+          location_ids: input.location_ids.split(",").map(Number),
+          password: input.password
+        }
+      }
     if (this.editingUser && this.editingUserId) {
-      this.userService.updateUser(this.editingUserId, payload).subscribe({
+       const convertedPayload = convertpayload(payload);
+      this.userService.updateUserAccess(this.editingUserId, convertedPayload).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated' });
           this.loadUserSection();
@@ -341,7 +358,16 @@ setActiveSection(section: 'lookup' | 'users') {
         }
       });
     } else {
-      this.userService.addUser(payload).subscribe({
+      const convertpayload=(input:any)=>{
+        return {
+          username: input.username,
+          role: input.role,
+          location_ids: input.location_ids.split(",").map(Number),
+          password: input.password
+        }
+      }
+      const convertedPayload = convertpayload(payload);
+      this.userService.addUserAccess(convertedPayload).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Created', detail: 'User created' });
           this.loadUserSection();
@@ -362,7 +388,7 @@ setActiveSection(section: 'lookup' | 'users') {
       return;
     }
     if (!confirm('Delete this user?')) return;
-    this.userService.deleteUser(id).subscribe({
+    this.userService.deleteUserAccess(id).subscribe({
       next: () => {
         this.messageService.add({ severity:'success', summary:'Deleted', detail:'User deleted' });
         this.loadUserSection();

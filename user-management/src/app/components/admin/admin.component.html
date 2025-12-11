@@ -1,9 +1,9 @@
 <div class="container">
-
     <p-tabs value="0">
         <p-tablist>
             <p-tab value="0">Lookup</p-tab>
             <p-tab value="1">Users</p-tab>
+            <p-tab value="2">Upload</p-tab>
         </p-tablist>
         <p-tabpanels>
             <p-tabpanel value="0">
@@ -121,153 +121,109 @@
                     </div>
                     <div class="admin-controls">
                         <button pButton type="button" (click)="setActiveSection('users')" icon="pi pi-users"
-                            label="Open Users" class="btn btn-ghost"></button>
+                            label="View Users" class="btn btn-ghost"></button>
                         <button pButton type="button" (click)="setActiveSection('users'); openUserAddInline()"
                             label="Add User" class="btn btn-primary"></button>
                     </div>
                 </div>
+                <!-- PANEL: Users -->
+                <section *ngIf="!activeSection === null || activeSection === 'users'">
+                    <div class="panel-title">
+                        <h3>Users</h3>
+                        <small *ngIf="activeSection !== 'users'"> (disabled)</small>
+                    </div>
+
+                    <div class="data-table-wrap card">
+                        <div class="page-header">
+                            <div>
+                                <strong>Users</strong>
+                                <span class="muted"> • </span>
+                                <strong>{{ users.length }}</strong>
+                            </div>
+                            <div class="controls">
+                                <input pInputText placeholder="Search users..." [(ngModel)]="userSearch"
+                                    class="p-inputtext" [disabled]="activeSection !== 'users'" />
+                                <button pButton type="button" label="Reload" (click)="loadUserSection()"
+                                    [disabled]="activeSection !== 'users'"></button>
+                                <button pButton type="button" label="Add Inline" (click)="openUserAddInline()"
+                                    [disabled]="activeSection !== 'users'"></button>
+                            </div>
+                        </div>
+                        <div *ngIf="this.userColumns.length; else emptyUsers">
+                            <table class="p-table p-component">
+                                <thead>
+                                    <tr>
+                                        <td *ngFor="let col of userColumns">{{ col.name | titlecase }}</td>
+                                        <td>Actions</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let row of users | slice:0:200">
+                                        <td *ngFor="let col of userColumns">{{ row[col.name] }}</td>
+                                        <td>
+                                            <button pButton type="button" icon="pi pi-eye" class="p-button-text"
+                                                (click)="viewUser(row.id)"></button>
+                                            <button pButton type="button" icon="pi pi-pencil" class="p-button-text"
+                                                (click)="openUserEditInline(row)"
+                                                [disabled]="activeSection !== 'users'"></button>
+                                            <button pButton type="button" icon="pi pi-trash"
+                                                class="p-button-text p-button-danger" (click)="deleteUserInline(row)"
+                                                [disabled]="activeSection !== 'users'"></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                        <ng-template #emptyUsers>
+                            <div class="p-4">
+                                <p>No users found.</p>
+                            </div>
+                        </ng-template>
+
+                    </div>
+
+                    <!-- Inline user form -->
+                    <div id="user-inline-form" class="form-panel" [class.form-disabled]="activeSection !== 'users'">
+                        <h4>{{ editingUser ? 'Edit User' : 'Add User' }}</h4>
+                        <form [formGroup]="userForm" (ngSubmit)="submitUserInline()">
+                            <div class="form-grid">
+                                <ng-container *ngFor="let col of userColumns">
+                                    <div class="form-group"
+                                        *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
+                                        <label>{{ col.name | titlecase }}</label>
+                                        <ng-container [ngSwitch]="(col.type || 'text')">
+                                            <input *ngSwitchCase="'integer'" pInputText type="number"
+                                                [formControlName]="col.name" [disabled]="activeSection !== 'users'" />
+                                            <input *ngSwitchCase="'text'" pInputText [formControlName]="col.name"
+                                                [disabled]="activeSection !== 'users'" />
+                                            <input *ngSwitchDefault pInputText [formControlName]="col.name"
+                                                [disabled]="activeSection !== 'users'" />
+                                        </ng-container>
+                                    </div>
+                                </ng-container>
+                            </div>
+
+                            <div class="form-actions">
+                                <button pButton type="submit" class="btn btn-primary"
+                                    [disabled]="activeSection !== 'users' || userForm.invalid">{{ editingUser ? 'Update
+                                    User' :
+                                    'Create User' }}</button>
+                                <button pButton type="button" class="btn btn-ghost" label="Cancel"
+                                    (click)="userFormVisible=false" [disabled]="activeSection !== 'users'"></button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
             </p-tabpanel>
-            <!-- PANEL: Users -->
-            <section *ngIf="!activeSection === null || activeSection === 'users'">
-                <div class="panel-title">
-                    <h3>Users</h3>
-                    <small *ngIf="activeSection !== 'users'"> (disabled)</small>
-                </div>
+            <p-tabpanel value="2">
+                <h3>Reports</h3>
+                <p>Reports section coming soon...</p>
+            </p-tabpanel>
 
-                <div class="data-table-wrap card">
-                    <div class="page-header">
-                        <div>
-                            <strong>Users</strong>
-                            <span class="muted"> • </span>
-                            <strong>{{ users.length }}</strong>
-                        </div>
-
-                        <div class="controls">
-                            <input pInputText placeholder="Search users..." [(ngModel)]="userSearch" class="p-inputtext"
-                                [disabled]="activeSection !== 'users'" />
-                            <button pButton type="button" label="Reload" (click)="loadUserSection()"
-                                [disabled]="activeSection !== 'users'"></button>
-                            <button pButton type="button" label="Add Inline" (click)="openUserAddInline()"
-                                [disabled]="activeSection !== 'users'"></button>
-                        </div>
-                    </div>
-
-                    <!-- <div *ngIf="users?.length; else emptyUsers">
-                        <table class="p-table p-component">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Hostname</th>
-                                    <th>IP</th>
-                                    <th>Department</th>
-                                    <th>Location</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let u of users | slice:0:200">
-                                    <td>{{ u.name || u.full_name }}</td>
-                                    <td>{{ u.hostname }}</td>
-                                    <td>{{ u.ip_address1 || u.ip_address }}</td>
-                                    <td>{{ u.department_name || u.department }}</td>
-                                    <td>{{ u.location_name || u.location }}</td>
-                                    <td>
-                                        <button pButton type="button" icon="pi pi-pencil" class="p-button-text"
-                                            (click)="openUserEditInline(u)"
-                                            [disabled]="activeSection !== 'users'"></button>
-                                        <button pButton type="button" icon="pi pi-trash"
-                                            class="p-button-text p-button-danger" (click)="deleteUserInline(u)"
-                                            [disabled]="activeSection !== 'users'"></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div> -->
-
-
-                    <div *ngIf="this.userColumns.length; else emptyUsers">
-                       <table class="p-table p-component">
-                        <thead>
-                            <tr>
-                                <td *ngFor="let col of userColumns">{{ col.name | titlecase }}</td>
-                                <td>Actions</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let row of users | slice:0:200">
-                                <td *ngFor="let col of userColumns">{{ row[col.name] }}</td>
-                                <td>
-                                    <button pButton type="button" icon="pi pi-eye" class="p-button-text"
-                                        (click)="viewUser(row.id)"></button>
-                                    <button pButton type="button" icon="pi pi-pencil" class="p-button-text"
-                                        (click)="openUserEditInline(row)"
-                                        [disabled]="activeSection !== 'users'"></button>
-                                    <button pButton type="button" icon="pi pi-trash"
-                                        class="p-button-text p-button-danger" (click)="deleteUserInline(row)"
-                                        [disabled]="activeSection !== 'users'"></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                       </table>
-                    
-                    </div>
-                    <ng-template #emptyUsers>
-                        <div class="p-4">
-                            <p>No users found.</p>
-                        </div>
-                    </ng-template>
-                </div>
-
-                <!-- Inline user form -->
-                <div id="user-inline-form" class="form-panel" *ngIf="userFormVisible"
-                    [class.form-disabled]="activeSection !== 'users'">
-                    <h4>{{ editingUser ? 'Edit User' : 'Add User' }}</h4>
-                    <form [formGroup]="userForm" (ngSubmit)="submitUserInline()">
-                        <div class="form-grid">
-                            <!-- <div *ngFor="let col of userColumns" class="form-group" *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
-            <label>{{ col.name | titlecase }}</label>
-            <ng-container [ngSwitch]="col.type">
-              <input *ngSwitchCase="'integer'" pInputText type="number" [formControlName]="col.name" [disabled]="activeSection !== 'users'"/>
-              <input *ngSwitchCase="'text'" pInputText [formControlName]="col.name" [disabled]="activeSection !== 'users'"/>
-              <input *ngSwitchDefault pInputText [formControlName]="col.name" [disabled]="activeSection !== 'users'"/>
-            </ng-container>
-          </div> -->
-                            <ng-container *ngFor="let col of userColumns">
-                                <div class="form-group"
-                                    *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
-                                    <label>{{ col.name | titlecase }}</label>
-                                    <ng-container [ngSwitch]="col.type">
-                                        <input *ngSwitchCase="'integer'" pInputText type="number"
-                                            [formControlName]="col.name" [disabled]="activeSection !== 'users'" />
-                                        <input *ngSwitchCase="'text'" pInputText [formControlName]="col.name"
-                                            [disabled]="activeSection !== 'users'" />
-                                        <input *ngSwitchDefault pInputText [formControlName]="col.name"
-                                            [disabled]="activeSection !== 'users'" />
-                                    </ng-container>
-                                </div>
-                            </ng-container>
-                        </div>
-
-                        <div class="form-actions">
-                            <button pButton type="submit" class="btn btn-primary"
-                                [disabled]="activeSection !== 'users' || userForm.invalid">{{ editingUser ? 'Update
-                                User' :
-                                'Create User' }}</button>
-                            <button pButton type="button" class="btn btn-ghost" label="Cancel"
-                                (click)="userFormVisible=false" [disabled]="activeSection !== 'users'"></button>
-                        </div>
-                    </form>
-                </div>
-            </section>
         </p-tabpanels>
     </p-tabs>
-
-
-
-
-    <p *ngIf="loading">Loading...</p>
-
-
-
-
+    <p *ngIf="loading"> Loading...
+        <!-- <p-progressSpinner></p-progressSpinner> -->
+    </p>
 </div>

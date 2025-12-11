@@ -8,11 +8,11 @@ import { UserDetailsComponent } from './components/user-details/user-details.com
 import { AdminComponent } from './components/admin/admin.component';
 
 export const appRoutes: Routes = [
-  {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
-  },
+  // {
+  //   path: '',
+  //   redirectTo: 'login',
+  //   pathMatch: 'full'
+  // },
   {
     path: 'login',
     component: UserFormComponent

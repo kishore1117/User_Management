@@ -169,7 +169,7 @@ export class AppComponent implements OnInit {
     const routeMap: { [key: string]: string[] } = {
       'Dashboard': ['/dashboard'],
       'Users': ['/users', '/user-details'],
-      'Admin': ['/settings', '/upload', '/reports'],
+      'Admin': ['/admin', '/upload', '/reports'],
       'Settings': ['/settings'],
       'Upload': ['/upload'],
       'Reports': ['/reports']
