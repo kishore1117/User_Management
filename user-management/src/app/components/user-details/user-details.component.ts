@@ -44,6 +44,7 @@ export class UserDetailsComponent implements OnInit {
 
   userForm!: FormGroup;
   userId: any;
+  isAdmin: boolean = false;
   isEditing = false;
   user: any = {};
   loading = true;
@@ -69,6 +70,9 @@ export class UserDetailsComponent implements OnInit {
   cdDvds: any[] = [];
   operatingSystems: any[] = [];
   softwareList: any[] = [];
+  warranties: any[] = [];
+  purchaseFrom: any[] = [];
+
 
   // For autocomplete
   filteredSoftware: any[] = [];
@@ -85,7 +89,9 @@ export class UserDetailsComponent implements OnInit {
   ngOnInit() {
     this.initForm();
     this.userId = this.route.snapshot.paramMap.get('id');
-
+    const role = localStorage.getItem('userRole');
+    this.isAdmin = role === 'admin';
+    console.log(this.isAdmin)
     // Load lookup data and user data in parallel
     forkJoin({
       lookupRes: this.userService.getLookupData(),
@@ -111,6 +117,8 @@ export class UserDetailsComponent implements OnInit {
           this.cdDvds = lookupRes.data.cd_dvds || [];
           this.operatingSystems = lookupRes.data.operating_systems || [];
           this.softwareList = lookupRes.data.software || [];
+          this.warranties = lookupRes.data.warranties || [];
+          this.purchaseFrom = lookupRes.data.purchase_from || [];
         }
 
         // Extract user data
@@ -137,40 +145,43 @@ export class UserDetailsComponent implements OnInit {
     });
   }
 
-private initForm() {
-  this.userForm = this.fb.group({
-    name: [''],
-    hostname: [''],
-    department_id: [''],
-    division_id: [''],
-    location_id: [''],
-    category_id: [''],
-    ip_address1: [''],
-    ip_address2: [''],
-    model_id: [''],
-    cpu_serial_id: [''],
-    processor_id: [''],
-    cpu_speed_id: [''],
-    ram_id: [''],
-    hdd_id: [''],
-    monitor_id: [''],
-    monitor_serial_id: [''],
-    keyboard_id: [''],
-    mouse_id: [''],
-    cd_dvd_id: [''],
-    os_id: [''],
-    floor: [''],
-    usb: [''],
-    softwareInput: [''],  // Add this line
-    software: this.fb.array([])
-  });
-  this.userForm.disable();
-}
+  private initForm() {
+    this.userForm = this.fb.group({
+      name: [''],
+      hostname: [''],
+      department_id: [''],
+      division_id: [''],
+      location_id: [''],
+      category_id: [''],
+      ip_address1: [''],
+      ip_address2: [''],
+      model_id: [''],
+      cpu_serial_id: [''],
+      processor_id: [''],
+      cpu_speed_id: [''],
+      ram_id: [''],
+      hdd_id: [''],
+      monitor_id: [''],
+      monitor_serial_id: [''],
+      keyboard_id: [''],
+      mouse_id: [''],
+      cd_dvd_id: [''],
+      os_id: [''],
+      floor: [''],
+      usb: [''],
+      warranty_id: [''],
+      purchase_from_id: [''],
+      asset_tag: [''],
+      softwareInput: [''],  // Add this line
+      software: this.fb.array([])
+    });
+    this.userForm.disable();
+  }
 
-onSoftwareInputChange(value: string) {
-  this.softwareInputValue = value;
-  this.filterSoftware({ query: value });
-}
+  onSoftwareInputChange(value: string) {
+    this.softwareInputValue = value;
+    this.filterSoftware({ query: value });
+  }
 
   private syncSoftwareControls() {
     const formArray = this.softwareFormArray;
@@ -213,13 +224,24 @@ onSoftwareInputChange(value: string) {
       ip_address1: this.user.ip_address1,
       ip_address2: this.user.ip_address2,
       floor: this.user.floor,
-      usb: this.user.usb
+      usb: this.user.usb,
+      asset_tag: this.user.asset_tag
     };
 
     // Find IDs from names in lookup data
     if (this.user.department_name) {
       const dept = this.departments.find(d => d.name === this.user.department_name);
       patch.department_id = dept?.id;
+    }
+
+    if (this.user.warranty) {
+      const warr = this.warranties.find(w => w.name === this.user.warranty);
+      patch.warranty_id = warr?.id;
+    }
+
+    if (this.user.purchase_from) {
+      const pf = this.purchaseFrom.find(p => p.name === this.user.purchase_from);
+      patch.purchase_from_id = pf?.id;
     }
 
     if (this.user.division_name) {
@@ -308,29 +330,29 @@ onSoftwareInputChange(value: string) {
     this.userSoftware = selected;
   }
 
-addSoftware(software: any) {
-  if (!software || !software.name) return;
-  const name = software.name;
-  
-  if (!this.userSoftware.includes(name)) {
-    this.userSoftware.push(name);
-  }
+  addSoftware(software: any) {
+    if (!software || !software.name) return;
+    const name = software.name;
 
-  const idx = this.softwareList.findIndex(s => s.name === name);
-  if (idx !== -1) {
-    const ctrl = this.softwareFormArray.at(idx) as FormControl;
-    if (ctrl) ctrl.setValue(true);
-  }
+    if (!this.userSoftware.includes(name)) {
+      this.userSoftware.push(name);
+    }
 
-  // Clear the input
-  const softwareInputCtrl = this.userForm.get('softwareInput');
-  if (softwareInputCtrl) {
-    softwareInputCtrl.setValue('');
+    const idx = this.softwareList.findIndex(s => s.name === name);
+    if (idx !== -1) {
+      const ctrl = this.softwareFormArray.at(idx) as FormControl;
+      if (ctrl) ctrl.setValue(true);
+    }
+
+    // Clear the input
+    const softwareInputCtrl = this.userForm.get('softwareInput');
+    if (softwareInputCtrl) {
+      softwareInputCtrl.setValue('');
+    }
+
+    this.softwareInputValue = '';
+    this.filteredSoftware = [];
   }
-  
-  this.softwareInputValue = '';
-  this.filteredSoftware = [];
-}
 
   removeSoftware(name: string) {
     if (!name) return;
@@ -342,147 +364,92 @@ addSoftware(software: any) {
     }
   }
 
-    getSoftwareControl(index: number): FormControl {
+  getSoftwareControl(index: number): FormControl {
     return this.softwareFormArray.at(index) as FormControl;
   }
 
-
-  // updateUser() {
-  //   const arraysEqual = (a: any[] = [], b: any[] = []) => {
-  //     if (a.length !== b.length) return false;
-  //     const sa = [...a].map(String).sort();
-  //     const sb = [...b].map(String).sort();
-  //     for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
-  //     return true;
-  //   };
-
-  //   const wasDisabled = this.userForm.disabled;
-  //   if (wasDisabled) this.userForm.enable();
-
-  //   const updatedFields: any = {};
-  //   const formValue = this.userForm.value;
-
-  //   // Compare primitive fields
-  //   Object.keys(formValue).forEach(key => {
-  //     if (key === 'software') return;
-  //     const newVal = formValue[key];
-  //     const oldVal = this.originalUser[key];
-  //     if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
-  //       updatedFields[key] = newVal;
-  //     }
-  //   });
-
-  //   // Compare software
-  //   const oldSoftware = Array.isArray(this.originalUser.software) ? [...this.originalUser.software] : [];
-  //   const newSoftware = Array.isArray(this.userSoftware) ? [...this.userSoftware] : [];
-  //   if (!arraysEqual(oldSoftware, newSoftware)) {
-  //     updatedFields['software'] = newSoftware;
-  //   }
-
-  //   if (Object.keys(updatedFields).length === 0) {
-  //     this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
-  //     if (wasDisabled) this.userForm.disable();
-  //     return;
-  //   }
-
-  //   this.userService.updateUser(this.userId, updatedFields).subscribe({
-  //     next: () => {
-  //       this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated successfully' });
-  //       this.originalUser = { ...this.originalUser, ...updatedFields };
-  //       this.userForm.markAsPristine();
-  //       this.isEditing = false;
-  //       this.ensureFormState();
-  //     },
-  //     error: () => {
-  //       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
-  //       if (wasDisabled) this.userForm.disable();
-  //     }
-  //   });
-  // }
-
   updateUser() {
-  const arraysEqual = (a: any[] = [], b: any[] = []) => {
-    if (a.length !== b.length) return false;
-    const sa = [...a].map(String).sort();
-    const sb = [...b].map(String).sort();
-    for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
-    return true;
-  };
+    const arraysEqual = (a: any[] = [], b: any[] = []) => {
+      if (a.length !== b.length) return false;
+      const sa = [...a].map(String).sort();
+      const sb = [...b].map(String).sort();
+      for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
+      return true;
+    };
 
-  const wasDisabled = this.userForm.disabled;
-  if (wasDisabled) this.userForm.enable();
+    const wasDisabled = this.userForm.disabled;
+    if (wasDisabled) this.userForm.enable();
 
-  const updatedFields: any = {};
-  const formValue = this.userForm.value;
+    const updatedFields: any = {};
+    const formValue = this.userForm.value;
 
-  // Get current location_id from form
-  const currentLocationId = formValue.location_id;
-  const originalLocationId = this.originalUser.location_id;
+    // Get current location_id from form
+    const currentLocationId = formValue.location_id;
+    const originalLocationId = this.originalUser.location_id;
 
-  // Flag to check if location was changed
-  let locationChanged = false;
+    // Flag to check if location was changed
+    let locationChanged = false;
 
-  // Compare primitive fields
-  Object.keys(formValue).forEach(key => {
-    if (key === 'software' || key === 'softwareInput') return;
-    
-    const newVal = formValue[key];
-    const oldVal = this.originalUser[key];
-    
-    // Track if location changed
-    if (key === 'location_id') {
-      if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
-        locationChanged = true;
+    // Compare primitive fields
+    Object.keys(formValue).forEach(key => {
+      if (key === 'software' || key === 'softwareInput') return;
+
+      const newVal = formValue[key];
+      const oldVal = this.originalUser[key];
+
+      // Track if location changed
+      if (key === 'location_id') {
+        if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
+          locationChanged = true;
+        }
+        return; // Don't add to updatedFields yet
       }
-      return; // Don't add to updatedFields yet
+
+      if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
+        updatedFields[key] = newVal;
+      }
+    });
+
+    // Handle location_id: always send it, but only if changed
+    if (locationChanged) {
+      // User explicitly changed location, send only the new location_id
+      updatedFields['location_id'] = currentLocationId;
+    } else if (currentLocationId) {
+      // No change in location, but send it as default
+      updatedFields['location_id'] = currentLocationId;
+    } else if (originalLocationId) {
+      // Fallback to original location_id if nothing selected
+      updatedFields['location_id'] = originalLocationId;
     }
-    
-    if (newVal !== oldVal && newVal !== null && newVal !== undefined && newVal !== "") {
-      updatedFields[key] = newVal;
+
+    // Compare software
+    const oldSoftware = Array.isArray(this.originalUser.software) ? [...this.originalUser.software] : [];
+    const newSoftware = Array.isArray(this.userSoftware) ? [...this.userSoftware] : [];
+    if (!arraysEqual(oldSoftware, newSoftware)) {
+      updatedFields['software'] = newSoftware;
     }
-  });
 
-  // Handle location_id: always send it, but only if changed
-  if (locationChanged) {
-    // User explicitly changed location, send only the new location_id
-    updatedFields['location_id'] = currentLocationId;
-  } else if (currentLocationId) {
-    // No change in location, but send it as default
-    updatedFields['location_id'] = currentLocationId;
-  } else if (originalLocationId) {
-    // Fallback to original location_id if nothing selected
-    updatedFields['location_id'] = originalLocationId;
-  }
-
-  // Compare software
-  const oldSoftware = Array.isArray(this.originalUser.software) ? [...this.originalUser.software] : [];
-  const newSoftware = Array.isArray(this.userSoftware) ? [...this.userSoftware] : [];
-  if (!arraysEqual(oldSoftware, newSoftware)) {
-    updatedFields['software'] = newSoftware;
-  }
-
-  if (Object.keys(updatedFields).length === 0) {
-    this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
-    if (wasDisabled) this.userForm.disable();
-    return;
-  }
-
-  console.log('Updated Fields:', updatedFields); // Debug log
-
-  this.userService.updateUser(this.userId, updatedFields).subscribe({
-    next: () => {
-      this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated successfully' });
-      this.originalUser = { ...this.originalUser, ...updatedFields };
-      this.userForm.markAsPristine();
-      this.isEditing = false;
-      this.ensureFormState();
-    },
-    error: () => {
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
+    if (Object.keys(updatedFields).length === 0) {
+      this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
       if (wasDisabled) this.userForm.disable();
+      return;
     }
-  });
-}
+
+
+    this.userService.updateUser(this.userId, updatedFields).subscribe({
+      next: () => {
+        this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated successfully' });
+        this.originalUser = { ...this.originalUser, ...updatedFields };
+        this.userForm.markAsPristine();
+        this.isEditing = false;
+        this.ensureFormState();
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
+        if (wasDisabled) this.userForm.disable();
+      }
+    });
+  }
 
   filterSoftware(event: any) {
     const query = event.query.toLowerCase();

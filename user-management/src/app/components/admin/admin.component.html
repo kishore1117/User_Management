@@ -86,7 +86,9 @@
                         <h4>{{ lookupEditing ? 'Edit' : 'Add' }} {{ selectedTable }}</h4>
                         <form [formGroup]="lookupForm" (ngSubmit)="submitLookup()">
                             <div class="form-grid">
-                                <div *ngFor="let col of tableColumns" class="form-group">
+                                <ng-container *ngFor="let col of tableColumns">
+                                <div class="form-group"
+                                *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
                                     <label>{{ col.name | titlecase }}</label>
                                     <ng-container [ngSwitch]="(col.type || 'text')">
                                         <input *ngSwitchCase="'integer'" pInputText type="number"
@@ -98,6 +100,8 @@
                                             [disabled]="activeSection !== 'lookup'" />
                                     </ng-container>
                                 </div>
+                                </ng-container>
+
                             </div>
 
                             <div class="form-actions">
@@ -161,8 +165,6 @@
                                     <tr *ngFor="let row of users | slice:0:200">
                                         <td *ngFor="let col of userColumns">{{ row[col.name] }}</td>
                                         <td>
-                                            <button pButton type="button" icon="pi pi-eye" class="p-button-text"
-                                                (click)="viewUser(row.id)"></button>
                                             <button pButton type="button" icon="pi pi-pencil" class="p-button-text"
                                                 (click)="openUserEditInline(row)"
                                                 [disabled]="activeSection !== 'users'"></button>

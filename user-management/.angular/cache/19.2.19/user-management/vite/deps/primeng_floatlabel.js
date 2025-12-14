@@ -6,12 +6,12 @@ import {
   BaseStyle
 } from "./chunk-2AGN55CE.js";
 import {
+  SharedModule
+} from "./chunk-MWRRSDV3.js";
+import {
   Bind,
   BindModule
 } from "./chunk-2D5KOQHT.js";
-import {
-  SharedModule
-} from "./chunk-MWRRSDV3.js";
 import "./chunk-FZI3XOAI.js";
 import {
   CommonModule
@@ -39,8 +39,8 @@ import {
   ɵɵprojection,
   ɵɵprojectionDef
 } from "./chunk-ANVCJLGX.js";
-import "./chunk-PEBH6BBU.js";
 import "./chunk-WPM5VTLQ.js";
+import "./chunk-PEBH6BBU.js";
 import "./chunk-4S3KYZTJ.js";
 import "./chunk-WDMUDEB6.js";
 

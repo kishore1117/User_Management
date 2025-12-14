@@ -32,6 +32,10 @@ export class UserService {
     return this.http.post(`${this.baseUrl}`, userData);
   }
 
+  exportUsers(): Observable<Blob> {
+    return this.http.get(`http://localhost:3000/api/download`, { responseType: 'blob' });
+  }
+
   findUser(criteria: any): Observable<any> {
     let params = new HttpParams();
     Object.keys(criteria).forEach(key => {

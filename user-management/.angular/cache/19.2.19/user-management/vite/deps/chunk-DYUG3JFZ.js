@@ -6,12 +6,12 @@ import {
   BaseStyle
 } from "./chunk-2AGN55CE.js";
 import {
+  SharedModule
+} from "./chunk-MWRRSDV3.js";
+import {
   Bind,
   BindModule
 } from "./chunk-2D5KOQHT.js";
-import {
-  SharedModule
-} from "./chunk-MWRRSDV3.js";
 import {
   P,
   R,
@@ -549,4 +549,4 @@ export {
   Badge,
   BadgeModule
 };
-//# sourceMappingURL=chunk-TG6BV2HR.js.map
+//# sourceMappingURL=chunk-DYUG3JFZ.js.map

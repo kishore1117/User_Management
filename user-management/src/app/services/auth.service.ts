@@ -24,4 +24,31 @@ export class AuthService {
   logout() {
     sessionStorage.removeItem(this.tokenKey);
   }
+
+  decodeToken(): any | null {
+  const token = this.getToken();
+  if (!token) return null;
+
+  try {
+    const payload = token.split('.')[1];
+    const decoded = atob(payload);
+    return JSON.parse(decoded);
+  } catch (e) {
+    console.error('Invalid token');
+    return null;
+  }
+}
+
+  getTokenRemainingTime(): number {
+    const decoded = this.decodeToken();
+    if (!decoded?.exp) return 0;
+
+    const expiryMs = decoded.exp * 1000;
+    return expiryMs - Date.now();
+  }
+
+  isTokenExpired(): boolean {
+    return this.getTokenRemainingTime() <= 0;
+  }
+
 }

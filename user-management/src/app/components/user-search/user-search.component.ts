@@ -107,8 +107,6 @@ export class UserSearchComponent {
   const id = this.selectedUser.id;
   this.http.put<User>(`${this.baseUrl}/${id}`, this.selectedUser).subscribe({
     next: (updatedUser) => {
-      // console.log('Updated User:', updatedUser);
-      // Remove the old user entry
       this.users = this.users.filter(u => u.id !== id);
       // Append the updated user to the results
       this.users = [...this.users, updatedUser];

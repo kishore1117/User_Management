@@ -16,7 +16,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule,TabsModule, ProgressSpinnerModule],
+  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule, TabsModule, ProgressSpinnerModule],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css'],
   providers: [MessageService]
@@ -58,7 +58,12 @@ export class AdminComponent implements OnInit {
     { label: 'Category', value: 'categories' },
     { label: 'Location', value: 'locations' },
     { label: 'Model', value: 'models' },
-    { label: "Processor", value: 'processors' }
+    { label: "Processor", value: 'processors' },
+    { label: 'Ram', value: "rams" },
+    { label: 'Storage', value: "hdds" },
+    { label: 'Warranty', value: 'warranties' },
+    { label: 'Purchased_from', value: 'purchase_from' },
+    { label: 'Software', value: 'software' }
   ];
 
   constructor(
@@ -66,7 +71,7 @@ export class AdminComponent implements OnInit {
     private http: HttpClient,
     private userService: UserService,
     private messageService: MessageService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // initialize empty forms
@@ -75,22 +80,22 @@ export class AdminComponent implements OnInit {
   }
 
   // --- SECTION SELECTION ---
-setActiveSection(section: 'lookup' | 'users') {
-  // toggle: clicking an already-active section will clear selection (show both panels)
-  if (this.activeSection === section) {
-    this.activeSection = null;
-    return;
-  }
+  setActiveSection(section: 'lookup' | 'users') {
+    // toggle: clicking an already-active section will clear selection (show both panels)
+    if (this.activeSection === section) {
+      this.activeSection = null;
+      return;
+    }
 
-  this.activeSection = section;
+    this.activeSection = section;
 
-  if (section === 'lookup') {
-    console.log('Selected lookup section');
-    if (this.selectedTable) this.loadLookupForSelectedTable();
-  } else {
-    this.loadUserSection();
+    if (section === 'lookup') {
+      console.log('Selected lookup section');
+      if (this.selectedTable) this.loadLookupForSelectedTable();
+    } else {
+      this.loadUserSection();
+    }
   }
-}
 
   // ---------- LOOKUP: schema + rows, dynamic form ----------
   onLookupTableSelect(tableName: string) {
@@ -110,16 +115,42 @@ setActiveSection(section: 'lookup' | 'users') {
     }).subscribe({
       next: ({ schema, rows }) => {
         const rawCols = Array.isArray(schema) ? schema : (schema && Array.isArray((schema as any).columns) ? (schema as any).columns : []);
-        this.tableColumns = rawCols.map((c: any) => {
-          const name = c.column_name || c.name || c.column || '';
-          return {
-            name,
-            type: c.data_type || c.type || 'text',
-            nullable: (typeof c.is_nullable === 'string') ? (c.is_nullable === 'YES') : (typeof c.nullable === 'boolean' ? c.nullable : true),
-            default: c.column_default || c.default,
-            isPrimary: !!(c.column_name === 'id' || c.isPrimary || c.primary_key || (c.column_default && String(c.column_default).startsWith('nextval')))
-          };
-        });
+        // this.tableColumns = rawCols.map((c: any) => {
+        //   const name = c.column_name || c.name || c.column || '';
+        //   return {
+        //     name,
+        //     type: c.data_type || c.type || 'text',
+        //     nullable: (typeof c.is_nullable === 'string') ? (c.is_nullable === 'YES') : (typeof c.nullable === 'boolean' ? c.nullable : true),
+        //     default: c.column_default || c.default,
+        //     isPrimary: !!(c.column_name === 'id' || c.isPrimary || c.primary_key || (c.column_default && String(c.column_default).startsWith('nextval')))
+        //   };
+        // });
+
+        const IGNORE_COLUMNS = ['created_at', 'updated_at'];
+
+        this.tableColumns = rawCols
+          .map((c: any) => {
+            const name = c.column_name || c.name || c.column || '';
+            return {
+              name,
+              type: c.data_type || c.type || 'text',
+              nullable:
+                typeof c.is_nullable === 'string'
+                  ? c.is_nullable === 'YES'
+                  : typeof c.nullable === 'boolean'
+                    ? c.nullable
+                    : true,
+              default: c.column_default || c.default,
+              isPrimary: !!(
+                name === 'id' ||
+                c.isPrimary ||
+                c.primary_key ||
+                (c.column_default && String(c.column_default).startsWith('nextval'))
+              )
+            };
+          })
+          .filter((col: any) => !IGNORE_COLUMNS.includes(col.name));
+
 
         // rows normalization
         if (rows && Array.isArray((rows as any).rows)) this.tableData = (rows as any).rows;
@@ -182,6 +213,7 @@ setActiveSection(section: 'lookup' | 'users') {
     }
     const raw = this.lookupForm.getRawValue ? this.lookupForm.getRawValue() : {};
     const payload = { ...raw };
+    console.log(payload)
     if (!this.lookupEditing) {
       if (this.lookupPrimaryKey in payload) delete payload[this.lookupPrimaryKey];
       this.userService.createTableRecord(this.selectedTable!, payload).subscribe({
@@ -234,7 +266,7 @@ setActiveSection(section: 'lookup' | 'users') {
       next: ({ schema, rows }) => {
         // schema normalization
         const rawCols = Array.isArray(schema) ? schema : (schema && Array.isArray((schema as any).columns) ? (schema as any).columns : []);
-        this.userColumns = rawCols.map((c:any) => {
+        this.userColumns = rawCols.map((c: any) => {
           const name = c.column_name || c.name || c.column || '';
           return {
             name,
@@ -245,7 +277,7 @@ setActiveSection(section: 'lookup' | 'users') {
           };
         });
         console.log('User Columns:', this.userColumns);
-        this.editingUser= true;
+        this.editingUser = true;
 
         // rows normalization - support different shapes returned by getAllUsers()
         if (!rows) this.users = [];
@@ -260,14 +292,14 @@ setActiveSection(section: 'lookup' | 'users') {
         this.buildUserFormFromColumns();
         // optionally fetch lookup lists for selects
         this.userService.getLookupData().subscribe({
-          next: (lk:any) => {
+          next: (lk: any) => {
             const data = lk?.data || lk || {};
             this.departments = data.departments || [];
             this.locations = data.locations || [];
             this.divisions = data.divisions || [];
             this.categories = data.categories || [];
           },
-          error: () => {}
+          error: () => { }
         });
 
         this.loading = false;
@@ -279,18 +311,18 @@ setActiveSection(section: 'lookup' | 'users') {
       }
     });
   }
-  viewUser(user:any) {}
+  viewUser(user: any) { }
 
   private buildUserFormFromColumns() {
     const group: any = {};
     // create controls for common user columns only (avoid sensitive or computed columns)
-    const ignored = new Set(['created_at','updated_at','id','password_hash']);
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
     this.userColumns.forEach(col => {
       if (ignored.has(col.name)) return;
       const validators = [];
       if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
       const t = String(col.type || '').toLowerCase();
-      let initial:any = '';
+      let initial: any = '';
       if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) initial = null;
       else if (t.includes('bool')) initial = false;
       group[col.name] = [initial, validators];
@@ -311,12 +343,12 @@ setActiveSection(section: 'lookup' | 'users') {
     setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
   }
 
-  openUserEditInline(user:any) {
+  openUserEditInline(user: any) {
     this.userFormVisible = true;
     this.editingUser = true;
     this.editingUserId = user.id || user.user_id || user.uid;
     // patch form with user's values for matching field names
-    const patch:any = {};
+    const patch: any = {};
     Object.keys(this.userForm.controls).forEach(k => {
       // try several candidate properties on user object
       patch[k] = user[k] ?? user[this.camelToSnake(k)] ?? user[this.snakeToCamel(k)] ?? user[k];
@@ -325,8 +357,8 @@ setActiveSection(section: 'lookup' | 'users') {
     setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
   }
 
-  private camelToSnake(s:string){ return s.replace(/([A-Z])/g,'_$1').toLowerCase(); }
-  private snakeToCamel(s:string){ return s.replace(/_([a-z])/g,(g)=>g[1].toUpperCase()); }
+  private camelToSnake(s: string) { return s.replace(/([A-Z])/g, '_$1').toLowerCase(); }
+  private snakeToCamel(s: string) { return s.replace(/_([a-z])/g, (g) => g[1].toUpperCase()); }
 
   submitUserInline() {
     if (!this.userForm) return;
@@ -336,16 +368,20 @@ setActiveSection(section: 'lookup' | 'users') {
     }
     const payload = { ...this.userForm.value };
     console.log('Submitting user form, payload:', payload);
-    const convertpayload=(input:any)=>{
-        return {
-          username: input.username,
-          role: input.role,
-          location_ids: input.location_ids.split(",").map(Number),
-          password: input.password
-        }
+    if (payload.location_ids && Array.isArray(payload.location_ids)) {
+      payload.location_ids = payload.location_ids.join(",");
+    }
+    const convertpayload = (input: any) => {
+      console.log('Converting payload:', input);
+      return {
+        username: input.username,
+        role: input.role,
+        location_ids: input.location_ids.split(",").map(Number),
+        password: input.password
       }
+    }
     if (this.editingUser && this.editingUserId) {
-       const convertedPayload = convertpayload(payload);
+      const convertedPayload = convertpayload(payload);
       this.userService.updateUserAccess(this.editingUserId, convertedPayload).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated' });
@@ -358,7 +394,7 @@ setActiveSection(section: 'lookup' | 'users') {
         }
       });
     } else {
-      const convertpayload=(input:any)=>{
+      const convertpayload = (input: any) => {
         return {
           username: input.username,
           role: input.role,
@@ -381,21 +417,21 @@ setActiveSection(section: 'lookup' | 'users') {
     }
   }
 
-  deleteUserInline(user:any) {
+  deleteUserInline(user: any) {
     const id = user?.id || user?.user_id || user?.uid;
     if (!id) {
-      this.messageService.add({ severity:'error', summary:'Delete failed', detail:'Invalid user id' });
+      this.messageService.add({ severity: 'error', summary: 'Delete failed', detail: 'Invalid user id' });
       return;
     }
     if (!confirm('Delete this user?')) return;
     this.userService.deleteUserAccess(id).subscribe({
       next: () => {
-        this.messageService.add({ severity:'success', summary:'Deleted', detail:'User deleted' });
+        this.messageService.add({ severity: 'success', summary: 'Deleted', detail: 'User deleted' });
         this.loadUserSection();
       },
       error: (err) => {
         console.error(err);
-        this.messageService.add({ severity:'error', summary:'Delete failed', detail: err?.message || 'Could not delete user' });
+        this.messageService.add({ severity: 'error', summary: 'Delete failed' });
       }
     });
   }

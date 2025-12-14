@@ -39,14 +39,15 @@
 
       <!-- Department Filter -->
       <div class="filter-section">
-        <!-- <label for="departmentSelect">Select Department:</label> -->
-        <select id="departmentSelect" [(ngModel)]="selectedDepartment" class="filter-dropdown">
-          <option value="">-- Select Department --</option>
-          <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+        <select [(ngModel)]="user.location_id" name="location_id" required>
+          <option value="">Select Location</option>
+          <option *ngFor="let loc of locations" [value]="loc.id">
+            {{ loc.name }}
+          </option>
         </select>
 
-        <button class="btn-delete" [disabled]="!selectedDepartment" (click)="openBulkDeleteModal()">
-          Delete All in Department
+        <button class="btn-delete" [disabled]="!user.location_id" (click)="openBulkDeleteModal()">
+          Delete users from selected location
         </button>
       </div>
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule, HttpEventType } from '@angular/common/http';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { ToastService } from '../../services/toastMessage.service';
+import { MessageService } from 'primeng/api';
 
 interface UploadResponse {
   message: string;
@@ -36,25 +37,39 @@ interface UploadResponse {
 export class UploadComponent {
   selectedFile: File | null = null;
   uploading = false;
+ 
+  user: any = {
+    location_id: null
+  };
   progress = 0;
   private baseUrl = 'http://localhost:3000/api/upload';
   departments: string[] = [];
+  locations: any[] = [];
   selectedDepartment: string = '';
   showBulkDeleteModal = false; // Updated endpoint
 
-  constructor(private http: HttpClient, private toastService: ToastService) {}
+  constructor(private http: HttpClient, private toastService: ToastService, private messageService: MessageService,) { }
 
   ngOnInit() {
-    this.loadDepartments();
+    this.loadLocations();
   }
 
-   loadDepartments() {
-    this.http.get<any[]>('http://localhost:3000/api/users').subscribe({
-      next: (users) => {
-        this.departments = [...new Set(users.map((u) => u.department))];
-      },
-      error: (err) => console.error('Error fetching departments:', err)
-    });
+  loadLocations() {
+    this.http.get<any>('http://localhost:3000/api/locations/allowed')
+      .subscribe({
+        next: (res) => {
+          this.locations = res.data || [];
+          console.log('Loaded locations:', this.locations);
+
+          // auto-select if only one location
+          if (this.locations.length === 1) {
+            this.user.location_id = this.locations[0].id;
+          }
+        },
+        error: () => {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load locations' });
+        }
+      });
   }
 
   onFileSelected(event: Event) {
@@ -77,9 +92,9 @@ export class UploadComponent {
       'application/vnd.ms-excel',
       'text/csv'
     ];
-    
-    if (!allowed.includes(this.selectedFile.type) && 
-        !this.selectedFile.name.match(/\.(xlsx|xls|csv)$/i)) {
+
+    if (!allowed.includes(this.selectedFile.type) &&
+      !this.selectedFile.name.match(/\.(xlsx|xls|csv)$/i)) {
       this.toastService.show('Invalid file type. Use .xlsx, .xls or .csv', 'error');
       return;
     }
@@ -100,15 +115,15 @@ export class UploadComponent {
         } else if (event.type === HttpEventType.Response) {
           this.uploading = false;
           const response = event.body;
-          
+
           if (response?.results) {
             const { successful, failed, totalProcessed } = response.results;
-            
+
             let message = `Upload complete: ${successful} of ${totalProcessed} records added`;
             if (failed > 0) {
               message += `, ${failed} failed`;
             }
-            
+
             this.toastService.show(message, failed > 0 ? 'error' : 'success');
           } else {
             this.toastService.show('Upload completed successfully', 'success');
@@ -142,22 +157,21 @@ export class UploadComponent {
   }
 
   openBulkDeleteModal() {
-    if (!this.selectedDepartment) return;
+    if (!this.user.location_id) return;
     this.showBulkDeleteModal = true;
   }
 
   confirmBulkDelete() {
-    const dept = this.selectedDepartment;
+   const locationId = this.user.location_id;
 
-    this.http.delete(`http://localhost:3000/api/users/department/${dept}`).subscribe({
+    this.http.delete(`http://localhost:3000/api/users/bulk-delete?location_id=${locationId}`).subscribe({
       next: (res) => {
-        console.log('Deleted all users from:', dept);
         this.showBulkDeleteModal = false;
-        this.selectedDepartment = '';
-        this.loadDepartments(); // Refresh department list after deletion
+        this.messageService.add({ severity:'success', summary:'Success', detail:'Users deleted successfully' });
+        this.user.location_id = null;
       },
       error: (err) => {
-        console.error('Error deleting users:', err);
+        this.messageService.add({ severity:'error', summary:'Error', detail: err.error?.message || 'Failed to delete users' });
         this.showBulkDeleteModal = false;
       }
     });

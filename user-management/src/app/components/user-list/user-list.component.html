@@ -7,10 +7,10 @@
     </div>
     <div class="header-actions">
       <p-button label="Add User" (click)="addUser()" icon="pi pi-plus" severity="success"></p-button>
-      <p-button label="Export" icon="pi pi-download" severity="info"></p-button>
+      <p-button label="Export" (click)="exportUsers()" icon="pi pi-download" severity="info"></p-button>
       <p-button label="Upload" (click)="uploadUsers()"  icon="pi pi-upload"  severity="info"></p-button>
     </div>
-  </div>
+  </div>    
 
   <!-- Table Card -->
   <div class="table-card">

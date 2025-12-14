@@ -12,16 +12,18 @@ import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { AuthService } from './services/auth.service';
 import { filter } from 'rxjs';
+import { JwtExpiryService } from './services/jwtExpiry';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, RouterOutlet, ToastModule, InputTextModule, CardModule, ButtonModule, AvatarModule, MegaMenuModule],
-  providers: [MessageService],
+  providers: [MessageService, JwtExpiryService],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  private logoutTimer: any;
   items: (MegaMenuItem & { label: string; icon: string })[] = [];
   isAuthenticated = false;
   username = '';
@@ -32,6 +34,7 @@ export class AppComponent implements OnInit {
 
   constructor(private router: Router,
     private authService: AuthService,
+    private jwtExpiryService: JwtExpiryService,
     private messageService: MessageService) {
     // Track route changes
     this.router.events
@@ -42,7 +45,12 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.setupAutoLogout();
     this.isAuthenticated = (localStorage.getItem('isAuthenticated') === 'true');
+    const token = localStorage.getItem('authtoken');
+    if (token) {
+      this.jwtExpiryService.scheduleLogout(token);
+    }
 
     // determine role from session/local storage (token or user object)
     this.userRole = this.getRoleFromStorage();
@@ -54,18 +62,18 @@ export class AppComponent implements OnInit {
         label: 'Dashboard',
         root: true,
         icon: 'pi pi-home',
-        command: () => { 
+        command: () => {
           this.currentRoute = '/dashboard';
-          this.router.navigate(['/dashboard']); 
+          this.router.navigate(['/dashboard']);
         }
       },
       {
         label: 'Users',
         root: true,
         icon: 'pi pi-users',
-        command: () => { 
+        command: () => {
           this.currentRoute = '/users';
-          this.router.navigate(['/users']); 
+          this.router.navigate(['/users']);
         }
       },
       // include Admin only for admin role
@@ -73,7 +81,7 @@ export class AppComponent implements OnInit {
         label: 'Admin',
         root: true,
         icon: 'pi pi-cog',
-        command:()=>{
+        command: () => {
           this.currentRoute = '/admin';
           this.router.navigate(['/admin']);
         }
@@ -111,6 +119,12 @@ export class AppComponent implements OnInit {
         // ]
       }] : [])
     ];
+  }
+
+  ngOnDestroy() {
+    if (this.logoutTimer) {
+      clearTimeout(this.logoutTimer);
+    }
   }
 
   private getRoleFromStorage(): string | null {
@@ -168,8 +182,8 @@ export class AppComponent implements OnInit {
 
     const routeMap: { [key: string]: string[] } = {
       'Dashboard': ['/dashboard'],
-      'Users': ['/users', '/user-details'],
-      'Admin': ['/admin', '/upload', '/reports'],
+      'Users': ['/users', '/user-details', '/upload', '/add', '/user/:id'],
+      'Admin': ['/admin', '/reports'],
       'Settings': ['/settings'],
       'Upload': ['/upload'],
       'Reports': ['/reports']
@@ -181,7 +195,7 @@ export class AppComponent implements OnInit {
 
   login() {
     this.authService.login({ username: this.username, password: this.password }).subscribe({
-      next: () => {
+      next: (res) => {
         this.isAuthenticated = true;
         localStorage.setItem('isAuthenticated', 'true');
         this.errorMessage = '';
@@ -189,7 +203,7 @@ export class AppComponent implements OnInit {
         this.userRole = this.getRoleFromStorage();
         localStorage.setItem('userRole', this.userRole || '');
         this.ngOnInit();
-
+        this.jwtExpiryService.scheduleLogout(res.token);
         this.router.navigate(['/users']);
         this.messageService.add({ severity: 'success', summary: 'Login successful', detail: 'Welcome back!' });
       },
@@ -209,7 +223,7 @@ export class AppComponent implements OnInit {
     localStorage.removeItem('userRole');
     this.username = '';
     this.password = '';
-    this.router.navigate(['/login']);
+    this.router.navigate(['/']);
     this.messageService.add({ severity: 'info', summary: 'Logout successful', detail: 'You have been logged out.' });
   }
 
@@ -225,5 +239,23 @@ export class AppComponent implements OnInit {
       .map(part => part.charAt(0).toUpperCase())
       .join('')
       .slice(0, 2);
+  }
+
+
+  setupAutoLogout() {
+    const remaining = this.authService.getTokenRemainingTime();
+
+    if (remaining <= 0) {
+      this.authService.logout();
+      return;
+    }
+
+    // Logout 1 minute before expiry
+    const logoutBefore = remaining - (60 * 1000);
+
+    this.logoutTimer = setTimeout(() => {
+      alert('Session expired. Please login again.');
+      this.authService.logout();
+    }, Math.max(logoutBefore, 0));
   }
 }

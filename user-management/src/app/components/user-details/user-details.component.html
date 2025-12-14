@@ -45,22 +45,22 @@
 
           <div class="form-group">
             <label for="department">Department</label>
-            <p-select id="department" formControlName="department_id" [options]="departments" optionLabel="name"
+            <p-select id="department" formControlName="department_id" [options]="departments" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select Department" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="division">Division</label>
-            <p-select id="division" formControlName="division_id" [options]="divisions" optionLabel="name"
+            <p-select id="division" formControlName="division_id" [options]="divisions" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select Division" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="location">Location</label>
-            <p-select id="location" formControlName="location_id" [options]="locations" optionLabel="name"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Location" class="w-full">
+            <p-select id="location" formControlName="location_id" [options]="locations" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isAdmin" placeholder="Select Location" class="w-full">
             </p-select>
           </div>
 
@@ -69,11 +69,6 @@
             <p-select id="category" formControlName="category_id" [options]="categories" optionLabel="name"
               optionValue="id" [disabled]="!isEditing" placeholder="Select Category" class="w-full">
             </p-select>
-          </div>
-
-          <div class="form-group">
-            <label for="usb">USB</label>
-            <input pInputText id="usb" formControlName="usb" [disabled]="!isEditing" class="input-field">
           </div>
         </div>
       </div>
@@ -104,58 +99,78 @@
           Hardware Information
         </h2>
         <div class="form-grid">
+
+          <div class="form-group">
+            <label for="warranty">Warranty</label>
+            <p-select id="warranty" formControlName="warranty_id" [options]="warranties" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Warranty" class="w-full">
+            </p-select>
+          </div>
+
+
+          <div class="form-group">
+            <label for="purchase_from">Purchase From</label>
+            <p-select id="purchase_from" formControlName="purchase_from_id" [options]="purchaseFrom" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Purchase From" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group">
+            <label for="asset_tag">Asset Tag</label>
+            <input pInputText id="asset_tag" formControlName="asset_tag" [disabled]="!isEditing" class="input-field">
+          </div>
           <div class="form-group">
             <label for="model">Model</label>
-            <p-select id="model" formControlName="model_id" [options]="models" optionLabel="name" optionValue="id"
+            <p-select id="model" formControlName="model_id" [options]="models" optionLabel="name" optionValue="id" appendTo="body"
               [disabled]="!isEditing" placeholder="Select Model" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="cpu_serial">CPU Serial</label>
-            <p-select id="cpu_serial" formControlName="cpu_serial_id" [options]="cpuSerials" optionLabel="name"
+            <p-select id="cpu_serial" formControlName="cpu_serial_id" [options]="cpuSerials" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Serial" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="processor">Processor</label>
-            <p-select id="processor" formControlName="processor_id" [options]="processors" optionLabel="name"
+            <p-select id="processor" formControlName="processor_id" [options]="processors" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select Processor" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="cpu_speed">CPU Speed</label>
-            <p-select id="cpu_speed" formControlName="cpu_speed_id" [options]="cpuSpeeds" optionLabel="name"
+            <p-select id="cpu_speed" formControlName="cpu_speed_id" [options]="cpuSpeeds" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Speed" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="ram">RAM</label>
-            <p-select id="ram" formControlName="ram_id" [options]="rams" optionLabel="name" optionValue="id"
+            <p-select id="ram" formControlName="ram_id" [options]="rams" optionLabel="name" optionValue="id" appendTo="body"
               [disabled]="!isEditing" placeholder="Select RAM" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="hdd">Storage (HDD)</label>
-            <p-select id="hdd" formControlName="hdd_id" [options]="hdds" optionLabel="name" optionValue="id"
+            <p-select id="hdd" formControlName="hdd_id" [options]="hdds" optionLabel="name" optionValue="id" appendTo="body"
               [disabled]="!isEditing" placeholder="Select Storage" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="os">Operating System</label>
-            <p-select id="os" formControlName="os_id" [options]="operatingSystems" optionLabel="name" optionValue="id"
+            <p-select id="os" formControlName="os_id" [options]="operatingSystems" optionLabel="name" optionValue="id" appendTo="body"
               [disabled]="!isEditing" placeholder="Select OS" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="monitor">Monitor</label>
-            <p-select id="monitor" formControlName="monitor_id" [options]="monitors" optionLabel="name" optionValue="id"
+            <p-select id="monitor" formControlName="monitor_id" [options]="monitors" optionLabel="name" optionValue="id" appendTo="body"
               [disabled]="!isEditing" placeholder="Select Monitor" class="w-full">
             </p-select>
           </div>
@@ -163,28 +178,28 @@
           <div class="form-group">
             <label for="monitor_serial">Monitor Serial</label>
             <p-select id="monitor_serial" formControlName="monitor_serial_id" [options]="monitorSerials"
-              optionLabel="name" optionValue="id" [disabled]="!isEditing" placeholder="Select Monitor Serial"
+              optionLabel="name" optionValue="id" [disabled]="!isEditing" placeholder="Select Monitor Serial" appendTo="body"
               class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="keyboard">Keyboard</label>
-            <p-select id="keyboard" formControlName="keyboard_id" [options]="keyboards" optionLabel="name"
+            <p-select id="keyboard" formControlName="keyboard_id" [options]="keyboards" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select Keyboard" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="mouse">Mouse</label>
-            <p-select id="mouse" formControlName="mouse_id" [options]="mice" optionLabel="name" optionValue="id"
+            <p-select id="mouse" formControlName="mouse_id" [options]="mice" optionLabel="name" optionValue="id"appendTo="body"
               [disabled]="!isEditing" placeholder="Select Mouse" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="cd_dvd">CD/DVD Drive</label>
-            <p-select id="cd_dvd" formControlName="cd_dvd_id" [options]="cdDvds" optionLabel="name" optionValue="id"
+            <p-select id="cd_dvd" formControlName="cd_dvd_id" [options]="cdDvds" optionLabel="name" optionValue="id" appendTo="body"
               [disabled]="!isEditing" placeholder="Select CD/DVD" class="w-full">
             </p-select>
           </div>

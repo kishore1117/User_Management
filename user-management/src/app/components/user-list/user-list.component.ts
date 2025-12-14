@@ -86,6 +86,17 @@ export class UserListComponent implements OnInit {
     this.router.navigate(['/upload']);
   }
 
+  exportUsers(){
+    this.userService.exportUsers().subscribe((blob: Blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'users_export.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
+  }
+
   prepareStatuses() {
     const unique = new Set<string>();
 
@@ -113,7 +124,6 @@ export class UserListComponent implements OnInit {
       selectedValues.includes(user.department_name)
     );
 
-    console.log('Filtered Users:', this.filteredUsers);
   }
 
   filterByStatus(status: string) {
@@ -127,7 +137,6 @@ export class UserListComponent implements OnInit {
         (user.name && user.name === 'NA' && status === 'Available IP') ||
         (!user.name || user.name !== 'NA') && status === 'Reserved IP'
     );
-    console.log('Filtered Users:', this.filteredUsers);
     this.users = this.filteredUsers;
   }
 

@@ -6,13 +6,14 @@
       <p class="subtitle">System Overview & Analytics</p>
     </div>
     <div class="header-stats">
+      <!-- IP Status -->
       <div class="stat-card">
         <div class="stat-icon total">
           <i class="pi pi-users"></i>
         </div>
         <div class="stat-info">
           <span class="stat-label">Total Users</span>
-          <span class="stat-value">{{ users.length }}</span>
+          <span class="stat-value">{{ metrics?.total_users || 0 }}</span>
         </div>
       </div>
       <div class="stat-card">
@@ -21,7 +22,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-label">Available IPs</span>
-          <span class="stat-value">{{ getAvailableCount() }}</span>
+          <span class="stat-value">{{ metrics?.available_ips || 0 }}</span>
         </div>
       </div>
       <div class="stat-card">
@@ -30,16 +31,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-label">Reserved IPs</span>
-          <span class="stat-value">{{ getReservedCount() }}</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon departments">
-          <i class="pi pi-building"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Departments</span>
-          <span class="stat-value">{{ departments.length }}</span>
+          <span class="stat-value">{{ metrics?.reserved_ips || 0 }}</span>
         </div>
       </div>
     </div>
@@ -47,161 +39,30 @@
 
   <!-- Charts Section -->
   <div class="charts-grid">
-    <!-- Department Distribution - Pie Chart -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>
-          <i class="pi pi-chart-pie"></i>
-          Department Distribution
-        </h3>
-        <p class="chart-description">Users per department</p>
-      </div>
-      <div class="chart-body">
-        <canvas id="deptPieChart"></canvas>
-      </div>
-    </div>
 
-    <!-- IP Status Overview - Doughnut Chart -->
-    <div class="chart-card">
+        <div class="chart-card">
       <div class="chart-header">
-        <h3>
-          <i class="pi pi-chart-bar"></i>
-          IP Status Overview
-        </h3>
+        <h3><i class="pi pi-chart-pie"></i> IP Status</h3>
         <p class="chart-description">Available vs Reserved</p>
       </div>
       <div class="chart-body">
-        <canvas id="ipStatusBarChart"></canvas>
+        <canvas id="ipStatusChart"></canvas>
       </div>
     </div>
-
-    <!-- Top Departments - Horizontal Bar Chart -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>
-          <i class="pi pi-bars"></i>
-          Top Departments by User Count
-        </h3>
-        <p class="chart-description">Department breakdown</p>
-      </div>
-      <div class="chart-body">
-        <canvas id="topDeptChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Device Distribution - Radar Chart -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>
-          <i class="pi pi-search"></i>
-          Device Status Distribution
-        </h3>
-        <p class="chart-description">Hardware availability</p>
-      </div>
-      <div class="chart-body">
-        <canvas id="deviceStatusChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Key Metrics Section -->
-  <div class="metrics-section">
-    <div class="metrics-header">
-      <h2>
-        <i class="pi pi-info-circle"></i>
-        Key Metrics
-      </h2>
-    </div>
-
-    <div class="metrics-grid">
-      <div class="metric-item">
-        <div class="metric-icon">
-          <i class="pi pi-server"></i>
+    <ng-container *ngFor="let key of ['software','department','location','category','warranty','model','processor','ram','os']">
+      <div class="chart-card" >
+        <div class="chart-header">
+          <h3>
+            <i class="pi pi-desktop"></i>
+            {{ key | titlecase }}
+          </h3>
         </div>
-        <div class="metric-content">
-          <span class="metric-label">Active Devices</span>
-          <span class="metric-value">{{ getActiveDevices() }}</span>
-          <span class="metric-percent">{{ getActiveDevicePercent() }}% of total</span>
+        <div class="chart-body">
+          <canvas [id]="key+'Chart'"></canvas>
         </div>
       </div>
-
-      <div class="metric-item">
-        <div class="metric-icon">
-          <i class="pi pi-calendar"></i>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Last Updated</span>
-          <span class="metric-value">{{ getLastUpdate() }}</span>
-          <span class="metric-percent">Real-time sync</span>
-        </div>
-      </div>
-
-      <div class="metric-item">
-        <div class="metric-icon">
-          <i class="pi pi-map-marker"></i>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Locations</span>
-          <span class="metric-value">{{ getUniqueLocations() }}</span>
-          <span class="metric-percent">Tracked across system</span>
-        </div>
-      </div>
-
-      <div class="metric-item">
-        <div class="metric-icon">
-          <i class="pi pi-exclamation-triangle"></i>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Offline Devices</span>
-          <span class="metric-value">{{ getOfflineDevices() }}</span>
-          <span class="metric-percent">Requires attention</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recent Activity Section -->
-  <div class="recent-section">
-    <div class="section-header">
-      <h2>
-        <i class="pi pi-history"></i>
-        Quick Access
-      </h2>
-    </div>
-
-    <div class="recent-grid">
-      <div class="recent-card">
-        <div class="recent-icon">
-          <i class="pi pi-user-plus"></i>
-        </div>
-        <div class="recent-content">
-          <h4>New Users</h4>
-          <p>{{ getNewUsersCount() }} added this week</p>
-          <a href="/users" class="recent-link">View All →</a>
-        </div>
-      </div>
-
-      <div class="recent-card">
-        <div class="recent-icon">
-          <i class="pi pi-wifi"></i>
-        </div>
-        <div class="recent-content">
-          <h4>IP Allocation</h4>
-          <p>{{ getIPUtilization() }}% utilized</p>
-          <a href="/users" class="recent-link">Manage IPs →</a>
-        </div>
-      </div>
-
-      <div class="recent-card">
-        <div class="recent-icon">
-          <i class="pi pi-chart-line"></i>
-        </div>
-        <div class="recent-content">
-          <h4>System Health</h4>
-          <p>All systems operational</p>
-          <a href="/users" class="recent-link">View Details →</a>
-        </div>
-      </div>
-    </div>
+    </ng-container>
   </div>
 </div>
+
+

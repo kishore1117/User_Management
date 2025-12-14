@@ -6,17 +6,19 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { UserListComponent } from './components/user-list/user-list.component';
 import { UserDetailsComponent } from './components/user-details/user-details.component';
 import { AdminComponent } from './components/admin/admin.component';
+import { AppComponent } from './app.component';
 
 export const appRoutes: Routes = [
   // {
   //   path: '',
   //   redirectTo: 'login',
-  //   pathMatch: 'full'
+  //   pathMatch: 'full',
+  //   // component: AppComponent
   // },
-  {
-    path: 'login',
-    component: UserFormComponent
-  },
+  // {
+  //   path: 'login',
+  //   component: UserFormComponent
+  // },
   {
     path: "users",
     component: UserListComponent,
