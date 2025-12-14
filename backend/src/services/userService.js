@@ -10,10 +10,12 @@ export const getAllUsers = async (req) => {
       u.id,
       u.hostname,
       u.name,
+
       d.name AS department_name,
       divi.name AS division_name,
       l.name AS location_name,
       c.name AS category_name,
+
       u.ip_address1,
       u.ip_address2,
       u.floor,
@@ -31,11 +33,22 @@ export const getAllUsers = async (req) => {
       cd.name AS cd_dvd,
       os.name AS os,
 
+      -- 🔹 NEW LOOKUP VALUES
+      u.asset_tag AS asset_tag,
+      w.warranty_name AS warranty,
+      pf.vendor_name AS purchase_from,
+
       u.usb,
       u.created_at,
       u.updated_at,
-      COALESCE(JSON_AGG(s.name) FILTER (WHERE s.name IS NOT NULL), '[]') AS software
+
+      COALESCE(
+        JSON_AGG(s.name) FILTER (WHERE s.name IS NOT NULL),
+        '[]'
+      ) AS software
+
     FROM users u
+
     LEFT JOIN locations l ON u.location_id = l.id
     LEFT JOIN departments d ON u.department_id = d.id
     LEFT JOIN divisions divi ON u.division_id = divi.id
@@ -54,13 +67,22 @@ export const getAllUsers = async (req) => {
     LEFT JOIN cd_dvds cd ON u.cd_dvd_id = cd.id
     LEFT JOIN operating_systems os ON u.os_id = os.id
 
+    -- 🔹 NEW LOOKUP JOINS
+    LEFT JOIN warranties w ON u.warranty_id = w.id
+    LEFT JOIN purchase_from pf ON u.purchase_from_id = pf.id
+
     LEFT JOIN user_software us ON u.id = us.user_id
     LEFT JOIN software s ON us.software_id = s.id
 
     WHERE u.location_id = ANY($1)
-    GROUP BY u.id, d.name, divi.name, l.name, c.name,
-      m.name, cs.name, p.name, sp.name, r.name, h.name, mo.name, ms.name,
-      kb.name, ms2.name, cd.name, os.name
+
+    GROUP BY 
+      u.id,
+      d.name, divi.name, l.name, c.name,
+      m.name, cs.name, p.name, sp.name, r.name, h.name,
+      mo.name, ms.name, kb.name, ms2.name, cd.name, os.name,
+      u.asset_tag, w.warranty_name, pf.vendor_name
+
     ORDER BY u.id ASC;
     `,
     [locationAccess]
@@ -69,225 +91,135 @@ export const getAllUsers = async (req) => {
   return result.rows;
 };
 
-export const getDashboardData = async (req) => {
-  const locationAccess = req.user?.location_ids || [];
 
-  // Query 1: Get location summary with counts
-  const locationResult = await pool.query(
-    `
-    SELECT 
-      l.id AS location_id,
-      l.name AS location_name,
-      COUNT(DISTINCT u.id) AS total_users
-    FROM users u
-    LEFT JOIN locations l ON u.location_id = l.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY l.id, l.name
-    ORDER BY l.name ASC;
-    `,
-    [locationAccess]
-  );
+export const getDashboardData = async (user) => {
+  try {
+    const locationIds = user?.location_ids || [];
 
-  // Query 2: Get department distribution
-  const deptResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      d.id,
-      d.name,
-      COUNT(*) AS count
-    FROM users u
-    LEFT JOIN departments d ON u.department_id = d.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, d.id, d.name
-    ORDER BY u.location_id, count DESC;
-    `,
-    [locationAccess]
-  );
+    if (!locationIds.length) {
+      return {
+        summary: { total_users: 0, available_ips: 0, reserved_ips: 0 },
+        location: [],
+        department: [],
+        division: [],
+        category: [],
+        model: [],
+        ram: [],
+        os: [],
+        processor: [],
+        warranty: [],
+        software: []
+      };
+    }
 
-  // Query 3: Get category distribution
-  const categoryResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      c.id,
-      c.name,
-      COUNT(*) AS count
-    FROM users u
-    LEFT JOIN categories c ON u.category_id = c.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, c.id, c.name
-    ORDER BY u.location_id, count DESC;
-    `,
-    [locationAccess]
-  );
+    /* ================= SUMMARY ================= */
+    const summary = (
+      await pool.query(
+        `
+        SELECT
+          COUNT(*)::int AS total_users,
+          COUNT(*) FILTER (WHERE ip_address1 IS NULL OR ip_address1 = '')::int AS available_ips,
+          COUNT(*) FILTER (WHERE ip_address1 IS NOT NULL AND ip_address1 <> '')::int AS reserved_ips
+        FROM users
+        WHERE location_id = ANY($1::int[])
+        `,
+        [locationIds]
+      )
+    ).rows[0];
 
-  // Query 4: Get IP Status
-  const ipStatusResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      COUNT(CASE WHEN u.name = 'NA' OR u.name IS NULL THEN 1 END) AS available_ips,
-      COUNT(CASE WHEN u.name != 'NA' AND u.name IS NOT NULL THEN 1 END) AS reserved_ips,
-      COUNT(*) AS total_ips
-    FROM users u
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id;
-    `,
-    [locationAccess]
-  );
-
-  // Query 5: Get hardware distribution (Processor)
-  const processorResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      'Processor' AS hardware_type,
-      p.name,
-      COUNT(*) AS count
-    FROM users u
-    LEFT JOIN processors p ON u.processor_id = p.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, p.id, p.name
-    ORDER BY u.location_id, count DESC;
-    `,
-    [locationAccess]
-  );
-
-  // Query 6: Get hardware distribution (RAM)
-  const ramResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      'RAM' AS hardware_type,
-      r.name,
-      COUNT(*) AS count
-    FROM users u
-    LEFT JOIN rams r ON u.ram_id = r.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, r.id, r.name
-    ORDER BY u.location_id, count DESC;
-    `,
-    [locationAccess]
-  );
-
-  // Query 7: Get hardware distribution (HDD)
-  const hddResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      'HDD' AS hardware_type,
-      h.name,
-      COUNT(*) AS count
-    FROM users u
-    LEFT JOIN hdds h ON u.hdd_id = h.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, h.id, h.name
-    ORDER BY u.location_id, count DESC;
-    `,
-    [locationAccess]
-  );
-
-  // Query 8: Get hardware distribution (OS)
-  const osResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      'OS' AS hardware_type,
-      os.name,
-      COUNT(*) AS count
-    FROM users u
-    LEFT JOIN operating_systems os ON u.os_id = os.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, os.id, os.name
-    ORDER BY u.location_id, count DESC;
-    `,
-    [locationAccess]
-  );
-
-  // Query 9: Get software distribution (top 10)
-  const softwareResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      s.name,
-      COUNT(*) AS count
-    FROM user_software us
-    JOIN software s ON us.software_id = s.id
-    JOIN users u ON us.user_id = u.id
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id, s.id, s.name
-    ORDER BY u.location_id, count DESC
-    LIMIT 10;
-    `,
-    [locationAccess]
-  );
-
-  // Query 10: Get device utilization
-  const utilizationResult = await pool.query(
-    `
-    SELECT 
-      u.location_id,
-      COUNT(CASE WHEN u.name IS NOT NULL AND u.name != 'NA' THEN 1 END)::float / 
-        NULLIF(COUNT(u.id), 0)::float * 100 AS device_utilization_percent
-    FROM users u
-    WHERE u.location_id = ANY($1)
-    GROUP BY u.location_id;
-    `,
-    [locationAccess]
-  );
-
-  // Combine all results
-  const hardwareResult = [
-    ...processorResult.rows,
-    ...ramResult.rows,
-    ...hddResult.rows,
-    ...osResult.rows
-  ];
-
-  // Format results by location
-  const formattedData = locationResult.rows.map(location => {
-    const locId = location.location_id;
-
-    return {
-      location_id: locId,
-      location_name: location.location_name,
-      total_users: location.total_users,
-      department_distribution: deptResult.rows
-        .filter(d => d.location_id === locId)
-        .map(d => ({ id: d.id, name: d.name, count: d.count })),
-      category_distribution: categoryResult.rows
-        .filter(c => c.location_id === locId)
-        .map(c => ({ id: c.id, name: c.name, count: c.count })),
-      ip_status: ipStatusResult.rows.find(ip => ip.location_id === locId) || {
-        available_ips: 0,
-        reserved_ips: 0,
-        total_ips: 0
-      },
-      hardware_distribution: {
-        processor: processorResult.rows
-          .filter(h => h.location_id === locId)
-          .map(h => ({ name: h.name, count: h.count })),
-        ram: ramResult.rows
-          .filter(h => h.location_id === locId)
-          .map(h => ({ name: h.name, count: h.count })),
-        hdd: hddResult.rows
-          .filter(h => h.location_id === locId)
-          .map(h => ({ name: h.name, count: h.count })),
-        os: osResult.rows
-          .filter(h => h.location_id === locId)
-          .map(h => ({ name: h.name, count: h.count }))
-      },
-      software_distribution: softwareResult.rows
-        .filter(s => s.location_id === locId)
-        .map(s => ({ name: s.name, count: s.count })),
-      device_utilization_percent: 
-        utilizationResult.rows.find(u => u.location_id === locId)?.device_utilization_percent || 0
+    /* ================= GENERIC LOOKUP (STRICT LOCATION BASED) ================= */
+    const lookupByLocation = async (table, userCol) => {
+      const query = `
+        SELECT
+          l.name AS name,
+          COUNT(u.id)::int AS count
+        FROM ${table} l
+        JOIN users u
+          ON u.${userCol} = l.id
+         AND u.location_id = ANY($1::int[])
+        GROUP BY l.name
+        ORDER BY count DESC, name ASC
+      `;
+      return (await pool.query(query, [locationIds])).rows;
     };
-  });
 
-  return formattedData;
+    /* ================= LOCATION ================= */
+    const location = (
+      await pool.query(
+        `
+        SELECT
+          l.name AS name,
+          COUNT(u.id)::int AS count
+        FROM locations l
+        JOIN users u
+          ON u.location_id = l.id
+         AND u.location_id = ANY($1::int[])
+        GROUP BY l.name
+        ORDER BY count DESC, name ASC
+        `,
+        [locationIds]
+      )
+    ).rows;
+
+    /* ================= WARRANTY ================= */
+    const warranty = (
+      await pool.query(
+        `
+        SELECT
+          w.warranty_name AS name,
+          COUNT(u.id)::int AS count
+        FROM warranties w
+        JOIN users u
+          ON u.warranty_id = w.id
+         AND u.location_id = ANY($1::int[])
+        GROUP BY w.warranty_name
+        ORDER BY count DESC, name ASC
+        `,
+        [locationIds]
+      )
+    ).rows;
+
+    /* ================= SOFTWARE ================= */
+    const software = (
+      await pool.query(
+        `
+        SELECT
+          s.name AS name,
+          COUNT(us.user_id)::int AS count
+        FROM software s
+        JOIN user_software us ON us.software_id = s.id
+        JOIN users u
+          ON u.id = us.user_id
+         AND u.location_id = ANY($1::int[])
+        GROUP BY s.name
+        ORDER BY count DESC, name ASC
+        `,
+        [locationIds]
+      )
+    ).rows;
+
+    /* ================= FINAL RESPONSE ================= */
+    return {
+      summary,
+      location,
+      department: await lookupByLocation('departments', 'department_id'),
+      division: await lookupByLocation('divisions', 'division_id'),
+      category: await lookupByLocation('categories', 'category_id'),
+      model: await lookupByLocation('models', 'model_id'),
+      ram: await lookupByLocation('rams', 'ram_id'),
+      os: await lookupByLocation('operating_systems', 'os_id'),
+      processor: await lookupByLocation('processors', 'processor_id'),
+      warranty,
+      software
+    };
+
+  } catch (error) {
+    console.error('Dashboard Metrics Error:', error);
+    throw error;
+  }
 };
+
+
 
 export const getLookupData = async () => {
   const query = `
@@ -296,6 +228,7 @@ export const getLookupData = async () => {
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM divisions) AS divisions,
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM locations) AS locations,
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM categories) AS categories,
+
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM models) AS models,
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cpu_serials) AS cpu_serials,
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM processors) AS processors,
@@ -308,52 +241,101 @@ export const getLookupData = async () => {
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM mice) AS mice,
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cd_dvds) AS cd_dvds,
       (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM operating_systems) AS operating_systems,
-      (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM software) AS software
+      (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM software) AS software,
+
+      -- 🔹 NEW LOOKUP TABLES
+      (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', warranty_name)) FROM warranties) AS warranties,
+      (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', vendor_name)) FROM purchase_from) AS purchase_from
+
     FROM (SELECT 1) AS dummy;
   `;
-  
+
   const result = await pool.query(query);
   return result.rows[0];
 };
-
 export const getUserById = async (userId) => {
   console.log("Fetching user by ID:", userId);
+
   const query = `
     SELECT 
       u.id,
       u.hostname,
       u.name,
+
       u.location_id,
       l.name AS location_name,
+
+      u.department_id,
       d.name AS department_name,
+
+      u.division_id,
       divi.name AS division_name,
+
+      u.category_id,
       c.name AS category_name,
+
+      -- ✅ asset is now a column
+      u.asset_tag,
+
+      u.warranty_id,
+      u.purchase_from_id,
+
       u.ip_address1,
       u.ip_address2,
       u.floor,
 
+      m.id AS model_id,
       m.name AS model,
+
+      cs.id AS cpu_serial_id,
       cs.name AS cpu_serial,
+
+      p.id AS processor_id,
       p.name AS processor,
+
+      sp.id AS cpu_speed_id,
       sp.name AS cpu_speed,
+
+      r.id AS ram_id,
       r.name AS ram,
+
+      h.id AS hdd_id,
       h.name AS hdd,
+
+      mo.id AS monitor_id,
       mo.name AS monitor,
+
+      ms.id AS monitor_serial_id,
       ms.name AS monitor_serial,
+
+      kb.id AS keyboard_id,
       kb.name AS keyboard,
+
+      ms2.id AS mouse_id,
       ms2.name AS mouse,
+
+      cd.id AS cd_dvd_id,
       cd.name AS cd_dvd,
+
+      os.id AS os_id,
       os.name AS os,
+
+      -- 🔹 LOOKUP VALUES
+      w.warranty_name AS warranty,
+      pf.vendor_name AS purchase_from,
 
       u.usb,
       u.created_at,
       u.updated_at,
 
       COALESCE(
-        (SELECT JSON_AGG(s.name)
-         FROM user_software us
-         JOIN software s ON us.software_id = s.id
-         WHERE us.user_id = u.id), '[]'
+        (
+          SELECT JSON_AGG(s.name)
+          FROM user_software us
+          JOIN software s ON us.software_id = s.id
+          WHERE us.user_id = u.id
+        ),
+        '[]'
       ) AS software
 
     FROM users u
@@ -375,12 +357,16 @@ export const getUserById = async (userId) => {
     LEFT JOIN cd_dvds cd ON u.cd_dvd_id = cd.id
     LEFT JOIN operating_systems os ON u.os_id = os.id
 
+    LEFT JOIN warranties w ON u.warranty_id = w.id
+    LEFT JOIN purchase_from pf ON u.purchase_from_id = pf.id
+
     WHERE u.id = $1;
   `;
 
   const result = await pool.query(query, [userId]);
   return result.rows[0];
 };
+
 
 export const addUser = async (data) => {
   const {

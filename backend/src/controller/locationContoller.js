@@ -30,6 +30,32 @@ export const getAllLocations = async (req, res) => {
   }
 };
 
+export const getAllowedLocations = async (req, res) => {
+  try {
+    const locationIds = req.user?.location_ids || [];
+
+    if (!locationIds.length) {
+      return res.json({ data: [] });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT id, name
+      FROM locations
+      WHERE id = ANY($1::int[])
+      ORDER BY name
+      `,
+      [locationIds]
+    );
+
+    res.json({ data: result.rows });
+  } catch (err) {
+    console.error('❌ Error fetching allowed locations:', err);
+    res.status(500).json({ message: 'Failed to fetch locations' });
+  }
+};
+
+
 /* 🟡 Get a single location by ID */
 export const getLocationById = async (req, res) => {
   const { id } = req.params;

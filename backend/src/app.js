@@ -8,7 +8,7 @@ import locationRouteres from "./router/locationRoutes.js";
 import departmentRoutes from "./router/departmentRoutes.js";
 import divisionRoutes from "./router/divisionRoutes.js";
 import softwareRoutes from "./router/softwareRoutes.js";
-import uploadRouter from "./router/uploadDataRoutes.js"
+import uploadRouter from "./router/dataRoutes.js"
 import lookupRouter from "./router/lookupRoutes.js";
 
 const app = express();

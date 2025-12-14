@@ -12,12 +12,12 @@ export const addUser = async (req, res) => {
     const userLocations = req.user?.location_ids || [];
 
     // ✅ Check if user has access to the target location
-    if (!userLocations.includes(location_id)) {
-      return res.status(403).json({
-        success: false,
-        message: "❌ You don’t have permission to create a user in this location."
-      });
-    }
+    // if (userLocations.includes(location_id) || req.user.role == 'user') {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "❌ You don’t have permission to create a user in this location."
+    //   });
+    // }
 
     // ✅ Validate hierarchy integrity
     await validateHierarchy(
@@ -52,6 +52,8 @@ export const getUserById = async (req, res) => {
     const userLocations = req.user?.location_ids || [];
 
     // Check if user has access to this user's location
+    console.log("User Locations:", userLocations);
+    console.log("Requested User Location ID:", user.location_id);
     if (!userLocations.includes(user.location_id)) {
       return res.status(403).json({
         success: false,
@@ -106,10 +108,10 @@ export const updateUser = async (req, res) => {
     const userAccess = decoded.location_ids || []; 
     const { location_id, department_id, division_id, category_id } = req.body;
 
-    // Check location access
-    if (!userAccess.includes(location_id)) {
-      return res.status(403).json({ message: "❌ You don’t have access to this location." });
-    }
+    // // Check location access
+    // if (!userAccess.includes(location_id)) {
+    //   return res.status(403).json({ message: "❌ You don’t have access to this location." });
+    // }
 
     // Validate hierarchy
     await validateHierarchy(location_id, department_id, division_id, category_id);
@@ -188,31 +190,23 @@ export const getLookupData = async (req, res) => {
   }
 };
 
+
 export const getDashboardData = async (req, res) => {
   try {
-    const data = await userService.getDashboardData(req);
-    res.status(200).json({ success: true, data });
+    const data = await userService.getDashboardData(req.user);
+    return res.status(200).json({
+      success: true,
+      data
+    });
   } catch (error) {
     console.error('Error getting dashboard data:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching dashboard data',
-      error: error.message 
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to load dashboard data'
     });
   }
 };
 
-// export const getTableDetails = async (req, res) => {
-//   const tableName = req.query.tableName;
-//   try {
-//     const result = await pool.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}'`);
-//     res.json(result.rows);
-
-//   } catch (err) {
-//     console.error("❌ Error fetching department columns:", err);
-//     res.status(500).json({ error: "Failed to fetch department columns" });
-//   }
-// };
 
   // GET /api/users/tableSchema?tableName=...
 export const getTableDetails = async (req, res) => {
@@ -287,22 +281,103 @@ export const updateTableRecord = async (req, res) => {
   }
 };
 
-// DELETE /api/users/table/:id  (body can include tableName or pass tableName as query param)
 export const deleteTableRecord = async (req, res) => {
   try {
     const id = req.params.id;
     const tableName = req.body.tableName || req.query.tableName;
-    if (!tableName) return res.status(400).json({ success: false, message: 'Missing tableName' });
+
+    if (!tableName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing tableName'
+      });
+    }
 
     const exists = await tableService.tableExists(tableName);
-    if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
+    if (!exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Table not found'
+      });
+    }
 
     const deleted = await tableService.deleteTableRecord(tableName, id);
-    if (!deleted) return res.status(404).json({ success: false, message: 'Record not found' });
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Record not found'
+      });
+    }
 
-    return res.json({ success: true, row: deleted });
+    return res.json({
+      success: true,
+      row: deleted
+    });
+
   } catch (err) {
-    console.error('Error deleting table record:', err);
-    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+    console.error('❌ Error deleting table record:', err);
+
+    // 🔥 Handle Foreign Key violation
+    if (err.code === '23503') {
+      const friendlyNames = {
+        processors: 'Processor',
+        departments: 'Department',
+        locations: 'Location',
+        warranties: 'Warranty',
+        purchase_from: 'Vendor'
+      };
+
+      const entity =
+        friendlyNames[err.table] ||
+        friendlyNames[req.body.tableName] ||
+        'This item';
+
+      return res.status(409).json({
+        success: false,
+        message: `${entity} is currently in use and cannot be deleted. Please remove its usage first.`
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to delete the record. Please try again later.'
+    });
   }
-}
+};
+
+export const deleteUsersByLocation = async (req, res) => {
+  const { location_id } = req.query; 
+ console.log("Location ID to delete users from:", location_id);
+  // Validation
+  if (!location_id) {
+    return res.status(400).json({
+      success: false,
+      message: "location_id query parameter is required"
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      DELETE FROM users
+      WHERE location_id = $1
+      RETURNING id
+      `,
+      [location_id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      deletedCount: result.rowCount,
+      deletedUserIds: result.rows.map(r => r.id),
+      message: `Users with location_id ${location_id} deleted successfully`
+    });
+  } catch (error) {
+    console.error("❌ Error deleting users by location:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+

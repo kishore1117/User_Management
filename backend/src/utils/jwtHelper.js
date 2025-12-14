@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 
 const SECRET_KEY = "apex_secret_2252524"; // better to keep in .env
-const EXPIRY = "1h"; // token valid for 1 hour
+const EXPIRY = "1hr"; // token valid for 1 hour
 
 // 🟢 Generate JWT token
 export const generateToken = (user) => {
