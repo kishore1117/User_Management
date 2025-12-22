@@ -10,16 +10,6 @@ import {
 import {
   CheckIcon
 } from "./chunk-CCRBAVUX.js";
-import "./chunk-EPJ5A6YM.js";
-import {
-  animate,
-  animateChild,
-  query,
-  state,
-  style,
-  transition,
-  trigger
-} from "./chunk-NUEDIEID.js";
 import {
   BaseComponent,
   PARENT_INSTANCE
@@ -40,6 +30,16 @@ import {
   l,
   s3 as s
 } from "./chunk-FZI3XOAI.js";
+import "./chunk-EPJ5A6YM.js";
+import {
+  animate,
+  animateChild,
+  query,
+  state,
+  style,
+  transition,
+  trigger
+} from "./chunk-NUEDIEID.js";
 import {
   CommonModule,
   NgClass,

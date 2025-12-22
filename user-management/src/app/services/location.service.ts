@@ -2,10 +2,11 @@ import { Injectable } from "@angular/core";
 import { BehaviorSubject, Observable } from "rxjs";
 import { jwtDecode } from "jwt-decode";
 import { HttpClient } from "@angular/common/http";
+import { environment } from "../../environments/environment";
 
 @Injectable({ providedIn: 'root' })
 export class LocationService {
-     private baseUrl = 'http://localhost:3000/api/locations';
+     private baseUrl = `${environment.apiBaseUrl}/locations`;
 
     constructor(private http: HttpClient){}
   private selectedLocation = new BehaviorSubject<number | null>(

@@ -27,7 +27,7 @@ export class UserFormComponent implements OnInit {
   user: any = {
     name: '',
     hostname: '',
-    ipAddress: '',
+    ip_address1: '',
     department: '',
     location_id: null
   };

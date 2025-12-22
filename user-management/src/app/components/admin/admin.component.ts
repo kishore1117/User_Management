@@ -11,18 +11,20 @@ import { MessageService } from 'primeng/api';
 import { UserService } from '../../services/user.service';
 import { TabsModule } from 'primeng/tabs';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { MultiSelectModule } from 'primeng/multiselect';
 
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule, TabsModule, ProgressSpinnerModule],
+  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule, TabsModule, ProgressSpinnerModule, MultiSelectModule],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css'],
   providers: [MessageService]
 })
 export class AdminComponent implements OnInit {
   loading = false;
+  activeTabIndex: number = 0;
 
   // ACTIVE SECTION: 'lookup' | 'users' | null
   activeSection: 'lookup' | 'users' | null = null;
@@ -44,13 +46,14 @@ export class AdminComponent implements OnInit {
   userFormVisible = false;
   editingUser = false;
   editingUserId: any = null;
-  userColumns: any[] = []; // columns for users table
+  userColumns: any[] = [];
 
-  // lookup arrays for selects (if you need them)
+  // lookup arrays for selects
   departments: any[] = [];
   divisions: any[] = [];
   locations: any[] = [];
   categories: any[] = [];
+  locationList: any[] = [];
 
   tableList = [
     { label: 'Department', value: 'departments' },
@@ -74,14 +77,25 @@ export class AdminComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // initialize empty forms
     this.lookupForm = this.fb.group({});
     this.userForm = this.fb.group({});
+    this.loadLocations();
+  }
+
+  // --- TAB CHANGE HANDLER ---
+  onTabChange(newIndex: number) {
+    this.activeTabIndex = newIndex;
+    console.log('Tab changed to:', newIndex);
+    
+    if (newIndex === 0) {
+      this.setActiveSection('lookup');
+    } else if (newIndex === 1) {
+      this.setActiveSection('users');
+    }
   }
 
   // --- SECTION SELECTION ---
   setActiveSection(section: 'lookup' | 'users') {
-    // toggle: clicking an already-active section will clear selection (show both panels)
     if (this.activeSection === section) {
       this.activeSection = null;
       return;
@@ -105,6 +119,79 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  loadLocations() {
+    this.http.get<any>('http://localhost:3000/api/locations/allowed')
+      .subscribe({
+        next: (res) => {
+          console.log("Locations loaded:", res.data);
+          this.locationList = res.data || [];
+          console.log("Location List after assignment:", this.locationList);
+        },
+        error: () => {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load locations' });
+        }
+      });
+  }
+
+  /**
+   * Convert location IDs to location objects for multiSelect display
+   */
+  private convertLocationIdsToObjects(locationIds: any): any[] {
+    if (!locationIds) return [];
+
+    let ids: number[] = [];
+
+    // Handle string (comma-separated)
+    if (typeof locationIds === 'string') {
+      ids = locationIds.split(',').map((id: string) => Number(id.trim())).filter(id => !isNaN(id));
+    }
+    // Handle array
+    else if (Array.isArray(locationIds)) {
+      ids = locationIds.map((id: any) => Number(id)).filter(id => !isNaN(id));
+    }
+    // Handle single number
+    else if (typeof locationIds === 'number') {
+      ids = [locationIds];
+    }
+
+    console.log('Converted location IDs:', ids);
+    console.log('Available locations:', this.locationList);
+
+    // Convert IDs to location objects
+    if (ids.length > 0 && this.locationList && this.locationList.length > 0) {
+      const result = this.locationList.filter((loc: any) => ids.includes(loc.id));
+      console.log('Result location objects:', result);
+      return result;
+    }
+
+    return [];
+  }
+
+  /**
+   * Convert location objects back to IDs for API submission
+   */
+  private normalizeLocationIds(value: any): number[] {
+    if (!value) return [];
+
+    // If it's an array, extract IDs
+    if (Array.isArray(value)) {
+      return value.map(v => {
+        // If it's an object with id property (from multiSelect), extract id
+        if (typeof v === 'object' && v !== null && v.id) return Number(v.id);
+        // Otherwise assume it's already an ID
+        return Number(v);
+      });
+    }
+
+    // If it's a comma-separated string
+    if (typeof value === 'string') {
+      return value.split(',').map(v => Number(v.trim())).filter(id => !isNaN(id));
+    }
+
+    // Single value
+    return [Number(value)];
+  }
+
   loadLookupForSelectedTable() {
     console.log('Loading lookup for table:', this.selectedTable);
     if (!this.selectedTable) return;
@@ -115,16 +202,6 @@ export class AdminComponent implements OnInit {
     }).subscribe({
       next: ({ schema, rows }) => {
         const rawCols = Array.isArray(schema) ? schema : (schema && Array.isArray((schema as any).columns) ? (schema as any).columns : []);
-        // this.tableColumns = rawCols.map((c: any) => {
-        //   const name = c.column_name || c.name || c.column || '';
-        //   return {
-        //     name,
-        //     type: c.data_type || c.type || 'text',
-        //     nullable: (typeof c.is_nullable === 'string') ? (c.is_nullable === 'YES') : (typeof c.nullable === 'boolean' ? c.nullable : true),
-        //     default: c.column_default || c.default,
-        //     isPrimary: !!(c.column_name === 'id' || c.isPrimary || c.primary_key || (c.column_default && String(c.column_default).startsWith('nextval')))
-        //   };
-        // });
 
         const IGNORE_COLUMNS = ['created_at', 'updated_at'];
 
@@ -151,7 +228,6 @@ export class AdminComponent implements OnInit {
           })
           .filter((col: any) => !IGNORE_COLUMNS.includes(col.name));
 
-
         // rows normalization
         if (rows && Array.isArray((rows as any).rows)) this.tableData = (rows as any).rows;
         else if (Array.isArray(rows)) this.tableData = rows;
@@ -176,8 +252,15 @@ export class AdminComponent implements OnInit {
       if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
       let initial: any = '';
       const t = String(col.type || '').toLowerCase();
-      if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) initial = null;
-      else if (t.includes('bool')) initial = false;
+
+      // Initialize location_ids as empty array for multiSelect
+      if (col.name === 'location_ids') {
+        initial = [];
+      } else if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) {
+        initial = null;
+      } else if (t.includes('bool')) {
+        initial = false;
+      }
 
       if (col.name === this.lookupPrimaryKey) {
         group[col.name] = [{ value: initial, disabled: true }];
@@ -200,8 +283,43 @@ export class AdminComponent implements OnInit {
   openLookupEdit(row: any) {
     this.lookupEditing = true;
     this.lookupEditingId = row[this.lookupPrimaryKey];
-    if (this.lookupForm.get(this.lookupPrimaryKey)) this.lookupForm.get(this.lookupPrimaryKey)!.disable();
-    this.lookupForm.patchValue(row || {});
+
+    // Prepare edit data with location_ids conversion
+    const editData = { ...row };
+
+    // Convert location_ids to location objects for multiSelect
+    if (editData.location_ids) {
+      editData.location_ids = this.convertLocationIdsToObjects(editData.location_ids);
+    } else {
+      editData.location_ids = [];
+    }
+
+    // Rebuild the form with the edit data
+    const group: any = {};
+    this.tableColumns.forEach(col => {
+      const validators = [];
+      if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
+
+      const t = String(col.type || '').toLowerCase();
+      let value: any = editData[col.name] ?? null;
+
+      // Special handling for location_ids - ensure it's an array of objects
+      if (col.name === 'location_ids') {
+        value = Array.isArray(editData.location_ids) ? editData.location_ids : [];
+      }
+
+      if (col.name === this.lookupPrimaryKey) {
+        group[col.name] = [{ value: value, disabled: true }];
+      } else {
+        group[col.name] = [value, validators];
+      }
+    });
+
+    this.lookupForm = this.fb.group(group);
+
+    console.log('Rebuilt lookup form with values:', this.lookupForm.value);
+    console.log('Location_ids field value:', this.lookupForm.get('location_ids')?.value);
+
     setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
   }
 
@@ -212,8 +330,12 @@ export class AdminComponent implements OnInit {
       return;
     }
     const raw = this.lookupForm.getRawValue ? this.lookupForm.getRawValue() : {};
-    const payload = { ...raw };
-    console.log(payload)
+
+    const payload = {
+      ...raw,
+      location_ids: this.normalizeLocationIds(raw.location_ids)
+    };
+
     if (!this.lookupEditing) {
       if (this.lookupPrimaryKey in payload) delete payload[this.lookupPrimaryKey];
       this.userService.createTableRecord(this.selectedTable!, payload).subscribe({
@@ -277,9 +399,8 @@ export class AdminComponent implements OnInit {
           };
         });
         console.log('User Columns:', this.userColumns);
-        this.editingUser = true;
 
-        // rows normalization - support different shapes returned by getAllUsers()
+        // rows normalization
         if (!rows) this.users = [];
         else if (Array.isArray(rows)) this.users = rows;
         else if (rows.success && Array.isArray(rows.users)) {
@@ -290,17 +411,6 @@ export class AdminComponent implements OnInit {
 
         // build user form from userColumns
         this.buildUserFormFromColumns();
-        // optionally fetch lookup lists for selects
-        this.userService.getLookupData().subscribe({
-          next: (lk: any) => {
-            const data = lk?.data || lk || {};
-            this.departments = data.departments || [];
-            this.locations = data.locations || [];
-            this.divisions = data.divisions || [];
-            this.categories = data.categories || [];
-          },
-          error: () => { }
-        });
 
         this.loading = false;
       },
@@ -311,11 +421,9 @@ export class AdminComponent implements OnInit {
       }
     });
   }
-  viewUser(user: any) { }
 
   private buildUserFormFromColumns() {
     const group: any = {};
-    // create controls for common user columns only (avoid sensitive or computed columns)
     const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
     this.userColumns.forEach(col => {
       if (ignored.has(col.name)) return;
@@ -323,8 +431,16 @@ export class AdminComponent implements OnInit {
       if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
       const t = String(col.type || '').toLowerCase();
       let initial: any = '';
-      if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) initial = null;
-      else if (t.includes('bool')) initial = false;
+      
+      // Initialize location_ids as empty array for multiSelect
+      if (col.name === 'location_ids') {
+        initial = [];
+      } else if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) {
+        initial = null;
+      } else if (t.includes('bool')) {
+        initial = false;
+      }
+      
       group[col.name] = [initial, validators];
     });
     console.log('Building user form with controls:', Object.keys(group));
@@ -347,13 +463,41 @@ export class AdminComponent implements OnInit {
     this.userFormVisible = true;
     this.editingUser = true;
     this.editingUserId = user.id || user.user_id || user.uid;
-    // patch form with user's values for matching field names
-    const patch: any = {};
-    Object.keys(this.userForm.controls).forEach(k => {
-      // try several candidate properties on user object
-      patch[k] = user[k] ?? user[this.camelToSnake(k)] ?? user[this.snakeToCamel(k)] ?? user[k];
+
+    // Prepare edit data with location_ids conversion
+    const editData = { ...user };
+
+    // Convert location_ids to location objects for multiSelect
+    if (editData.location_ids) {
+      editData.location_ids = this.convertLocationIdsToObjects(editData.location_ids);
+    } else {
+      editData.location_ids = [];
+    }
+
+    // Rebuild the form with the edit data
+    const group: any = {};
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
+    this.userColumns.forEach(col => {
+      if (ignored.has(col.name)) return;
+      const validators = [];
+      if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
+
+      let value: any = editData[col.name] ?? null;
+
+      // Special handling for location_ids - ensure it's an array of objects
+      if (col.name === 'location_ids') {
+        value = Array.isArray(editData.location_ids) ? editData.location_ids : [];
+      }
+
+      group[col.name] = [value, validators];
     });
-    this.userForm.patchValue(patch);
+
+    this.userForm = this.fb.group(group);
+    this.userFormVisible = true;
+
+    console.log('Rebuilt user form with values:', this.userForm.value);
+    console.log('User location_ids field value:', this.userForm.get('location_ids')?.value);
+
     setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
   }
 
@@ -368,21 +512,16 @@ export class AdminComponent implements OnInit {
     }
     const payload = { ...this.userForm.value };
     console.log('Submitting user form, payload:', payload);
-    if (payload.location_ids && Array.isArray(payload.location_ids)) {
-      payload.location_ids = payload.location_ids.join(",");
+
+    // Normalize location_ids
+    if (payload.location_ids) {
+      payload.location_ids = this.normalizeLocationIds(payload.location_ids);
+    } else {
+      payload.location_ids = [];
     }
-    const convertpayload = (input: any) => {
-      console.log('Converting payload:', input);
-      return {
-        username: input.username,
-        role: input.role,
-        location_ids: input.location_ids.split(",").map(Number),
-        password: input.password
-      }
-    }
+
     if (this.editingUser && this.editingUserId) {
-      const convertedPayload = convertpayload(payload);
-      this.userService.updateUserAccess(this.editingUserId, convertedPayload).subscribe({
+      this.userService.updateUserAccess(this.editingUserId, payload).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'User updated' });
           this.loadUserSection();
@@ -394,16 +533,7 @@ export class AdminComponent implements OnInit {
         }
       });
     } else {
-      const convertpayload = (input: any) => {
-        return {
-          username: input.username,
-          role: input.role,
-          location_ids: input.location_ids.split(",").map(Number),
-          password: input.password
-        }
-      }
-      const convertedPayload = convertpayload(payload);
-      this.userService.addUserAccess(convertedPayload).subscribe({
+      this.userService.addUserAccess(payload).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Created', detail: 'User created' });
           this.loadUserSection();

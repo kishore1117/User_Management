@@ -50,9 +50,13 @@ export class UserDetailsComponent implements OnInit {
   loading = true;
   originalUser: any = {};
   selectedSoftware: any[] = [];
+  isPrinterSelected: boolean = false;
   softwareInputValue: string = '';
+  printer_id: number = 49;
+  selectedCategory: string = 'Other';
 
   // Lookup data
+  printer_type: any[] = [{ label: 'Network', value: 'NETWORK' }, { label: 'USB', value: 'USB' }];
   departments: any[] = [];
   divisions: any[] = [];
   locations: any[] = [];
@@ -73,6 +77,100 @@ export class UserDetailsComponent implements OnInit {
   warranties: any[] = [];
   purchaseFrom: any[] = [];
 
+  // Category-based field visibility mapping
+  categoryFieldMap: { [key: string]: { hardware: string[], network: string[], software: boolean } } = {
+    // Map category names to visible hardware, network, and software fields
+    'Desktop': {
+      hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
+      network: ['ip_address1'],
+      software: true
+    },
+    'Laptop': {
+      hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os'],
+      network: ['ip_address1', 'ip_address2'],
+      software: true
+    },
+    'Monitor': {
+      hardware: ['model', 'monitor_serial'],
+      network: [],
+      software: false
+    },
+    'Keyboard': {
+      hardware: ['model'],
+      network: [],
+      software: false
+    },
+    'Mouse': {
+      hardware: ['model'],
+      network: [],
+      software: false
+    },
+    'Firewall':{
+      hardware: ['model', 'processor','ram', 'hdd', 'os'],
+      network: ['ip_address1'],
+      software: false
+    },
+    'Printer': {
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: true
+    },
+    'Storage':{
+      hardware: ['model', 'processor','ram', 'hdd', 'os'],
+      network: ['ip_address1', 'ip_address2'],
+      software: false
+    },
+    'Server':{
+      hardware: ['model', 'processor','cpu_speed', 'ram', 'hdd', 'os'],
+      network: ['ip_address1', 'ip_address2'],
+      software: true
+    },
+    'IP Phone':{
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false
+    },
+    'CCTV':{
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false
+    },
+    'Biomatric':{
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false
+    },
+    'Network Switch':{
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false
+    } ,
+    'Router': {
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false
+    },
+    'Switch': {
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false
+    },
+    'Other': {
+      hardware: [],
+      network: ['ip_address1'],
+      software: true
+    },
+    'N/A':{
+      hardware: [],
+      network: ['ip_address1'],
+      software: false
+    },
+    'Instrumentation machines':{
+      hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
+      network: ['ip_address1', 'ip_address2'],
+      software: true
+    }
+  };
 
   // For autocomplete
   filteredSoftware: any[] = [];
@@ -91,7 +189,6 @@ export class UserDetailsComponent implements OnInit {
     this.userId = this.route.snapshot.paramMap.get('id');
     const role = localStorage.getItem('userRole');
     this.isAdmin = role === 'admin';
-    console.log(this.isAdmin)
     // Load lookup data and user data in parallel
     forkJoin({
       lookupRes: this.userService.getLookupData(),
@@ -143,12 +240,15 @@ export class UserDetailsComponent implements OnInit {
         this.loading = false;
       }
     });
+     this.listenToCategoryChanges();
   }
 
   private initForm() {
     this.userForm = this.fb.group({
       name: [''],
       hostname: [''],
+      serial_number: [''],
+      printer_type: [''],
       department_id: [''],
       division_id: [''],
       location_id: [''],
@@ -181,6 +281,14 @@ export class UserDetailsComponent implements OnInit {
   onSoftwareInputChange(value: string) {
     this.softwareInputValue = value;
     this.filterSoftware({ query: value });
+  }
+
+  listenToCategoryChanges() {
+    this.userForm.get('category_id')?.valueChanges.subscribe(catId => {
+      if(catId === this.printer_id){
+        this.isPrinterSelected = true;
+      }
+    });
   }
 
   private syncSoftwareControls() {
@@ -225,8 +333,14 @@ export class UserDetailsComponent implements OnInit {
       ip_address2: this.user.ip_address2,
       floor: this.user.floor,
       usb: this.user.usb,
-      asset_tag: this.user.asset_tag
+      asset_tag: this.user.asset_tag,
+      serial_number: this.user.serial_number,
+      printer_type: this.user.printer_type
     };
+
+    if(this.user.category_name === 'Printer'){
+      this.isPrinterSelected = true;
+    }
 
     // Find IDs from names in lookup data
     if (this.user.department_name) {
@@ -461,6 +575,50 @@ export class UserDetailsComponent implements OnInit {
   enableEdit() {
     this.isEditing = true;
     this.ensureFormState();
+  }
+
+  // Get visible hardware fields based on selected category
+  getVisibleHardwareFields(): string[] {
+    const selectedCategoryId = this.userForm.get('category_id')?.value;
+    const selectedCategory = this.categories.find(cat => cat.id === selectedCategoryId);
+    const categoryName = selectedCategory?.name || 'Other';
+    return this.categoryFieldMap[categoryName]?.hardware || [];
+  }
+
+  // Get visible network fields based on selected category
+  getVisibleNetworkFields(): string[] {
+    const selectedCategoryId = this.userForm.get('category_id')?.value;
+    const selectedCategory = this.categories.find(cat => cat.id === selectedCategoryId);
+    const categoryName = selectedCategory?.name || 'Other';
+    return this.categoryFieldMap[categoryName]?.network || [];
+  }
+
+  // Check if a specific hardware field should be visible
+  isHardwareFieldVisible(fieldName: string): boolean {
+    return this.getVisibleHardwareFields().includes(fieldName);
+  }
+
+  // Check if a specific network field should be visible
+  isNetworkFieldVisible(fieldName: string): boolean {
+    return this.getVisibleNetworkFields().includes(fieldName);
+  }
+
+  // Check if hardware section should be shown
+  hasVisibleHardwareFields(): boolean {
+    return this.getVisibleHardwareFields().length > 0;
+  }
+
+  // Check if network section should be shown
+  hasVisibleNetworkFields(): boolean {
+    return this.getVisibleNetworkFields().length > 0;
+  }
+
+  // Check if software section should be shown
+  shouldShowSoftware(): boolean {
+    const selectedCategoryId = this.userForm.get('category_id')?.value;
+    const selectedCategory = this.categories.find(cat => cat.id === selectedCategoryId);
+    const categoryName = selectedCategory?.name || 'Other';
+    return this.categoryFieldMap[categoryName]?.software || false;
   }
 
   goBack() {

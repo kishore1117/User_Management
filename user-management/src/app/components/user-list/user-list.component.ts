@@ -46,7 +46,9 @@ export class UserListComponent implements OnInit {
 
   // Status filters
   ipStatuses: any[] = [];
+  Categorys: any[] = [];
   selectedStatus = '';
+  selectedCategory = '';
 
   constructor(private userService: UserService, private router: Router) {}
 
@@ -57,6 +59,7 @@ export class UserListComponent implements OnInit {
 
       this.prepareDepartments();
       this.prepareStatuses();
+      this.prepareCategories();
 
       this.loading = false;
     });
@@ -75,8 +78,6 @@ export class UserListComponent implements OnInit {
       label: d,
       value: d,
     }));
-
-    console.log('Department Options:', this.departments);
   }
   addUser(){
      this.router.navigate(['/add']);
@@ -112,6 +113,21 @@ export class UserListComponent implements OnInit {
     }));
   }
 
+  prepareCategories() {
+    const unique = new Set<string>();
+
+    this.users.forEach((user) => {
+      if (user.category_name) {
+        unique.add(user.category_name);
+      }
+    });
+
+    this.Categorys = Array.from(unique).map((c) => ({
+      label: c,
+      value: c,
+    }));
+  }
+
   filterByDepartment(selectedDepartments: any[]) {
     if (!selectedDepartments || selectedDepartments.length === 0) {
       this.filteredUsers = [...this.users];
@@ -136,6 +152,17 @@ export class UserListComponent implements OnInit {
       (user) =>
         (user.name && user.name === 'NA' && status === 'Available IP') ||
         (!user.name || user.name !== 'NA') && status === 'Reserved IP'
+    );
+    this.users = this.filteredUsers;
+  }
+
+  filterByCategory(category: string) {
+    if (!category) {
+      this.filteredUsers = [...this.users];
+      return;
+    }
+    this.filteredUsers = this.users.filter(
+      (user) => user.category_name === category
     );
     this.users = this.filteredUsers;
   }

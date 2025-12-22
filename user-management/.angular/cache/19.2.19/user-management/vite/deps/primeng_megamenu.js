@@ -3,30 +3,22 @@ import {
   TooltipModule
 } from "./chunk-6L4T6VFJ.js";
 import {
-  RouterLink,
-  RouterLinkActive,
-  RouterModule
-} from "./chunk-J5U5X6U4.js";
-import {
   zindexutils
 } from "./chunk-NMOYQVAO.js";
 import {
   Badge,
   BadgeModule
 } from "./chunk-DYUG3JFZ.js";
+import "./chunk-CVKGUHRC.js";
 import {
   Ripple
 } from "./chunk-LPAM3Y3V.js";
-import "./chunk-CVKGUHRC.js";
 import {
   AngleDownIcon,
   AngleRightIcon,
   BarsIcon
 } from "./chunk-XO4QTO3U.js";
 import "./chunk-CCRBAVUX.js";
-import "./chunk-YRXHQ6N4.js";
-import "./chunk-ZLHXMVBC.js";
-import "./chunk-ZC3SGFJN.js";
 import {
   BaseComponent,
   PARENT_INSTANCE
@@ -52,6 +44,14 @@ import {
   s3 as s2,
   z
 } from "./chunk-FZI3XOAI.js";
+import {
+  RouterLink,
+  RouterLinkActive,
+  RouterModule
+} from "./chunk-GZWHH6MU.js";
+import "./chunk-OKPEKIVQ.js";
+import "./chunk-ZC3SGFJN.js";
+import "./chunk-ZLHXMVBC.js";
 import {
   CommonModule,
   NgForOf,

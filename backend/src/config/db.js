@@ -2,21 +2,30 @@ import pkg from "pg";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from 'dotenv';
 
+dotenv.config();
 const { Pool } = pkg;
 
 // Get __dirname equivalent in ESM
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename)
 
+
+// const pool = new Pool({
+//   user: process.env.IP_USER,
+//   host: process.env.IP_HOST,
+//   database: process.env.IP_DATABASE,
+//   password: String(process.env.IP_PASSWORDS),
+//   port: parseInt(process.env.IP_PORT, 10),  // ensure port is a number
+// });
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'userInfo',
+  database: 'postgres',
   password: 'admin',
-  port: 5433,
+  port: 5432,
 });
-
 export async function initDB() {
   try {
     // Read schema.sql content

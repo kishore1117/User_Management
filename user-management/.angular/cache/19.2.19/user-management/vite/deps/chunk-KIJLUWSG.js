@@ -5,9 +5,6 @@ import {
   Fluid
 } from "./chunk-EV3CQRPZ.js";
 import {
-  NgControl
-} from "./chunk-FPHGACWK.js";
-import {
   PARENT_INSTANCE
 } from "./chunk-GJ35ZOEU.js";
 import {
@@ -16,6 +13,9 @@ import {
 import {
   Bind
 } from "./chunk-2D5KOQHT.js";
+import {
+  NgControl
+} from "./chunk-FPHGACWK.js";
 import {
   Directive,
   HostListener,
@@ -272,4 +272,4 @@ export {
   InputText,
   InputTextModule
 };
-//# sourceMappingURL=chunk-QLVFKOT5.js.map
+//# sourceMappingURL=chunk-KIJLUWSG.js.map

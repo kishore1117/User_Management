@@ -1,5 +1,5 @@
 import db from '../config/db.js';
-const { pool, initDB } = db; 
+const { pool, initDB } = db;
 import { generateToken } from "../utils/jwtHelper.js";
 
 // 🟢 Create new user_access
@@ -140,11 +140,11 @@ export const updateUserAccess = async (req, res) => {
         [finalLocationIds]
       );
 
-      if (check.rows.length !== finalLocationIds.length) {
-        return res
-          .status(400)
-          .json({ message: "One or more location IDs are invalid" });
-      }
+      // if (check.rows.length !== finalLocationIds.length) {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "One or more location IDs are invalid" });
+      // }
     }
 
     const query = `
@@ -203,17 +203,22 @@ export const deleteUserAccess = async (req, res) => {
 export const getAllUserAccess = async (req, res) => {
   try {
     const query = `
-      SELECT 
-        ua.id,
-        ua.username,
-        ua.role,
-        ua.location_ids,
-        ua.password,
-        ARRAY_AGG(l.name) AS location_names
-      FROM user_access ua
-      LEFT JOIN locations l ON l.id = ANY(ua.location_ids)
-      GROUP BY ua.id
-      ORDER BY ua.id;
+     SELECT 
+  ua.id,
+  ua.username,
+  ua.role,
+  ARRAY_AGG(DISTINCT l.name) AS location_ids,
+  ua.password
+FROM user_access ua
+LEFT JOIN locations l 
+  ON l.id = ANY(ua.location_ids)
+GROUP BY 
+  ua.id,
+  ua.username,
+  ua.role,
+  ua.password
+ORDER BY ua.id;
+
     `;
     const result = await pool.query(query);
     res.json(result.rows);

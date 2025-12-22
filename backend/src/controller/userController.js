@@ -8,16 +8,25 @@ const { pool, initDB } = db;
 
 export const addUser = async (req, res) => {
   try {
-    const { location_id } = req.body;
-    const userLocations = req.user?.location_ids || [];
+    const { ip_address1 } = req.body;
+    if (ip_address1 ) {
+      const ipCheck = await pool.query(
+        `
+        SELECT id
+        FROM users
+        WHERE ip_address1 = $1
+        LIMIT 1
+        `,
+        [ip_address1 || null]
+      );
 
-    // ✅ Check if user has access to the target location
-    // if (userLocations.includes(location_id) || req.user.role == 'user') {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "❌ You don’t have permission to create a user in this location."
-    //   });
-    // }
+      if (ipCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "❌ IP address already exists in the system"
+        });
+      }
+    }
 
     // ✅ Validate hierarchy integrity
     await validateHierarchy(
@@ -26,6 +35,7 @@ export const addUser = async (req, res) => {
       req.body.division_id,
       req.body.category_id
     );
+
 
     const result = await userService.addUser(req.body);
     res.json({ success: true, message: "✅ User created successfully", user: result });
@@ -177,7 +187,8 @@ export const updateUser = async (req, res) => {
 
 export const getLookupData = async (req, res) => {
   try {
-    const data = await userService.getLookupData();
+    console.log("Fetching lookup data for user:", req.user);
+    const data = await userService.getLookupData(req.user);
     res.status(200).json({ success: true, data });
   } catch (error) {
     console.log(req.params);

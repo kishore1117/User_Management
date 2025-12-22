@@ -8,9 +8,9 @@
     <div class="header-actions">
       <p-button label="Add User" (click)="addUser()" icon="pi pi-plus" severity="success"></p-button>
       <p-button label="Export" (click)="exportUsers()" icon="pi pi-download" severity="info"></p-button>
-      <p-button label="Upload" (click)="uploadUsers()"  icon="pi pi-upload"  severity="info"></p-button>
+      <p-button label="Upload" (click)="uploadUsers()" icon="pi pi-upload" severity="info"></p-button>
     </div>
-  </div>    
+  </div>
 
   <!-- Table Card -->
   <div class="table-card">
@@ -29,19 +29,24 @@
         <tr class="filter-row">
           <th>
             <p-columnFilter type="text" field="name" placeholder="Search name..." ariaLabel="Filter Name"
-              filterOn="input"></p-columnFilter>
+              [showMenu]="false" filterOn="input"></p-columnFilter>
           </th>
           <th>
-            <p-columnFilter type="text" field="hostname" placeholder="Search hostname..."
+            <p-columnFilter type="text" field="hostname" placeholder="Search hostname..." [showMenu]="false"
               ariaLabel="Filter hostname" filterOn="input"></p-columnFilter>
+          </th>
+
+          <th>
+            <p-columnFilter type="text" field="ip_address1" placeholder="Search IP Address 1..." [showMenu]="false"
+              ariaLabel="Filter IP Address 1" filterOn="input"></p-columnFilter>
           </th>
           <th>
             <p-columnFilter field="department_name" matchMode="in" [showMenu]="false">
               <ng-template #filter let-value let-filter="filterCallback">
                 <p-multiselect [(ngModel)]="selectedDepartments" [options]="departments" optionLabel="label"
                   placeholder="All departments" [appendTo]="'body'" [showClear]="true"
-                  (onChange)="filterByDepartment($event.value)" (onClear)="clearFilter()"
-                  styleClass="w-full" [panelStyle]="{ minWidth: '200px' }">
+                  (onChange)="filterByDepartment($event.value)" (onClear)="clearFilter()" styleClass="w-full"
+                  [panelStyle]="{ minWidth: '200px' }">
                 </p-multiselect>
               </ng-template>
             </p-columnFilter>
@@ -49,9 +54,8 @@
           <th>
             <p-columnFilter field="status" matchMode="equals" [showMenu]="false">
               <ng-template #filter let-value let-filter="filterCallback">
-                <p-select [(ngModel)]="selectedStatus" [options]="ipStatuses"
-                  (onChange)="filterByStatus($event.value)" (onClear)="clearFilter()"
-                  placeholder="All statuses" [showClear]="true" styleClass="w-full">
+                <p-select [(ngModel)]="selectedStatus" [options]="ipStatuses" (onChange)="filterByStatus($event.value)"
+                  (onClear)="clearFilter()" placeholder="All statuses" [showClear]="true" styleClass="w-full">
                   <ng-template let-option #item>
                     <p-tag [value]="option.value" [severity]="getSeverity(option.value)"></p-tag>
                   </ng-template>
@@ -59,7 +63,21 @@
               </ng-template>
             </p-columnFilter>
           </th>
-          <th colspan="5" class="filter-spacer"></th>
+          <th>
+            <p-columnFilter field="category_name" matchMode="in" [showMenu]="false">
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-select [(ngModel)]="selectedCategory" [options]="Categorys"
+                  (onChange)="filterByCategory($event.value)" (onClear)="clearFilter()" placeholder="All categories"
+                  [showClear]="true" styleClass="w-full">
+                  <ng-template let-option #item>
+                    <p-tag [value]="option.value" class="category-label"></p-tag>
+                  </ng-template>
+                </p-select>
+              </ng-template>
+            </p-columnFilter>
+          </th>
+
+          <!-- <th colspan="5" class="filter-spacer"></th> -->
         </tr>
 
         <!-- Header Row -->
@@ -125,7 +143,7 @@
           </td>
           <td class="col-department">
             <div class="cell-content">
-              <span class="badge-dept">{{ row.department_name }}</span>
+              <span class="badge-dept">{{ row.department_name || '—'}}</span>
             </div>
           </td>
           <td class="col-status">

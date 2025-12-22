@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private baseUrl = 'http://localhost:3000/api/users';
-  private lookupUrl = 'http://localhost:3000/api/lookupData';
-  private userAccessUrl = 'http://localhost:3000/api/user-access';
+  private baseUrl = `${environment.apiBaseUrl}/users`;
+  private lookupUrl = `${environment.apiBaseUrl}/lookupData`;
+  private userAccessUrl = `${environment.apiBaseUrl}/user-access`;
 
   constructor(private http: HttpClient) {}
 
@@ -33,7 +33,7 @@ export class UserService {
   }
 
   exportUsers(): Observable<Blob> {
-    return this.http.get(`http://localhost:3000/api/download`, { responseType: 'blob' });
+    return this.http.get(`${environment.apiBaseUrl}/download`, { responseType: 'blob' });
   }
 
   findUser(criteria: any): Observable<any> {

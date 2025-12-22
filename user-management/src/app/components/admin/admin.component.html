@@ -1,231 +1,444 @@
-<div class="container">
-    <p-tabs value="0">
-        <p-tablist>
-            <p-tab value="0">Lookup</p-tab>
-            <p-tab value="1">Users</p-tab>
-            <p-tab value="2">Upload</p-tab>
-        </p-tablist>
-        <p-tabpanels>
-            <p-tabpanel value="0">
-                <div class="admin-header">
-                    <div class="admin-left">
-                        <h2>Lookup / Admin Management</h2>
-                        <p class="subtitle">Manage lookup tables and their records</p>
-                    </div>
+<div class="admin-container">
+  <!-- Header -->
+  <div class="admin-header">
+    <div class="header-content">
+      <h1 class="header-title">Admin Management</h1>
+      <p class="header-subtitle">Manage lookup tables, users, and system configuration</p>
+    </div>
+  </div>
 
-                    <div class="admin-controls">
-                        <label for="tableSelect" class="form-label">Select Table</label>
-                        <select id="tableSelect" [(ngModel)]="selectedTable"
-                            (change)="onLookupTableSelect(tableSelect.value)" #tableSelect class="p-inputtext">
-                            <option value="">-- Select table --</option>
-                            <option *ngFor="let t of tableList" [value]="t.value">{{ t.label }}</option>
-                        </select>
-                        <button pButton type="button" (click)="setActiveSection('lookup'); openLookupAdd()"
-                            label="Add New" class="btn btn-primary" [disabled]="!selectedTable"></button>
-                        <button pButton type="button" (click)="setActiveSection('lookup')" label="Open Lookup"
-                            class="btn btn-ghost"></button>
-                    </div>
+  <!-- Tab Navigation -->
+  <p-tabs  class="admin-tabs">
+    <!-- <p-tablist>
+      <p-tab value="0">
+        <ng-template pTemplate="header">
+          <i class="pi pi-database"></i>
+          <span class="ml-2">
+            Lookup Tables
+        </span>
+        </ng-template>
+      </p-tab>
+      <p-tab value="1">
+        <ng-template pTemplate="header">
+          <i class="pi pi-users"></i>
+          <span class="ml-2">User Management</span>
+        </ng-template>
+      </p-tab>
+    </p-tablist> -->
+
+    <p-tabpanels>
+      <!-- TAB 1: LOOKUP TABLES -->
+      <p-tabpanel value="0">
+        <div class="tab-content">
+          <!-- Lookup Header -->
+          <div class="section-header">
+            <div class="header-info">
+              <h2 class="section-title">
+                <i class="pi pi-database"></i>
+                Lookup Tables Management
+              </h2>
+              <p class="section-subtitle">Create and manage system lookup tables</p>
+            </div>
+
+            <div class="header-controls">
+              <div class="control-group">
+                <label for="tableSelect" class="control-label">Select Table:</label>
+                <select id="tableSelect" [(ngModel)]="selectedTable" 
+                  (change)="onLookupTableSelect(tableSelect.value)" 
+                  #tableSelect class="table-select">
+                  <option value="">-- Choose a table --</option>
+                  <option *ngFor="let t of tableList" [value]="t.value">{{ t.label }}</option>
+                </select>
+              </div>
+
+              <div class="control-buttons">
+                <button class="btn btn-secondary" 
+                  (click)="setActiveSection('lookup'); openLookupAdd()"
+                  [disabled]="!selectedTable">
+                  <i class="pi pi-plus"></i>
+                  <span>Add Record</span>
+                </button>
+                <button class="btn btn-primary" 
+                  (click)="setActiveSection('lookup')"
+                  [disabled]="!selectedTable">
+                  <i class="pi pi-eye"></i>
+                  <span>View Records</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lookup Records Table -->
+          <div class="records-section" *ngIf="activeSection === 'lookup' || activeSection === null">
+            <div class="records-header">
+              <div class="records-info">
+                <span class="record-stat">
+                  <strong>{{ tableColumns.length }}</strong> columns
+                </span>
+                <span class="record-stat separator">•</span>
+                <span class="record-stat">
+                  <strong>{{ tableData.length }}</strong> records
+                </span>
+              </div>
+
+              <div class="records-controls">
+                <div class="search-box">
+                  <i class="pi pi-search"></i>
+                  <input type="text" placeholder="Search records..." 
+                    [(ngModel)]="tableSearch" 
+                    [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                    class="search-input">
                 </div>
-                <!-- PANEL: Lookup -->
-                <section *ngIf="!activeSection === null || activeSection === 'lookup'">
-                    <div class="panel-title">
-                        <h3>Lookup: {{ selectedTable || '—' }}</h3>
-                        <small *ngIf="activeSection !== 'lookup'">(disabled)</small>
-                    </div>
+                <button class="btn btn-icon" 
+                  (click)="loadLookupForSelectedTable()"
+                  [disabled]="activeSection !== 'lookup' && activeSection !== null">
+                  <i class="pi pi-refresh"></i>
+                </button>
+              </div>
+            </div>
 
-                    <!-- Existing list -->
-                    <div class="data-table-wrap card">
-                        <div class="page-header">
-                            <div>
-                                <strong>{{ tableColumns.length }} columns</strong>
-                                <span class="muted"> • </span>
-                                <strong>{{ tableData.length }}</strong> records
-                            </div>
+            <!-- Data Table -->
+            <div class="table-wrapper" *ngIf="tableData?.length; else emptyRecords">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th *ngFor="let col of tableColumns" class="table-header">
+                      {{ col.name | titlecase }}
+                    </th>
+                    <th class="table-header">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of tableData | slice:0:100" class="table-row">
+                    <td *ngFor="let col of tableColumns" class="table-cell">
+                      <span class="cell-value">{{ row[col.name] }}</span>
+                    </td>
+                    <td class="table-cell actions-cell">
+                      <button class="action-btn edit-btn" 
+                        (click)="openLookupEdit(row)"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        title="Edit">
+                        <i class="pi pi-pencil"></i>
+                      </button>
+                      <button class="action-btn delete-btn" 
+                        (click)="deleteLookup(row)"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        title="Delete">
+                        <i class="pi pi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-                            <div class="controls">
-                                <input pInputText placeholder="Search..." [(ngModel)]="tableSearch" class="p-inputtext"
-                                    [disabled]="activeSection !== 'lookup'" />
-                                <button pButton type="button" label="Reload" (click)="loadLookupForSelectedTable()"
-                                    [disabled]="activeSection !== 'lookup'"></button>
-                            </div>
-                        </div>
+            <ng-template #emptyRecords>
+              <div class="empty-state">
+                <i class="pi pi-inbox"></i>
+                <p>No records found for this table</p>
+              </div>
+            </ng-template>
+          </div>
 
-                        <div *ngIf="tableData?.length; else emptyLookup">
-                            <table class="p-table p-component">
-                                <thead>
-                                    <tr>
-                                        <th *ngFor="let col of tableColumns">{{ col.name | titlecase }}</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr *ngFor="let row of tableData | slice:0:100">
-                                        <td *ngFor="let col of tableColumns">{{ row[col.name] }}</td>
-                                        <td>
-                                            <button pButton type="button" icon="pi pi-pencil" class="p-button-text"
-                                                (click)="openLookupEdit(row)"
-                                                [disabled]="activeSection !== 'lookup'"></button>
-                                            <button pButton type="button" icon="pi pi-trash"
-                                                class="p-button-text p-button-danger" (click)="deleteLookup(row)"
-                                                [disabled]="activeSection !== 'lookup'"></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+          <!-- Lookup Form -->
+          <div class="form-section" id="lookup-form" 
+            [class.form-disabled]="activeSection !== 'lookup' && activeSection !== null">
+            <div class="form-header">
+              <h3 class="form-title">
+                {{ lookupEditing ? 'Edit' : 'Add New' }} {{ selectedTable | titlecase }}
+              </h3>
+              <p class="form-subtitle">
+                {{ lookupEditing ? 'Update the record details below' : 'Fill in the details to create a new record' }}
+              </p>
+            </div>
 
-                        <ng-template #emptyLookup>
-                            <div class="p-4">
-                                <p>No records found for this table.</p>
-                            </div>
-                        </ng-template>
-                    </div>
+            <form [formGroup]="lookupForm" (ngSubmit)="submitLookup()" class="dynamic-form">
+              <div class="form-grid">
+                <ng-container *ngFor="let col of tableColumns">
+                  <div class="form-group" 
+                    *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
+                    <label class="form-label">
+                      {{ col.name | titlecase }}
+                      <span *ngIf="!col.nullable && col.name !== lookupPrimaryKey" class="required">*</span>
+                    </label>
 
-                    <!-- Add / Edit form -->
-                    <div id="lookup-form" class="form-panel" [class.form-disabled]="activeSection !== 'lookup'">
-                        <h4>{{ lookupEditing ? 'Edit' : 'Add' }} {{ selectedTable }}</h4>
-                        <form [formGroup]="lookupForm" (ngSubmit)="submitLookup()">
-                            <div class="form-grid">
-                                <ng-container *ngFor="let col of tableColumns">
-                                <div class="form-group"
-                                *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
-                                    <label>{{ col.name | titlecase }}</label>
-                                    <ng-container [ngSwitch]="(col.type || 'text')">
-                                        <input *ngSwitchCase="'integer'" pInputText type="number"
-                                            [formControlName]="col.name"
-                                            [disabled]="activeSection !== 'lookup' || (col.name === lookupPrimaryKey)" />
-                                        <input *ngSwitchCase="'text'" pInputText [formControlName]="col.name"
-                                            [disabled]="activeSection !== 'lookup'" />
-                                        <input *ngSwitchDefault pInputText [formControlName]="col.name"
-                                            [disabled]="activeSection !== 'lookup'" />
-                                    </ng-container>
-                                </div>
-                                </ng-container>
+                    <ng-container [ngSwitch]="col.name">
+                      <!-- LOCATION IDS MULTISELECT -->
+                      <p-multiSelect *ngSwitchCase="'location_ids'"
+                        [options]="locationList"
+                        optionLabel="name"
+                        optionValue="id"
+                        formControlName="location_ids"
+                        placeholder="Select Locations"
+                        display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-multiSelect>
 
-                            </div>
+                      <!-- INTEGER INPUT -->
+                      <input *ngSwitchCase="'integer'" 
+                        type="number"
+                        pInputText
+                        [formControlName]="col.name"
+                        [disabled]="(activeSection !== 'lookup' && activeSection !== null) || col.name === lookupPrimaryKey"
+                        placeholder="Enter number"
+                        class="form-control">
 
-                            <div class="form-actions">
-                                <button pButton type="submit" class="btn btn-primary"
-                                    [disabled]="activeSection !== 'lookup' || lookupForm.invalid">{{ lookupEditing ?
-                                    'Update' :
-                                    'Create' }}</button>
-                                <button pButton type="button" class="btn btn-ghost" label="Cancel"
-                                    (click)="openLookupAdd()" [disabled]="activeSection !== 'lookup'"></button>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-            </p-tabpanel>
-            <p-tabpanel value="1">
-                <!-- User header -->
-                <div class="user-header">
-                    <div class="user-left">
-                        <h2>User Management</h2>
-                        <p class="subtitle">Manage system users inline</p>
-                    </div>
-                    <div class="admin-controls">
-                        <button pButton type="button" (click)="setActiveSection('users')" icon="pi pi-users"
-                            label="View Users" class="btn btn-ghost"></button>
-                        <button pButton type="button" (click)="setActiveSection('users'); openUserAddInline()"
-                            label="Add User" class="btn btn-primary"></button>
-                    </div>
+                      <!-- TEXT INPUT (DEFAULT) -->
+                      <input *ngSwitchDefault
+                        type="text"
+                        pInputText
+                        [formControlName]="col.name"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        placeholder="Enter value"
+                        class="form-control">
+                    </ng-container>
+
+                    <small *ngIf="lookupForm.get(col.name)?.hasError('required') && lookupForm.get(col.name)?.touched" 
+                      class="error-message">
+                      {{ col.name | titlecase }} is required
+                    </small>
+                  </div>
+                </ng-container>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="(activeSection !== 'lookup' && activeSection !== null) || lookupForm.invalid">
+                  <i [class]="lookupEditing ? 'pi pi-check' : 'pi pi-plus'"></i>
+                  <span>{{ lookupEditing ? 'Update Record' : 'Create Record' }}</span>
+                </button>
+                <button type="button" 
+                  class="btn btn-secondary"
+                  (click)="openLookupAdd()"
+                  [disabled]="activeSection !== 'lookup' && activeSection !== null">
+                  <i class="pi pi-times"></i>
+                  <span>Cancel</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </p-tabpanel>
+
+      <!-- TAB 2: USER MANAGEMENT -->
+      <p-tabpanel value="1">
+        <div class="tab-content">
+          <!-- Users Header -->
+          <div class="section-header">
+            <div class="header-info">
+              <h2 class="section-title">
+                <i class="pi pi-users"></i>
+                User Access Management
+              </h2>
+              <p class="section-subtitle">Manage user accounts and permissions</p>
+            </div>
+
+            <div class="header-controls">
+              <div class="control-buttons ml-auto">
+                <button class="btn btn-secondary" 
+                  (click)="setActiveSection('users'); openUserAddInline()">
+                  <i class="pi pi-plus"></i>
+                  <span>Add User</span>
+                </button>
+                <button class="btn btn-primary" 
+                  (click)="setActiveSection('users')">
+                  <i class="pi pi-eye"></i>
+                  <span>View Users</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Records Table -->
+          <div class="records-section" *ngIf="activeSection === 'users' || activeSection === null">
+            <div class="records-header">
+              <div class="records-info">
+                <span class="record-stat">
+                  <i class="pi pi-users"></i>
+                  <strong>{{ users.length }}</strong> users
+                </span>
+              </div>
+
+              <div class="records-controls">
+                <div class="search-box">
+                  <i class="pi pi-search"></i>
+                  <input type="text" placeholder="Search users..." 
+                    [(ngModel)]="userSearch"
+                    [disabled]="activeSection !== 'users' && activeSection !== null"
+                    class="search-input">
                 </div>
-                <!-- PANEL: Users -->
-                <section *ngIf="!activeSection === null || activeSection === 'users'">
-                    <div class="panel-title">
-                        <h3>Users</h3>
-                        <small *ngIf="activeSection !== 'users'"> (disabled)</small>
-                    </div>
+                <button class="btn btn-icon" 
+                  (click)="loadUserSection()"
+                  [disabled]="activeSection !== 'users' && activeSection !== null">
+                  <i class="pi pi-refresh"></i>
+                </button>
+              </div>
+            </div>
 
-                    <div class="data-table-wrap card">
-                        <div class="page-header">
-                            <div>
-                                <strong>Users</strong>
-                                <span class="muted"> • </span>
-                                <strong>{{ users.length }}</strong>
-                            </div>
-                            <div class="controls">
-                                <input pInputText placeholder="Search users..." [(ngModel)]="userSearch"
-                                    class="p-inputtext" [disabled]="activeSection !== 'users'" />
-                                <button pButton type="button" label="Reload" (click)="loadUserSection()"
-                                    [disabled]="activeSection !== 'users'"></button>
-                                <button pButton type="button" label="Add Inline" (click)="openUserAddInline()"
-                                    [disabled]="activeSection !== 'users'"></button>
-                            </div>
-                        </div>
-                        <div *ngIf="this.userColumns.length; else emptyUsers">
-                            <table class="p-table p-component">
-                                <thead>
-                                    <tr>
-                                        <td *ngFor="let col of userColumns">{{ col.name | titlecase }}</td>
-                                        <td>Actions</td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr *ngFor="let row of users | slice:0:200">
-                                        <td *ngFor="let col of userColumns">{{ row[col.name] }}</td>
-                                        <td>
-                                            <button pButton type="button" icon="pi pi-pencil" class="p-button-text"
-                                                (click)="openUserEditInline(row)"
-                                                [disabled]="activeSection !== 'users'"></button>
-                                            <button pButton type="button" icon="pi pi-trash"
-                                                class="p-button-text p-button-danger" (click)="deleteUserInline(row)"
-                                                [disabled]="activeSection !== 'users'"></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+            <!-- Users Table -->
+            <div class="table-wrapper" *ngIf="userColumns.length; else emptyUsers">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th *ngFor="let col of userColumns" class="table-header">
+                      {{ col.name | titlecase }}
+                    </th>
+                    <th class="table-header">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of users | slice:0:200" class="table-row">
+                    <td *ngFor="let col of userColumns" class="table-cell">
+                      <span class="cell-value">{{ row[col.name] }}</span>
+                    </td>
+                    <td class="table-cell actions-cell">
+                      <button class="action-btn edit-btn" 
+                        (click)="openUserEditInline(row)"
+                        [disabled]="activeSection !== 'users' && activeSection !== null"
+                        title="Edit">
+                        <i class="pi pi-pencil"></i>
+                      </button>
+                      <button class="action-btn delete-btn" 
+                        (click)="deleteUserInline(row)"
+                        [disabled]="activeSection !== 'users' && activeSection !== null"
+                        title="Delete">
+                        <i class="pi pi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-                        </div>
-                        <ng-template #emptyUsers>
-                            <div class="p-4">
-                                <p>No users found.</p>
-                            </div>
-                        </ng-template>
+            <ng-template #emptyUsers>
+              <div class="empty-state">
+                <i class="pi pi-inbox"></i>
+                <p>No users found in the system</p>
+              </div>
+            </ng-template>
+          </div>
 
-                    </div>
+          <!-- User Form -->
+          <div class="form-section" id="user-inline-form" 
+            [class.form-disabled]="activeSection !== 'users' && activeSection !== null">
+            <div class="form-header">
+              <h3 class="form-title">
+                {{ editingUser ? 'Edit User' : 'Add New User' }}
+              </h3>
+              <p class="form-subtitle">
+                {{ editingUser ? 'Update user information and permissions' : 'Create a new user account' }}
+              </p>
+            </div>
 
-                    <!-- Inline user form -->
-                    <div id="user-inline-form" class="form-panel" [class.form-disabled]="activeSection !== 'users'">
-                        <h4>{{ editingUser ? 'Edit User' : 'Add User' }}</h4>
-                        <form [formGroup]="userForm" (ngSubmit)="submitUserInline()">
-                            <div class="form-grid">
-                                <ng-container *ngFor="let col of userColumns">
-                                    <div class="form-group"
-                                        *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
-                                        <label>{{ col.name | titlecase }}</label>
-                                        <ng-container [ngSwitch]="(col.type || 'text')">
-                                            <input *ngSwitchCase="'integer'" pInputText type="number"
-                                                [formControlName]="col.name" [disabled]="activeSection !== 'users'" />
-                                            <input *ngSwitchCase="'text'" pInputText [formControlName]="col.name"
-                                                [disabled]="activeSection !== 'users'" />
-                                            <input *ngSwitchDefault pInputText [formControlName]="col.name"
-                                                [disabled]="activeSection !== 'users'" />
-                                        </ng-container>
-                                    </div>
-                                </ng-container>
-                            </div>
+            <form [formGroup]="userForm" (ngSubmit)="submitUserInline()" class="dynamic-form">
+              <div class="form-grid">
+                <ng-container *ngFor="let col of userColumns">
+                  <div class="form-group" 
+                    *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
+                    <label class="form-label">
+                      {{ col.name | titlecase }}
+                      <span *ngIf="!col.nullable" class="required">*</span>
+                    </label>
 
-                            <div class="form-actions">
-                                <button pButton type="submit" class="btn btn-primary"
-                                    [disabled]="activeSection !== 'users' || userForm.invalid">{{ editingUser ? 'Update
-                                    User' :
-                                    'Create User' }}</button>
-                                <button pButton type="button" class="btn btn-ghost" label="Cancel"
-                                    (click)="userFormVisible=false" [disabled]="activeSection !== 'users'"></button>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-            </p-tabpanel>
-            <p-tabpanel value="2">
-                <h3>Reports</h3>
-                <p>Reports section coming soon...</p>
-            </p-tabpanel>
+                    <!-- <ng-container [ngSwitch]="(col.type || 'text')">
 
-        </p-tabpanels>
-    </p-tabs>
-    <p *ngIf="loading"> Loading...
-        <!-- <p-progressSpinner></p-progressSpinner> -->
-    </p>
+                                
+                      <p-multiSelect *ngSwitchCase="'location_ids'"
+                        [options]="locationList"
+                        optionLabel="name"
+                        optionValue="id"
+                        formControlName="location_ids"
+                        placeholder="Select Locations"
+                        display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-multiSelect>
+                      <input *ngSwitchCase="'integer'" 
+                        type="number"
+                        pInputText
+                        [formControlName]="col.name"
+                        [disabled]="activeSection !== 'users' && activeSection !== null"
+                        placeholder="Enter number"
+                        class="form-control">
+
+                      <input *ngSwitchDefault
+                        type="text"
+                        pInputText
+                        [formControlName]="col.name"
+                        [disabled]="activeSection !== 'users' && activeSection !== null"
+                        placeholder="Enter value"
+                        class="form-control">
+                    </ng-container> -->
+
+                    <ng-container [ngSwitch]="col.name">
+                      <!-- LOCATION IDS MULTISELECT -->
+                      <p-multiSelect *ngSwitchCase="'location_ids'"
+                        [options]="locationList"
+                        optionLabel="name"
+                        optionValue="id"
+                        formControlName="location_ids"
+                        placeholder="Select Locations"
+                        display="chip"
+                        class="form-control multiselect">
+                      </p-multiSelect>
+
+                      <!-- INTEGER INPUT -->
+                      <input *ngSwitchCase="'integer'" 
+                        type="number"
+                        pInputText
+                        [formControlName]="col.name"
+                        [disabled]="(activeSection !== 'lookup' && activeSection !== null) || col.name === lookupPrimaryKey"
+                        placeholder="Enter number"
+                        class="form-control">
+
+                      <!-- TEXT INPUT (DEFAULT) -->
+                      <input *ngSwitchDefault
+                        type="text"
+                        pInputText
+                        [formControlName]="col.name"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        placeholder="Enter value"
+                        class="form-control">
+                    </ng-container>
+
+                    <small *ngIf="userForm.get(col.name)?.hasError('required') && userForm.get(col.name)?.touched" 
+                      class="error-message">
+                      {{ col.name | titlecase }} is required
+                    </small>
+                  </div>
+                </ng-container>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="(activeSection !== 'users' && activeSection !== null) || userForm.invalid">
+                  <i [class]="editingUser ? 'pi pi-check' : 'pi pi-plus'"></i>
+                  <span>{{ editingUser ? 'Update User' : 'Create User' }}</span>
+                </button>
+                <button type="button" 
+                  class="btn btn-secondary"
+                  (click)="userFormVisible=false; openUserAddInline()"
+                  [disabled]="activeSection !== 'users' && activeSection !== null">
+                  <i class="pi pi-times"></i>
+                  <span>Cancel</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </p-tabpanel>
+
+    </p-tabpanels>
+  </p-tabs>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="pi pi-spin pi-spinner"></i>
+      <p>Loading...</p>
+    </div>
+  </div>
 </div>

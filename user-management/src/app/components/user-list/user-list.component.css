@@ -29,6 +29,9 @@
   color: #1f2937;
 }
 
+p-columnFilter{
+  width: max-content !important;
+}
 .subtitle {
   margin: 0;
   font-size: 0.95rem;
@@ -105,7 +108,7 @@
 }
 
 ::ng-deep .filter-row .p-columnFilter {
-  width: 100% !important;
+  width: max-content !important;
 }
 
 ::ng-deep .filter-row input.p-inputtext {

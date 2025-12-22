@@ -7,14 +7,6 @@ import {
   DomHandler
 } from "./chunk-CVKGUHRC.js";
 import {
-  animate,
-  animation,
-  style,
-  transition,
-  trigger,
-  useAnimation
-} from "./chunk-NUEDIEID.js";
-import {
   BaseComponent,
   PARENT_INSTANCE
 } from "./chunk-GJ35ZOEU.js";
@@ -36,6 +28,14 @@ import {
   bt,
   j
 } from "./chunk-FZI3XOAI.js";
+import {
+  animate,
+  animation,
+  style,
+  transition,
+  trigger,
+  useAnimation
+} from "./chunk-NUEDIEID.js";
 import {
   CommonModule,
   NgIf,
@@ -1082,4 +1082,4 @@ var OverlayModule = class _OverlayModule {
 export {
   Overlay
 };
-//# sourceMappingURL=chunk-CVAKM7UR.js.map
+//# sourceMappingURL=chunk-A4G75EJ2.js.map
