@@ -1,14 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { ToastService } from '../../services/toastMessage.service';
+import { AuthService } from '../../services/auth.service';
+import { MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css'],
   animations: [
@@ -19,33 +22,69 @@ import { ToastService } from '../../services/toastMessage.service';
     ]),
   ],
 })
-export class UserFormComponent {
-  user = { name: '', hostname: '', ipAddress: '', department: '' };
-  departments = ['IT', 'Finance', 'HR','Pharma','Cidis','Skinnova','Herbal','YVO','Sales admin','Data analysis','Regulatory'];
+export class UserFormComponent implements OnInit {
 
-  message = '';
-  messageType: 'success' | 'error' | null = null;
-  fadeState: 'visible' | 'hidden' = 'hidden';
+  user: any = {
+    name: '',
+    hostname: '',
+    ip_address1: '',
+    department: '',
+    location_id: null
+  };
 
-  constructor(private http: HttpClient, private toastService: ToastService) {}
-  clearForm() {
-    this.user = { name: '', hostname: '', ipAddress: '', department: '' };
+  locations: any[] = [];
+
+  constructor(
+    private http: HttpClient,
+     private messageService: MessageService,
+     private router: Router
+  ) {}
+
+  ngOnInit() {
+    this.loadLocations();
+  }
+
+  loadLocations() {
+    this.http.get<any>('http://localhost:3000/api/locations/allowed')
+      .subscribe({
+        next: (res) => {
+          this.locations = res.data || [];
+
+          // auto-select if only one location
+          if (this.locations.length === 1) {
+            this.user.location_id = this.locations[0].id;
+          }
+        },
+        error: () => {
+          this.messageService.add({ severity:'error', summary:'Error', detail:'Failed to load locations' });
+        }
+      });
   }
 
   addUser() {
-    this.http.post('http://localhost:3000/api/users', this.user).subscribe({
+    this.http.post(
+      'http://localhost:3000/api/users/create',
+      this.user
+    ).subscribe({
       next: () => {
-        this.toastService.show('User added successfully!', 'success');
+        this.messageService.add({ severity:'success', summary:'Success', detail:'User added successfully' });
+        this.router.navigate(['/users']);
         this.clearForm();
       },
-      error: () => this.toastService.show('Failed to add user. Please try again.', 'error')
+      error: (error) => {
+        this.messageService.add({ severity:'error', summary:'Error', detail: error.error?.message || 'Failed to add user' });
+      }
     });
   }
 
-  showMessage(msg: string, type: 'success' | 'error') {
-    this.message = msg;
-    this.messageType = type;
-    this.fadeState = 'visible';
-    setTimeout(() => (this.fadeState = 'hidden'), 2500);
+  clearForm() {
+    this.user = {
+      name: '',
+      hostname: '',
+      ipAddress: '',
+      department: '',
+      location_id: null
+    };
   }
 }
+

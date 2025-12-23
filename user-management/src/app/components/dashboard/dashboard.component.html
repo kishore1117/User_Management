@@ -1,93 +1,68 @@
-<div class="dashboard-container">
-  <div class="header">
-    <h2>User Dashboard</h2>
-    <div class="filter-section">
-      <select [(ngModel)]="selectedDepartment" (change)="filterByDepartment()">
-        <option value="">All Departments</option>
-        <option *ngFor="let dept of departments" [value]="dept">
-          {{ dept }}
-        </option>
-      </select>
-      <button *ngIf="selectedDepartment" (click)="clearFilter()" class="clear-btn">
-        Clear Filter
-      </button>
+<div class="dashboard-wrapper">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Dashboard</h1>
+      <p class="subtitle">System Overview & Analytics</p>
+    </div>
+    <div class="header-stats">
+      <!-- IP Status -->
+      <div class="stat-card">
+        <div class="stat-icon total">
+          <i class="pi pi-users"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Users</span>
+          <span class="stat-value">{{ metrics?.total_users || 0 }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon available">
+          <i class="pi pi-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Available IPs</span>
+          <span class="stat-value">{{ metrics?.available_ips || 0 }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon reserved">
+          <i class="pi pi-lock"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Reserved IPs</span>
+          <span class="stat-value">{{ metrics?.reserved_ips || 0 }}</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Hostname</th>
-          <th>IP Address</th>
-          <th>Department</th>
-          <th>Created Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="loading">
-          <td colspan="6" class="loading">Loading users...</td>
-        </tr>
-        <tr *ngIf="!loading && filteredUsers.length === 0">
-          <td colspan="6" class="no-data">No users found</td>
-        </tr>
-        <tr *ngFor="let user of filteredUsers">
-          <td>
-            <input *ngIf="user.id === editingId" 
-                   type="text" 
-                   [(ngModel)]="selectedUser!.name" 
-                   name="name{{user.id}}" />
-            <span *ngIf="user.id !== editingId">{{ user.name }}</span>
-          </td>
-          <td>
-            <input *ngIf="user.id === editingId" 
-                   type="text" 
-                   [(ngModel)]="selectedUser!.hostname" 
-                   name="hostname{{user.id}}" />
-            <span *ngIf="user.id !== editingId">{{ user.hostname }}</span>
-          </td>
-          <td>
-            <input *ngIf="user.id === editingId" 
-                   type="text" 
-                   [(ngModel)]="selectedUser!.ip_address" 
-                   name="ip{{user.id}}" />
-            <span *ngIf="user.id !== editingId">{{ user.ip_address }}</span>
-          </td>
-          <td>
-            <select *ngIf="user.id === editingId" 
-                    [(ngModel)]="selectedUser!.department" 
-                    name="dept{{user.id}}">
-              <option *ngFor="let dept of departments" [value]="dept">
-                {{ dept }}
-              </option>
-            </select>
-            <span *ngIf="user.id !== editingId">{{ user.department }}</span>
-          </td>
-          <td>{{ user.created_at | date:'medium' }}</td>
-          <td>
-            <div class="action-icons">
-              <ng-container *ngIf="user.id !== editingId">
-                <i class="fas fa-edit icon icon-edit" 
-                   (click)="editUser(user)" 
-                   title="Edit"></i>
-                <i class="fas fa-trash-alt icon icon-delete" 
-                   (click)="deleteUser(user.id)" 
-                   title="Delete"></i>
-              </ng-container>
-              <ng-container *ngIf="user.id === editingId">
-                <i class="fas fa-save icon icon-save" 
-                   (click)="updateUser()" 
-                   title="Save"></i>
-                <i class="fas fa-times icon icon-cancel" 
-                   (click)="cancelEdit()" 
-                   title="Cancel"></i>
-              </ng-container>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Charts Section -->
+  <div class="charts-grid">
+
+        <div class="chart-card">
+      <div class="chart-header">
+        <h3><i class="pi pi-chart-pie"></i> IP Status</h3>
+        <p class="chart-description">Available vs Reserved</p>
+      </div>
+      <div class="chart-body">
+        <canvas id="ipStatusChart"></canvas>
+      </div>
+    </div>
+    <ng-container *ngFor="let key of ['software','department','location','category','warranty','model','processor','ram','os']">
+      <div class="chart-card" >
+        <div class="chart-header">
+          <h3>
+            <i class="pi pi-desktop"></i>
+            {{ key | titlecase }}
+          </h3>
+        </div>
+        <div class="chart-body">
+          <canvas [id]="key+'Chart'"></canvas>
+        </div>
+      </div>
+    </ng-container>
   </div>
 </div>
+
+

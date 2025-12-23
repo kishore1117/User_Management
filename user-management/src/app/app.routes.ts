@@ -3,16 +3,26 @@ import { UserFormComponent } from './components/user-form/user-form.component';
 import { UserSearchComponent } from './components/user-search/user-search.component';
 import { UploadComponent } from './components/upload/upload.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { UserListComponent } from './components/user-list/user-list.component';
+import { UserDetailsComponent } from './components/user-details/user-details.component';
+import { AdminComponent } from './components/admin/admin.component';
+import { AppComponent } from './app.component';
 
 export const appRoutes: Routes = [
-  { 
-    path: '', 
-    redirectTo: 'login', 
-    pathMatch: 'full' 
-  },
+  // {
+  //   path: '',
+  //   redirectTo: 'login',
+  //   pathMatch: 'full',
+  //   // component: AppComponent
+  // },
+  // {
+  //   path: 'login',
+  //   component: UserFormComponent
+  // },
   {
-    path: 'login',
-    component: UserFormComponent
+    path: "users",
+    component: UserListComponent,
+    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
   },
   {
     path: 'dashboard',
@@ -33,5 +43,20 @@ export const appRoutes: Routes = [
     path: 'upload',
     component: UploadComponent,
     canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+  },
+  {
+    path: 'user/:id',
+    component: UserDetailsComponent,
+    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+  },
+  {
+    path:'admin',
+    component:AdminComponent,
+    canActivate: [() => {
+      const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+      const userRole = localStorage.getItem('userRole') || '';
+      const isAdmin = userRole.toLowerCase().includes('admin');
+      return isAuthenticated && isAdmin;
+    }]
   }
 ];

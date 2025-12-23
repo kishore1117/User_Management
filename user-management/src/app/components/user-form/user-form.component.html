@@ -1,13 +1,64 @@
 <div class="form-container">
-  <h3>Add User</h3>
-  <form (ngSubmit)="addUser()">
-    <input type="text" placeholder="Name" [(ngModel)]="user.name" name="name" required />
-    <input type="text" placeholder="Hostname" [(ngModel)]="user.hostname" name="hostname" required />
-    <input type="text" placeholder="IP Address" [(ngModel)]="user.ipAddress" name="ipAddress" required />
+  <h3>➕ Add User</h3>
+
+  <form #form="ngForm" (ngSubmit)="addUser()">
+
+    <input
+      type="text"
+      placeholder="Name"
+      [(ngModel)]="user.name"
+      name="name"
+      required
+    />
+
+    <input
+      type="text"
+      placeholder="Hostname"
+      [(ngModel)]="user.hostname"
+      name="hostname"
+      required
+    />
+
+    <input
+      type="text"
+      placeholder="IP Address"
+      [(ngModel)]="user.ip_address1"
+      name="ip_address1"
+      required
+      pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+      #ipInput="ngModel"
+    />
+
+    <div class="error-message" *ngIf="ipInput.invalid && ipInput.touched">
+      <small *ngIf="ipInput.errors?.['required']">IP Address is required.</small>
+      <small *ngIf="ipInput.errors?.['pattern']">
+        Enter a valid IPv4 address (e.g., 192.168.1.10)
+      </small>
+    </div>
+
+    <!-- 🔹 Department
     <select [(ngModel)]="user.department" name="department" required>
       <option value="">Select Department</option>
-      <option *ngFor="let dept of departments">{{ dept }}</option>
+      <option *ngFor="let dept of departments" [value]="dept">
+        {{ dept }}
+      </option>
+    </select> -->
+
+    <!-- 🔹 Location (from token access) -->
+    <select [(ngModel)]="user.location_id" name="location_id" required>
+      <option value="">Select Location</option>
+      <option *ngFor="let loc of locations" [value]="loc.id">
+        {{ loc.name }}
+      </option>
     </select>
-    <button type="submit">Add User</button>
+
+    <button
+      type="submit"
+      [disabled]="form.invalid"
+      class="submit-btn"
+    >
+      Add User
+    </button>
+
   </form>
 </div>

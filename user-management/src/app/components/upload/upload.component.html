@@ -1,45 +1,72 @@
-<div class="form-container">
-  <h3>Upload Excel / CSV</h3>
+<div class="main">
 
-  <div class="upload-area">
-    <input 
-      type="file" 
-      (change)="onFileSelected($event)" 
-      accept=".xlsx,.xls,.csv" 
-      [disabled]="uploading"
-    />
-    
-    <div class="file-info" *ngIf="selectedFile">
-      <strong>Selected:</strong> {{ selectedFile.name }} 
-      ({{ formatFileSize(selectedFile.size) }})
+  <div class="form-container">
+    <h3>⬆️Upload Excel / CSV</h3>
+
+    <div class="upload-area">
+      <input type="file" (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" [disabled]="uploading" />
+
+      <div class="file-info" *ngIf="selectedFile">
+        <strong>Selected:</strong> {{ selectedFile.name }}
+        ({{ formatFileSize(selectedFile.size) }})
+      </div>
+
+      <div class="actions">
+        <button type="button" (click)="upload()" [disabled]="uploading || !selectedFile">
+          {{ uploading ? 'Uploading...' : 'Upload' }}
+        </button>
+        <button type="button" (click)="clear()" [disabled]="uploading">
+          Clear
+        </button>
+      </div>
+
+      <div class="progress" *ngIf="uploading">
+        <div class="progress-bar" [style.width.%]="progress"></div>
+        <div class="progress-label">{{ progress }}%</div>
+      </div>
+
+      <p class="note">
+        Supported formats: Excel (.xlsx, .xls) and CSV (.csv)
+        <br>
+        Required columns: name, hostname, ip_address, department
+      </p>
+    </div>
+  </div>
+
+  <div class="form-container">
+    <div class="upload-container">
+      <h2>🗑️Bulk Delete users</h2>
+
+      <!-- Department Filter -->
+      <div class="filter-section">
+        <select [(ngModel)]="user.location_id" name="location_id" required>
+          <option value="">Select Location</option>
+          <option *ngFor="let loc of locations" [value]="loc.id">
+            {{ loc.name }}
+          </option>
+        </select>
+
+        <button class="btn-delete" [disabled]="!user.location_id" (click)="openBulkDeleteModal()">
+          Delete users from selected location
+        </button>
+      </div>
+
+      <!-- Confirmation Modal -->
+      <div class="modal-overlay" *ngIf="showBulkDeleteModal">
+        <div class="modal-content">
+          <h3>Confirm Bulk Delete</h3>
+          <p>
+            Are you sure you want to delete all users in
+            <strong>{{ selectedDepartment }}</strong> department?
+          </p>
+
+          <div class="modal-buttons">
+            <button class="btn btn-confirm" (click)="confirmBulkDelete()">Yes, Delete</button>
+            <button class="btn btn-cancel" (click)="cancelBulkDelete()">Cancel</button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="actions">
-      <button 
-        type="button" 
-        (click)="upload()" 
-        [disabled]="uploading || !selectedFile"
-      >
-        {{ uploading ? 'Uploading...' : 'Upload' }}
-      </button>
-      <button 
-        type="button" 
-        (click)="clear()" 
-        [disabled]="uploading"
-      >
-        Clear
-      </button>
-    </div>
-
-    <div class="progress" *ngIf="uploading">
-      <div class="progress-bar" [style.width.%]="progress"></div>
-      <div class="progress-label">{{ progress }}%</div>
-    </div>
-
-    <p class="note">
-      Supported formats: Excel (.xlsx, .xls) and CSV (.csv)
-      <br>
-      Required columns: name, hostname, ip_address, department
-    </p>
   </div>
 </div>

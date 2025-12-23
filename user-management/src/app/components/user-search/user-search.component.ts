@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgModel } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { ToastService } from '../../services/toastMessage.service';
@@ -28,11 +28,15 @@ interface User {
   ],
 })
 export class UserSearchComponent {
+  errorMessage = '';
   search = { name: '', hostname: '', ipAddress: '' };
   users: User[] = [];
   selectedUser: User | null = null;
   editingId: number | null = null;
   hideResults = false;
+  selectedUserToDelete: any = null;
+  showDeleteModal = false;
+  searchedUsers: User[] = [];
 
   departments = ['IT', 'Finance', 'HR','Pharma','Cidis','Skinnova','Herbal','YVO','Sales admin','Data analysis','Regulatory'];
 
@@ -44,8 +48,22 @@ export class UserSearchComponent {
 
   constructor(private http: HttpClient, private toastService: ToastService) {}
 
+     isFormValid(search: any, ipInput: NgModel): boolean {
+    const { name, hostname, ipAddress } = search;
+
+    // Case 1: All fields empty → invalid
+    if (!name && !hostname && !ipAddress) return false;
+
+    // Case 2: IP entered but invalid pattern → invalid
+    if (ipAddress && ipInput.invalid) return false;
+
+    // ✅ Otherwise → valid
+    return true;
+  }
   searchUsers() {
+    this.errorMessage = '';
     const body: any = {};
+
      this.hideResults = false;
     if (this.search.name?.trim()) body.name = this.search.name.trim();
     if (this.search.hostname?.trim()) body.hostname = this.search.hostname.trim();
@@ -89,8 +107,6 @@ export class UserSearchComponent {
   const id = this.selectedUser.id;
   this.http.put<User>(`${this.baseUrl}/${id}`, this.selectedUser).subscribe({
     next: (updatedUser) => {
-      // console.log('Updated User:', updatedUser);
-      // Remove the old user entry
       this.users = this.users.filter(u => u.id !== id);
       // Append the updated user to the results
       this.users = [...this.users, updatedUser];
@@ -104,6 +120,8 @@ export class UserSearchComponent {
       this.clearSearch();
 
       this.toastService.show('User updated successfully!', 'success');
+
+      this.hideResults = true;
     },
     error: () => this.toastService.show('Failed to update user. Please try again.', 'error')
   });
@@ -126,5 +144,34 @@ export class UserSearchComponent {
       },
       error: () => this.toastService.show('Failed to delete user. Please try again.', 'error')
     });
+  }
+
+  openDeleteModal(user: any) {
+    this.selectedUserToDelete = user;
+    this.showDeleteModal = true;
+  }
+
+    confirmDelete() {
+    const userId = this.selectedUserToDelete.id;
+
+    this.http.delete(`http://192.168.1.247:3000/api/users/${userId}`).subscribe({
+      next: (res) => {
+        this.toastService.show('🗑️ User deleted successfully', 'success');
+        this.searchedUsers = this.searchedUsers.filter(u => u.id !== userId);
+        this.showDeleteModal = false;
+        this.selectedUserToDelete = null;
+        this.hideResults = true;
+      },
+      error: (err) => {
+        console.error('Error deleting user:', err);
+        this.showDeleteModal = false;
+      }
+    });
+  }
+
+  
+  cancelDelete() {
+    this.showDeleteModal = false;
+    this.selectedUserToDelete = null;
   }
 }

@@ -1,0 +1,283 @@
+<div class="user-details-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading user details...</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading && userForm" class="content">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-content">
+        <h1>{{ isEditing ? 'Edit User' : 'User Details' }}</h1>
+        <p class="subtitle">{{ user.name || 'Unknown' }}</p>
+      </div>
+      <div class="header-actions">
+        <button *ngIf="!isEditing" pButton type="button" label="Edit" icon="pi pi-pencil" (click)="enableEdit()"
+          class="btn-edit">
+        </button>
+        <button *ngIf="isEditing" pButton type="button" label="Save" icon="pi pi-check" (click)="updateUser()"
+          class="btn-save">
+        </button>
+        <button pButton type="button" label="Back" icon="pi pi-arrow-left" (click)="goBack()" class="btn-back">
+        </button>
+      </div>
+    </div>
+
+    <form [formGroup]="userForm">
+      <!-- Basic Information Section -->
+      <div class="form-section">
+        <h2 class="section-title">
+          <i class="pi pi-user"></i>
+          Basic Information
+        </h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input pInputText id="name" formControlName="name" [disabled]="!isEditing" class="input-field">
+          </div>
+
+          <div class="form-group">
+            <label for="hostname">Hostname *</label>
+            <input pInputText id="hostname" formControlName="hostname" [disabled]="!isEditing" class="input-field">
+          </div>
+
+          <div class="form-group">
+            <label for="department">Department</label>
+            <p-select id="department" formControlName="department_id" [options]="departments" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Department" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group">
+            <label for="division">Division</label>
+            <p-select id="division" formControlName="division_id" [options]="divisions" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Division" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group">
+            <label for="location">Location</label>
+            <p-select id="location" formControlName="location_id" [options]="locations" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isAdmin" placeholder="Select Location" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group">
+            <label for="category">Category</label>
+            <p-select id="category" formControlName="category_id" [options]="categories" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Category" class="w-full">
+            </p-select>
+          </div>
+
+            <div class="form-group" *ngIf="isPrinterSelected">
+            <label for="printer_type">Printer Type</label>
+           <p-select id="printer_type" formControlName="printer_type" [options]="printer_type" optionLabel="label" appendTo="body"
+              optionValue="value" [disabled]="!isEditing" placeholder="Select Printer Type" class="w-full">
+            </p-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- IP Address Section -->
+      <div class="form-section" *ngIf="hasVisibleNetworkFields()">
+        <h2 class="section-title">
+          <i class="pi pi-globe"></i>
+          Network Information
+        </h2>
+        <div class="form-grid">
+          <div class="form-group" *ngIf="isNetworkFieldVisible('ip_address1')">
+            <label for="ip1">IP Address 1</label>
+            <input pInputText id="ip1" formControlName="ip_address1" [disabled]="!isEditing" class="input-field">
+          </div>
+
+          <div class="form-group" *ngIf="isNetworkFieldVisible('ip_address2')">
+            <label for="ip2">IP Address 2</label>
+            <input pInputText id="ip2" formControlName="ip_address2" [disabled]="!isEditing" class="input-field">
+          </div>
+        </div>
+      </div>
+
+      <!-- Hardware Information Section -->
+      <div class="form-section" *ngIf="hasVisibleHardwareFields()">
+        <h2 class="section-title">
+          <i class="pi pi-cpu"></i>
+          Hardware Information
+        </h2>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="warranty">Warranty</label>
+            <p-select id="warranty" formControlName="warranty_id" [options]="warranties" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Warranty" class="w-full">
+            </p-select>
+          </div>
+
+
+          <div class="form-group">
+            <label for="purchase_from">Purchase From</label>
+            <p-select id="purchase_from" formControlName="purchase_from_id" [options]="purchaseFrom" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Purchase From" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group">
+            <label for="asset_tag">Asset Tag</label>
+            <input pInputText id="asset_tag" formControlName="asset_tag" [disabled]="!isEditing" class="input-field">
+          </div>
+          
+          <div class="form-group" *ngIf="isHardwareFieldVisible('model')">
+            <label for="model">Model</label>
+            <p-select id="model" formControlName="model_id" [options]="models" optionLabel="name" optionValue="id" appendTo="body"
+              [disabled]="!isEditing" placeholder="Select Model" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('cpu_serial')">
+            <label for="cpu_serial">CPU Serial</label>
+            <p-select id="cpu_serial" formControlName="cpu_serial_id" [options]="cpuSerials" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Serial" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('processor')">
+            <label for="processor">Processor</label>
+            <p-select id="processor" formControlName="processor_id" [options]="processors" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Processor" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('cpu_speed')">
+            <label for="cpu_speed">CPU Speed</label>
+            <p-select id="cpu_speed" formControlName="cpu_speed_id" [options]="cpuSpeeds" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Speed" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('ram')">
+            <label for="ram">RAM</label>
+            <p-select id="ram" formControlName="ram_id" [options]="rams" optionLabel="name" optionValue="id" appendTo="body"
+              [disabled]="!isEditing" placeholder="Select RAM" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('hdd')">
+            <label for="hdd">Storage (HDD)</label>
+            <p-select id="hdd" formControlName="hdd_id" [options]="hdds" optionLabel="name" optionValue="id" appendTo="body"
+              [disabled]="!isEditing" placeholder="Select Storage" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('os')">
+            <label for="os">Operating System</label>
+            <p-select id="os" formControlName="os_id" [options]="operatingSystems" optionLabel="name" optionValue="id" appendTo="body"
+              [disabled]="!isEditing" placeholder="Select OS" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('monitor')">
+            <label for="monitor">Monitor</label>
+            <p-select id="monitor" formControlName="monitor_id" [options]="monitors" optionLabel="name" optionValue="id" appendTo="body"
+              [disabled]="!isEditing" placeholder="Select Monitor" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('monitor_serial')">
+            <label for="monitor_serial">Monitor Serial</label>
+            <p-select id="monitor_serial" formControlName="monitor_serial_id" [options]="monitorSerials"
+              optionLabel="name" optionValue="id" [disabled]="!isEditing" placeholder="Select Monitor Serial" appendTo="body"
+              class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('keyboard')">
+            <label for="keyboard">Keyboard</label>
+            <p-select id="keyboard" formControlName="keyboard_id" [options]="keyboards" optionLabel="name" appendTo="body"
+              optionValue="id" [disabled]="!isEditing" placeholder="Select Keyboard" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('mouse')">
+            <label for="mouse">Mouse</label>
+            <p-select id="mouse" formControlName="mouse_id" [options]="mice" optionLabel="name" optionValue="id"appendTo="body"
+              [disabled]="!isEditing" placeholder="Select Mouse" class="w-full">
+            </p-select>
+          </div>
+
+          <div class="form-group" *ngIf="isHardwareFieldVisible('cd_dvd')">
+            <label for="cd_dvd">CD/DVD Drive</label>
+            <p-select id="cd_dvd" formControlName="cd_dvd_id" [options]="cdDvds" optionLabel="name" optionValue="id" appendTo="body"
+              [disabled]="!isEditing" placeholder="Select CD/DVD" class="w-full">
+            </p-select>
+          </div>
+
+            <div class="form-group">
+            <label for="serial_number">Serial Number</label>
+            <input pInputText id="serial_number" formControlName="serial_number" [disabled]="!isEditing" class="input-field">
+          </div>
+        </div>
+      </div>
+
+      <!-- Software Section -->
+      <div class="form-section" *ngIf="shouldShowSoftware()">
+        <h2 class="section-title">
+          <i class="pi pi-download"></i>
+          Installed Software
+        </h2>
+        <div class="software-input" *ngIf="isEditing">
+          <p-autoComplete formControlName="softwareInput" [suggestions]="filteredSoftware"
+            (completeMethod)="filterSoftware($event)" (onSelect)="addSoftware($event.value)" field="name"
+            placeholder="Search and add software..." class="w-full">
+            <ng-template let-value pTemplate="item">
+              <div>{{ value.name }}</div>
+            </ng-template>
+          </p-autoComplete>
+        </div>
+
+        <!-- Selected Software Tags -->
+        <div class="selected-software" *ngIf="userSoftware.length > 0">
+          <div class="software-tags">
+            <span *ngFor="let software of userSoftware" class="software-tag">
+              {{ software }}
+              <button *ngIf="isEditing" type="button" (click)="removeSoftware(software)" class="tag-remove">
+                <i class="pi pi-times"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <div class="software-list">
+          <div class="software-header">
+            <h3>All Available Software ({{ softwareList.length }})</h3>
+          </div>
+
+          <div class="software-checkboxes">
+            <div *ngFor="let software of softwareList; let i = index" class="software-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" [id]="'sw_' + i" [formControl]="getSoftwareControl(i)"
+                  (change)="onSoftwareCheckboxChange()" [disabled]="!isEditing" class="software-checkbox">
+                <label [for]="'sw_' + i" class="checkbox-label">
+                  {{ software.name }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="softwareList.length === 0" class="empty-software">
+            <p>No software available</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button *ngIf="isEditing" pButton type="button" label="Save Changes" icon="pi pi-check" (click)="updateUser()"
+          class="btn-save-large">
+        </button>
+        <button pButton type="button" label="Cancel" icon="pi pi-times" (click)="goBack()" class="btn-cancel">
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

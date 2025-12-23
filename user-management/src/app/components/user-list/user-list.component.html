@@ -1,0 +1,198 @@
+<div class="users-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-title">
+      <h2>User Management</h2>
+      <p class="subtitle">Manage and view all users in the system</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Add User" (click)="addUser()" icon="pi pi-plus" severity="success"></p-button>
+      <p-button label="Export" (click)="exportUsers()" icon="pi pi-download" severity="info"></p-button>
+      <p-button label="Upload" (click)="uploadUsers()" icon="pi pi-upload" severity="info"></p-button>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <!-- Loading Indicator -->
+    <div *ngIf="loading" class="loading-overlay">
+      <p-progressSpinner></p-progressSpinner>
+    </div>
+
+    <p-table #dt2 [value]="filteredUsers" dataKey="id" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]"
+      [loading]="loading" [globalFilterFields]="['name', 'hostname', 'department_name']" [paginator]="true"
+      [tableStyle]="{ 'min-width': '50rem' }" responsiveLayout="scroll" styleClass="p-datatable-striped">
+
+      <!-- Table Header -->
+      <ng-template #header>
+        <!-- Filter Row -->
+        <tr class="filter-row">
+          <th>
+            <p-columnFilter type="text" field="name" placeholder="Search name..." ariaLabel="Filter Name"
+              [showMenu]="false" filterOn="input"></p-columnFilter>
+          </th>
+          <th>
+            <p-columnFilter type="text" field="hostname" placeholder="Search hostname..." [showMenu]="false"
+              ariaLabel="Filter hostname" filterOn="input"></p-columnFilter>
+          </th>
+
+          <th>
+            <p-columnFilter type="text" field="ip_address1" placeholder="Search IP Address 1..." [showMenu]="false"
+              ariaLabel="Filter IP Address 1" filterOn="input"></p-columnFilter>
+          </th>
+          <th>
+            <p-columnFilter field="department_name" matchMode="in" [showMenu]="false">
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-multiselect [(ngModel)]="selectedDepartments" [options]="departments" optionLabel="label"
+                  placeholder="All departments" [appendTo]="'body'" [showClear]="true"
+                  (onChange)="filterByDepartment($event.value)" (onClear)="clearFilter()" styleClass="w-full"
+                  [panelStyle]="{ minWidth: '200px' }">
+                </p-multiselect>
+              </ng-template>
+            </p-columnFilter>
+          </th>
+          <th>
+            <p-columnFilter field="status" matchMode="equals" [showMenu]="false">
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-select [(ngModel)]="selectedStatus" [options]="ipStatuses" (onChange)="filterByStatus($event.value)"
+                  (onClear)="clearFilter()" placeholder="All statuses" [showClear]="true" styleClass="w-full">
+                  <ng-template let-option #item>
+                    <p-tag [value]="option.value" [severity]="getSeverity(option.value)"></p-tag>
+                  </ng-template>
+                </p-select>
+              </ng-template>
+            </p-columnFilter>
+          </th>
+          <th>
+            <p-columnFilter field="category_name" matchMode="in" [showMenu]="false">
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-select [(ngModel)]="selectedCategory" [options]="Categorys"
+                  (onChange)="filterByCategory($event.value)" (onClear)="clearFilter()" placeholder="All categories"
+                  [showClear]="true" styleClass="w-full">
+                  <ng-template let-option #item>
+                    <p-tag [value]="option.value" class="category-label"></p-tag>
+                  </ng-template>
+                </p-select>
+              </ng-template>
+            </p-columnFilter>
+          </th>
+
+          <!-- <th colspan="5" class="filter-spacer"></th> -->
+        </tr>
+
+        <!-- Header Row -->
+        <tr class="header-row">
+          <th class="col-name">
+            <span class="header-text">
+              <i class="pi pi-user"></i> Name
+            </span>
+          </th>
+          <th class="col-hostname">
+            <span class="header-text">
+              <i class="pi pi-server"></i> Hostname
+            </span>
+          </th>
+          <th class="col-department">
+            <span class="header-text">
+              <i class="pi pi-building"></i> Department
+            </span>
+          </th>
+          <th class="col-status">
+            <span class="header-text">
+              <i class="pi pi-info-circle"></i> Status
+            </span>
+          </th>
+          <th class="col-location">
+            <span class="header-text">
+              <i class="pi pi-map-marker"></i> Location
+            </span>
+          </th>
+          <th class="col-category">
+            <span class="header-text">
+              <i class="pi pi-tag"></i> Category
+            </span>
+          </th>
+          <th class="col-ip">
+            <span class="header-text">
+              <i class="pi pi-wifi"></i> IP Address 1
+            </span>
+          </th>
+          <th class="col-ip">
+            <span class="header-text">
+              <i class="pi pi-wifi"></i> IP Address 2
+            </span>
+          </th>
+          <th class="col-action">
+            <span class="header-text">Action</span>
+          </th>
+        </tr>
+      </ng-template>
+
+      <!-- Table Body -->
+      <ng-template #body let-row let-rowIndex="rowIndex">
+        <tr class="data-row" [ngClass]="{ 'verified-row': row.verified }">
+          <td class="col-name">
+            <div class="cell-content">
+              <span class="cell-value">{{ row.name }}</span>
+            </div>
+          </td>
+          <td class="col-hostname">
+            <div class="cell-content">
+              <code class="code-text">{{ row.hostname }}</code>
+            </div>
+          </td>
+          <td class="col-department">
+            <div class="cell-content">
+              <span class="badge-dept">{{ row.department_name || '—'}}</span>
+            </div>
+          </td>
+          <td class="col-status">
+            <p-tag [value]="getStatus(row)" [severity]="getSeverity(getStatus(row))"></p-tag>
+          </td>
+          <td class="col-location">
+            <div class="cell-content">
+              <i class="pi pi-map-marker text-muted"></i>
+              <span>{{ row.location_name || '—' }}</span>
+            </div>
+          </td>
+          <td class="col-category">
+            <div class="cell-content">
+              <span class="category-label">{{ row.category_name || '—' }}</span>
+            </div>
+          </td>
+          <td class="col-ip">
+            <div class="cell-content">
+              <span class="ip-text">{{ row.ip_address1 || '—' }}</span>
+            </div>
+          </td>
+          <td class="col-ip">
+            <div class="cell-content">
+              <span class="ip-text">{{ row.ip_address2 || '—' }}</span>
+            </div>
+          </td>
+          <td class="col-action">
+            <button class="action-button" (click)="viewUser(row.id)" [title]="'View ' + row.name">
+              <i class="pi" [ngClass]="{
+                'pi-check-circle text-success': row.verified,
+                'pi-arrow-right text-primary': !row.verified
+              }"></i>
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Empty Message -->
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="9" class="empty-message">
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <p>No users found</p>
+              <small>Try adjusting your filters or add a new user</small>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

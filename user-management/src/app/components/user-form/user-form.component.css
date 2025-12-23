@@ -5,9 +5,16 @@
 h2, h3, h4 {
   color: #2c3e50;
 }
+.submit-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 a:hover {
   text-decoration: underline;
+}
+small{
+  color: #b71c1c;
 }
 
 nav {
