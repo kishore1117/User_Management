@@ -2,20 +2,101 @@ import db from '../config/db.js';
 const { pool, initDB } = db; 
 
 /* 🟢 Create a new location */
+// export const createLocation = async (req, res) => {
+//   const { name, address } = req.body;
+//   if (!name) return res.status(400).json({ message: "Name is required" });
+
+//   try {
+//     const result = await pool.query(
+//       `INSERT INTO locations (name, address)
+//        VALUES ($1, $2) RETURNING *`,
+//       [name, address]
+//     );
+//     res.status(201).json(result.rows[0]);
+//   } catch (err) {
+//     console.error("❌ Error creating location:", err);
+//     res.status(500).json({ error: "Failed to create location" });
+//   }
+// };
+
+export const updateLocationAssignmentsForAllAdmins = async (locationId) => {
+   const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+        await client.query(
+      `UPDATE user_access
+       SET location_ids = array(
+         SELECT DISTINCT unnest(
+           array_append(
+             COALESCE(location_ids, '{}'),
+             $1
+           )
+         )
+       )
+       WHERE role = 'admin'`,
+      [locationId]
+    );
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("❌ Error updating location assignments:", err);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+
 export const createLocation = async (req, res) => {
   const { name, address } = req.body;
-  if (!name) return res.status(400).json({ message: "Name is required" });
+
+  if (!name) {
+    return res.status(400).json({ message: "Name is required" });
+  }
+
+  const client = await pool.connect();
 
   try {
-    const result = await pool.query(
+    await client.query("BEGIN");
+
+    // 1️⃣ Create location
+    const locationResult = await client.query(
       `INSERT INTO locations (name, address)
-       VALUES ($1, $2) RETURNING *`,
+       VALUES ($1, $2)
+       RETURNING id, name, address`,
       [name, address]
     );
-    res.status(201).json(result.rows[0]);
+
+    const location = locationResult.rows[0];
+
+    // 2️⃣ Update ALL admin users
+    await client.query(
+      `UPDATE user_access
+       SET location_ids = array(
+         SELECT DISTINCT unnest(
+           array_append(
+             COALESCE(location_ids, '{}'),
+             $1
+           )
+         )
+       )
+       WHERE role = 'admin'`,
+      [location.id]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      message: "Location created and assigned to all admins",
+      location,
+    });
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("❌ Error creating location:", err);
     res.status(500).json({ error: "Failed to create location" });
+  } finally {
+    client.release();
   }
 };
 
