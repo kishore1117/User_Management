@@ -12,6 +12,7 @@ import { UserService } from '../../services/user.service';
 import { TabsModule } from 'primeng/tabs';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { environment } from '../../../environments/environment';
 
 
 @Component({
@@ -120,7 +121,7 @@ export class AdminComponent implements OnInit {
   }
 
   loadLocations() {
-    this.http.get<any>('http://localhost:3000/api/locations/allowed')
+    this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
           console.log("Locations loaded:", res.data);
