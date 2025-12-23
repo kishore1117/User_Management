@@ -62,8 +62,6 @@ export const getUserById = async (req, res) => {
     const userLocations = req.user?.location_ids || [];
 
     // Check if user has access to this user's location
-    console.log("User Locations:", userLocations);
-    console.log("Requested User Location ID:", user.location_id);
     if (!userLocations.includes(user.location_id)) {
       return res.status(403).json({
         success: false,
@@ -187,11 +185,9 @@ export const updateUser = async (req, res) => {
 
 export const getLookupData = async (req, res) => {
   try {
-    console.log("Fetching lookup data for user:", req.user);
     const data = await userService.getLookupData(req.user);
     res.status(200).json({ success: true, data });
   } catch (error) {
-    console.log(req.params);
     console.error('Error getting lookup data:', error);
     res.status(500).json({ 
       success: false, 

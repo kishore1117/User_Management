@@ -374,7 +374,6 @@ export const getDashboardData = async (user) => {
 
 
 export const getLookupData = async (user) => {
-  console.log("Fetching lookup data for locations:", user.location_ids);
   const locationIds = user?.location_ids || [];
   const query = `
 SELECT 
@@ -472,7 +471,6 @@ FROM (SELECT 1) AS dummy;
   return result.rows[0];
 };
 export const getUserById = async (userId) => {
-  console.log("Fetching user by ID:", userId);
 
   const query = `
     SELECT 
