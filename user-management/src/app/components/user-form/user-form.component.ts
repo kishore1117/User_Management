@@ -7,6 +7,7 @@ import { ToastService } from '../../services/toastMessage.service';
 import { AuthService } from '../../services/auth.service';
 import { MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-user-form',
@@ -45,7 +46,7 @@ export class UserFormComponent implements OnInit {
   }
 
   loadLocations() {
-    this.http.get<any>('http://localhost:3000/api/locations/allowed')
+    this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
           this.locations = res.data || [];
@@ -63,7 +64,7 @@ export class UserFormComponent implements OnInit {
 
   addUser() {
     this.http.post(
-      'http://localhost:3000/api/users/create',
+      `${environment.apiBaseUrl}/users/create`,
       this.user
     ).subscribe({
       next: () => {

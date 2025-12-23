@@ -5,7 +5,7 @@ import { HttpClient, HttpClientModule, HttpEventType } from '@angular/common/htt
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { ToastService } from '../../services/toastMessage.service';
 import { MessageService } from 'primeng/api';
-
+import { environment } from '../../../environments/environment';
 interface UploadResponse {
   message: string;
   results?: {
@@ -42,7 +42,7 @@ export class UploadComponent {
     location_id: null
   };
   progress = 0;
-  private baseUrl = 'http://localhost:3000/api/upload';
+  private baseUrl = `${environment.apiBaseUrl}/upload`;
   departments: string[] = [];
   locations: any[] = [];
   selectedDepartment: string = '';
@@ -55,7 +55,7 @@ export class UploadComponent {
   }
 
   loadLocations() {
-    this.http.get<any>('http://localhost:3000/api/locations/allowed')
+    this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
           this.locations = res.data || [];
@@ -164,7 +164,7 @@ export class UploadComponent {
   confirmBulkDelete() {
    const locationId = this.user.location_id;
 
-    this.http.delete(`http://localhost:3000/api/users/bulk-delete?location_id=${locationId}`).subscribe({
+    this.http.delete(`${environment.apiBaseUrl}/users/bulk-delete?location_id=${locationId}`).subscribe({
       next: (res) => {
         this.showBulkDeleteModal = false;
         this.messageService.add({ severity:'success', summary:'Success', detail:'Users deleted successfully' });
