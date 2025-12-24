@@ -1,5 +1,5 @@
 import db from '../config/db.js';
-const { pool, initDB } = db; 
+const { pool, initDB } = db;
 
 /* 🟢 Create a new location */
 // export const createLocation = async (req, res) => {
@@ -19,11 +19,31 @@ const { pool, initDB } = db;
 //   }
 // };
 
-export const updateLocationAssignmentsForAllAdmins = async (locationId) => {
-   const client = await pool.connect();
+export const removeLocationFromAllAdmins = async (locationId) => {
+  const client = await pool.connect();
   try {
     await client.query("BEGIN");
-        await client.query(
+    await client.query(
+      `UPDATE user_access
+       SET location_ids = array_remove(location_ids, $1)
+       WHERE role = 'admin'`,
+      [locationId]
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("❌ Error removing location assignments:", err);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const updateLocationAssignmentsForAllAdmins = async (locationId) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
       `UPDATE user_access
        SET location_ids = array(
          SELECT DISTINCT unnest(
@@ -114,6 +134,8 @@ export const getAllLocations = async (req, res) => {
 export const getAllowedLocations = async (req, res) => {
   try {
     const locationIds = req.user?.location_ids || [];
+    const userName = req.user?.username;
+    console.log(req.user);
 
     if (!locationIds.length) {
       return res.json({ data: [] });
@@ -121,12 +143,13 @@ export const getAllowedLocations = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT id, name
-      FROM locations
-      WHERE id = ANY($1::int[])
-      ORDER BY name
+ SELECT DISTINCT l.id, l.name
+FROM user_access ua
+JOIN locations l
+  ON l.id = ANY (ua.location_ids)
+WHERE ua.username = $1;
       `,
-      [locationIds]
+      [userName]
     );
 
     res.json({ data: result.rows });

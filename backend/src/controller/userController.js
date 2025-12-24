@@ -314,6 +314,9 @@ export const deleteTableRecord = async (req, res) => {
     }
 
     const deleted = await tableService.deleteTableRecord(tableName, id);
+    if(tableName === 'locations' && deleted){
+      await locationController.removeLocationFromAllAdmins(deleted.id);
+    }
     if (!deleted) {
       return res.status(404).json({
         success: false,
