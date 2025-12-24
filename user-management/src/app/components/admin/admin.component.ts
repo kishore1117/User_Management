@@ -414,6 +414,7 @@ export class AdminComponent implements OnInit {
         this.buildUserFormFromColumns();
 
         this.loading = false;
+        this.loadLocations();
       },
       error: (err) => {
         this.loading = false;

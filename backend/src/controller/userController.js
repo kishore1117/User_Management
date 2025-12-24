@@ -1,6 +1,7 @@
 import userService from "../services/userService.js";
 import * as tableService  from '../services/adminService.js';
 import { validateHierarchy } from "../utils/validateHierarchy.js"; 
+import * as locationController from './locationContoller.js';
 import jwt from "jsonwebtoken";
 import db from '../config/db.js';
 const { pool, initDB } = db;
@@ -261,7 +262,11 @@ export const createTableRecord = async (req, res) => {
     if (!exists) return res.status(404).json({ success: false, message: 'Table not found' });
 
     const created = await tableService.createTableRecord(tableName, data);
+    if(tableName === 'locations'){
+      await locationController.updateLocationAssignmentsForAllAdmins(created.id);
+    }
     return res.json({ success: true, row: created });
+
   } catch (err) {
     console.error('Error creating table record:', err);
     return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
@@ -309,6 +314,9 @@ export const deleteTableRecord = async (req, res) => {
     }
 
     const deleted = await tableService.deleteTableRecord(tableName, id);
+    if(tableName === 'locations' && deleted){
+      await locationController.removeLocationFromAllAdmins(deleted.id);
+    }
     if (!deleted) {
       return res.status(404).json({
         success: false,
