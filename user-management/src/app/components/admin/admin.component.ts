@@ -620,4 +620,11 @@ export class AdminComponent implements OnInit {
       });
     });
   }
+
+  // GET TABLE LABEL BY VALUE
+  getSelectedTableLabel(): string {
+    if (!this.selectedTable) return 'Record';
+    const table = this.tableList.find(t => t.value === this.selectedTable);
+    return table ? table.label : this.selectedTable;
+  }
 }

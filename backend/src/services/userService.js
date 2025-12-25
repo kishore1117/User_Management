@@ -595,7 +595,7 @@ export const addUser = async (data) => {
     ram_id,
     hdd_id,
     monitor_id,
-    monitor_serial_id,
+    monitor_serial_number,
     keyboard_id,
     mouse_id,
     cd_dvd_id,
@@ -607,14 +607,14 @@ export const addUser = async (data) => {
     `INSERT INTO users 
       (hostname, name, department_id, division_id, location_id, category_id, 
        ip_address1, ip_address2, floor, model_id, cpu_serial_id, processor_id, cpu_speed_id, 
-       ram_id, hdd_id, monitor_id, monitor_serial_id, keyboard_id, mouse_id, cd_dvd_id, os_id, usb)
+       ram_id, hdd_id, monitor_id, monitor_serial_number, keyboard_id, mouse_id, cd_dvd_id, os_id, usb)
       VALUES 
       ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
       RETURNING *`,
     [
       hostname, name, department_id, division_id, location_id, category_id,
       ip_address1, ip_address2, floor, model_id, cpu_serial_id, processor_id, cpu_speed_id,
-      ram_id, hdd_id, monitor_id, monitor_serial_id, keyboard_id, mouse_id, cd_dvd_id, os_id, usb
+      ram_id, hdd_id, monitor_id, monitor_serial_number, keyboard_id, mouse_id, cd_dvd_id, os_id, usb
     ]
   );
   return result.rows[0];

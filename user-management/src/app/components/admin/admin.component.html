@@ -134,7 +134,7 @@
             [class.form-disabled]="activeSection !== 'lookup' && activeSection !== null">
             <div class="form-header">
               <h3 class="form-title">
-                {{ lookupEditing ? 'Edit' : 'Add New' }} {{ selectedTable | titlecase }}
+                {{ lookupEditing ? 'Edit' : 'Add New' }} {{ getSelectedTableLabel() }}
               </h3>
               <p class="form-subtitle">
                 {{ lookupEditing ? 'Update the record details below' : 'Fill in the details to create a new record' }}
