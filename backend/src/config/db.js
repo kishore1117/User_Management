@@ -22,8 +22,8 @@ const __dirname = path.dirname(__filename)
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'postgres',
-  password: 'admin',
+  database: 'inventory_management',
+  password: 'Postgres@123',
   port: 5432,
 });
 export async function initDB() {

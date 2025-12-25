@@ -9,7 +9,7 @@ import compression from "compression";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { initDB, pool } from "./src/config/db.js";
+import { initDB } from "./src/config/db.js";
 
 // ------------------------
 // 📁 Local Imports
