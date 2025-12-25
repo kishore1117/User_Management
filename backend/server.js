@@ -37,7 +37,7 @@ dotenv.config({
 // ------------------------
 // 🗄️ Database Init
 // ------------------------
-const { pool, initDB } = db;
+//const { pool, initDB } = db;
 // initDB();
 
 // ------------------------
