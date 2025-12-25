@@ -10,7 +10,7 @@ export const getAllUsers = async (req) => {
       u.id,
       u.hostname,
       u.name,
-
+      u.monitor_serial_number,
       d.name AS department_name,
       divi.name AS division_name,
       l.name AS location_name,
@@ -27,7 +27,6 @@ export const getAllUsers = async (req) => {
       r.name AS ram,
       h.name AS hdd,
       mo.name AS monitor,
-      ms.name AS monitor_serial,
       kb.name AS keyboard,
       ms2.name AS mouse,
       cd.name AS cd_dvd,
@@ -61,7 +60,6 @@ export const getAllUsers = async (req) => {
     LEFT JOIN rams r ON u.ram_id = r.id
     LEFT JOIN hdds h ON u.hdd_id = h.id
     LEFT JOIN monitors mo ON u.monitor_id = mo.id
-    LEFT JOIN monitor_serials ms ON u.monitor_serial_id = ms.id
     LEFT JOIN keyboards kb ON u.keyboard_id = kb.id
     LEFT JOIN mice ms2 ON u.mouse_id = ms2.id
     LEFT JOIN cd_dvds cd ON u.cd_dvd_id = cd.id
@@ -80,7 +78,7 @@ export const getAllUsers = async (req) => {
       u.id,
       d.name, divi.name, l.name, c.name,
       m.name, cs.name, p.name, sp.name, r.name, h.name,
-      mo.name, ms.name, kb.name, ms2.name, cd.name, os.name,
+      mo.name,  kb.name, ms2.name, cd.name, os.name,
       u.asset_tag, w.warranty_name, pf.vendor_name
 
     ORDER BY u.id ASC;
@@ -420,9 +418,6 @@ SELECT
    FROM monitors) AS monitors,
 
   (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
-   FROM monitor_serials) AS monitor_serials,
-
-  (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
    FROM keyboards) AS keyboards,
 
   (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
@@ -479,6 +474,7 @@ export const getUserById = async (userId) => {
       u.name,
       u.serial_number,
       u.printer_type,
+      u.monitor_serial_number,
 
       u.location_id,
       l.name AS location_name,
@@ -523,9 +519,6 @@ export const getUserById = async (userId) => {
       mo.id AS monitor_id,
       mo.name AS monitor,
 
-      ms.id AS monitor_serial_id,
-      ms.name AS monitor_serial,
-
       kb.id AS keyboard_id,
       kb.name AS keyboard,
 
@@ -569,12 +562,10 @@ export const getUserById = async (userId) => {
     LEFT JOIN rams r ON u.ram_id = r.id
     LEFT JOIN hdds h ON u.hdd_id = h.id
     LEFT JOIN monitors mo ON u.monitor_id = mo.id
-    LEFT JOIN monitor_serials ms ON u.monitor_serial_id = ms.id
     LEFT JOIN keyboards kb ON u.keyboard_id = kb.id
     LEFT JOIN mice ms2 ON u.mouse_id = ms2.id
     LEFT JOIN cd_dvds cd ON u.cd_dvd_id = cd.id
     LEFT JOIN operating_systems os ON u.os_id = os.id
-
     LEFT JOIN warranties w ON u.warranty_id = w.id
     LEFT JOIN purchase_from pf ON u.purchase_from_id = pf.id
 
