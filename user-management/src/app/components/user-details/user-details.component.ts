@@ -68,7 +68,6 @@ export class UserDetailsComponent implements OnInit {
   rams: any[] = [];
   hdds: any[] = [];
   monitors: any[] = [];
-  monitorSerials: any[] = [];
   keyboards: any[] = [];
   mice: any[] = [];
   cdDvds: any[] = [];
@@ -87,24 +86,24 @@ export class UserDetailsComponent implements OnInit {
     },
     'Laptop': {
       hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os'],
-      network: ['ip_address1', 'ip_address2'],
+      network: ['ip_address1'],
       software: true
     },
-    'Monitor': {
-      hardware: ['model', 'monitor_serial'],
-      network: [],
-      software: false
-    },
-    'Keyboard': {
-      hardware: ['model'],
-      network: [],
-      software: false
-    },
-    'Mouse': {
-      hardware: ['model'],
-      network: [],
-      software: false
-    },
+    // 'Monitor': {
+    //   hardware: ['model', 'monitor_serial'],
+    //   network: [],
+    //   software: false
+    // },
+    // 'Keyboard': {
+    //   hardware: ['model'],
+    //   network: [],
+    //   software: false
+    // },
+    // 'Mouse': {
+    //   hardware: ['model'],
+    //   network: [],
+    //   software: false
+    // },
     'Firewall':{
       hardware: ['model', 'processor','ram', 'hdd', 'os'],
       network: ['ip_address1'],
@@ -113,7 +112,7 @@ export class UserDetailsComponent implements OnInit {
     'Printer': {
       hardware: ['model'],
       network: ['ip_address1'],
-      software: true
+      software: false
     },
     'Storage':{
       hardware: ['model', 'processor','ram', 'hdd', 'os'],
@@ -208,7 +207,6 @@ export class UserDetailsComponent implements OnInit {
           this.rams = lookupRes.data.rams || [];
           this.hdds = lookupRes.data.hdds || [];
           this.monitors = lookupRes.data.monitors || [];
-          this.monitorSerials = lookupRes.data.monitor_serials || [];
           this.keyboards = lookupRes.data.keyboards || [];
           this.mice = lookupRes.data.mice || [];
           this.cdDvds = lookupRes.data.cd_dvds || [];
@@ -262,7 +260,7 @@ export class UserDetailsComponent implements OnInit {
       ram_id: [''],
       hdd_id: [''],
       monitor_id: [''],
-      monitor_serial_id: [''],
+      monitor_serial_number: [''],
       keyboard_id: [''],
       mouse_id: [''],
       cd_dvd_id: [''],
@@ -335,7 +333,8 @@ export class UserDetailsComponent implements OnInit {
       usb: this.user.usb,
       asset_tag: this.user.asset_tag,
       serial_number: this.user.serial_number,
-      printer_type: this.user.printer_type
+      printer_type: this.user.printer_type,
+      monitor_serial_number: this.user.monitor_serial_number,
     };
 
     if(this.user.category_name === 'Printer'){
@@ -408,10 +407,10 @@ export class UserDetailsComponent implements OnInit {
       patch.monitor_id = mon?.id;
     }
 
-    if (this.user.monitor_serial) {
-      const monSerial = this.monitorSerials.find(m => m.name === this.user.monitor_serial);
-      patch.monitor_serial_id = monSerial?.id;
-    }
+    // if (this.user.monitor_serial) {
+    //   const monSerial = this.monitorSerials.find(m => m.name === this.user.monitor_serial);
+    //   patch.monitor_serial_id = monSerial?.id;
+    // }
 
     if (this.user.keyboard) {
       const kbd = this.keyboards.find(k => k.name === this.user.keyboard);

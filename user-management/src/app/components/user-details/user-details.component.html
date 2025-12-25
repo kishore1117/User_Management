@@ -134,12 +134,12 @@
             </p-select>
           </div>
 
-          <div class="form-group" *ngIf="isHardwareFieldVisible('cpu_serial')">
+          <!-- <div class="form-group" *ngIf="isHardwareFieldVisible('cpu_serial')">
             <label for="cpu_serial">CPU Serial</label>
             <p-select id="cpu_serial" formControlName="cpu_serial_id" [options]="cpuSerials" optionLabel="name" appendTo="body"
               optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Serial" class="w-full">
             </p-select>
-          </div>
+          </div> -->
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('processor')">
             <label for="processor">Processor</label>
@@ -183,13 +183,7 @@
             </p-select>
           </div>
 
-          <div class="form-group" *ngIf="isHardwareFieldVisible('monitor_serial')">
-            <label for="monitor_serial">Monitor Serial</label>
-            <p-select id="monitor_serial" formControlName="monitor_serial_id" [options]="monitorSerials"
-              optionLabel="name" optionValue="id" [disabled]="!isEditing" placeholder="Select Monitor Serial" appendTo="body"
-              class="w-full">
-            </p-select>
-          </div>
+
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('keyboard')">
             <label for="keyboard">Keyboard</label>
@@ -216,6 +210,18 @@
             <label for="serial_number">Serial Number</label>
             <input pInputText id="serial_number" formControlName="serial_number" [disabled]="!isEditing" class="input-field">
           </div>
+
+           <div class="form-group"  *ngIf="isHardwareFieldVisible('monitor_serial')">
+            <label for="serial_number">Monitor Serial</label>
+            <input pInputText id="monitor_serial" formControlName="monitor_serial_number" [disabled]="!isEditing" class="input-field">
+          </div>
+                    <!-- <div class="form-group" *ngIf="isHardwareFieldVisible('monitor_serial')">
+            <label for="monitor_serial">Monitor Serial</label>
+            <p-select id="monitor_serial" formControlName="monitor_serial_id" [options]="monitorSerials"
+              optionLabel="name" optionValue="id" [disabled]="!isEditing" placeholder="Select Monitor Serial" appendTo="body"
+              class="w-full">
+            </p-select>
+          </div> -->
         </div>
       </div>
 

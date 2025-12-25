@@ -13,12 +13,14 @@ import { TabsModule } from 'primeng/tabs';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { environment } from '../../../environments/environment';
+import { SelectModule } from 'primeng/select';
+import { ToastModule } from 'primeng/toast';
 
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule, TabsModule, ProgressSpinnerModule, MultiSelectModule],
+  imports: [CommonModule, CardModule, ButtonModule, TableModule, InputTextModule, FormsModule, ReactiveFormsModule, TabsModule, ProgressSpinnerModule, MultiSelectModule, SelectModule, ToastModule],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css'],
   providers: [MessageService]
@@ -55,6 +57,10 @@ export class AdminComponent implements OnInit {
   locations: any[] = [];
   categories: any[] = [];
   locationList: any[] = [];
+  roleList = [
+    { label: 'Admin', value: 'admin' },
+    { label: 'User', value: 'user' }
+  ];
 
   tableList = [
     { label: 'Department', value: 'departments' },
@@ -66,8 +72,12 @@ export class AdminComponent implements OnInit {
     { label: 'Ram', value: "rams" },
     { label: 'Storage', value: "hdds" },
     { label: 'Warranty', value: 'warranties' },
-    { label: 'Purchased_from', value: 'purchase_from' },
-    { label: 'Software', value: 'software' }
+    { label: 'Vendor details', value: 'purchase_from' },
+    { label: 'Software', value: 'software' },
+    { label: 'Operating System', value: 'operating_systems' },
+    { label: 'Monitor', value: 'monitors' },
+    { label: 'Keyboard', value: 'keyboards' },
+    { label: 'Mouse', value: 'mice' },
   ];
 
   constructor(
@@ -204,7 +214,7 @@ export class AdminComponent implements OnInit {
       next: ({ schema, rows }) => {
         const rawCols = Array.isArray(schema) ? schema : (schema && Array.isArray((schema as any).columns) ? (schema as any).columns : []);
 
-        const IGNORE_COLUMNS = ['created_at', 'updated_at'];
+        const IGNORE_COLUMNS = ['created_at', 'updated_at','id'];
 
         this.tableColumns = rawCols
           .map((c: any) => {
@@ -228,11 +238,18 @@ export class AdminComponent implements OnInit {
             };
           })
           .filter((col: any) => !IGNORE_COLUMNS.includes(col.name));
-
+           console.log('Table Columns:', this.tableColumns);
         // rows normalization
         if (rows && Array.isArray((rows as any).rows)) this.tableData = (rows as any).rows;
         else if (Array.isArray(rows)) this.tableData = rows;
         else this.tableData = [];
+
+        // Sort data by name or id field
+        this.tableData.sort((a: any, b: any) => {
+          const aValue = a.name || a.id || '';
+          const bValue = b.name || b.id || '';
+          return String(aValue).localeCompare(String(bValue));
+        });
 
         this.lookupPrimaryKey = (this.tableColumns.find(c => c.isPrimary) || this.tableColumns.find(c => c.name === 'id') || { name: 'id' }).name;
         this.buildLookupForm();
@@ -410,6 +427,13 @@ export class AdminComponent implements OnInit {
         else if (rows.rows && Array.isArray(rows.rows)) this.users = rows.rows;
         else this.users = rows.users || rows.data || [];
 
+        // Sort users by name field alphabetically
+        this.users.sort((a: any, b: any) => {
+          const aName = a.name || '';
+          const bName = b.name || '';
+          return String(aName).localeCompare(String(bName));
+        });
+
         // build user form from userColumns
         this.buildUserFormFromColumns();
 
@@ -565,6 +589,35 @@ export class AdminComponent implements OnInit {
         console.error(err);
         this.messageService.add({ severity: 'error', summary: 'Delete failed' });
       }
+    });
+  }
+
+  // SEARCH FILTER METHODS
+  getFilteredTableData(): any[] {
+    if (!this.tableSearch.trim()) {
+      return this.tableData;
+    }
+
+    const searchTerm = this.tableSearch.toLowerCase();
+    return this.tableData.filter((row: any) => {
+      return this.tableColumns.some((col: any) => {
+        const cellValue = String(row[col.name] || '').toLowerCase();
+        return cellValue.includes(searchTerm);
+      });
+    });
+  }
+
+  getFilteredUsers(): any[] {
+    if (!this.userSearch.trim()) {
+      return this.users;
+    }
+
+    const searchTerm = this.userSearch.toLowerCase();
+    return this.users.filter((user: any) => {
+      return this.userColumns.some((col: any) => {
+        const cellValue = String(user[col.name] || '').toLowerCase();
+        return cellValue.includes(searchTerm);
+      });
     });
   }
 }

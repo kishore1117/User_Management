@@ -8,7 +8,7 @@
   </div>
 
   <!-- Tab Navigation -->
-  <p-tabs  class="admin-tabs">
+  <p-tabs class="admin-tabs">
     <!-- <p-tablist>
       <p-tab value="0">
         <ng-template pTemplate="header">
@@ -43,8 +43,7 @@
             <div class="header-controls">
               <div class="control-group">
                 <label for="tableSelect" class="control-label">Select Table:</label>
-                <select id="tableSelect" [(ngModel)]="selectedTable" 
-                  (change)="onLookupTableSelect(tableSelect.value)" 
+                <select id="tableSelect" [(ngModel)]="selectedTable" (change)="onLookupTableSelect(tableSelect.value)"
                   #tableSelect class="table-select">
                   <option value="">-- Choose a table --</option>
                   <option *ngFor="let t of tableList" [value]="t.value">{{ t.label }}</option>
@@ -52,15 +51,12 @@
               </div>
 
               <div class="control-buttons">
-                <button class="btn btn-secondary" 
-                  (click)="setActiveSection('lookup'); openLookupAdd()"
+                <button class="btn btn-secondary" (click)="setActiveSection('lookup'); openLookupAdd()"
                   [disabled]="!selectedTable">
                   <i class="pi pi-plus"></i>
                   <span>Add Record</span>
                 </button>
-                <button class="btn btn-primary" 
-                  (click)="setActiveSection('lookup')"
-                  [disabled]="!selectedTable">
+                <button class="btn btn-primary" (click)="setActiveSection('lookup')" [disabled]="!selectedTable">
                   <i class="pi pi-eye"></i>
                   <span>View Records</span>
                 </button>
@@ -84,13 +80,10 @@
               <div class="records-controls">
                 <div class="search-box">
                   <i class="pi pi-search"></i>
-                  <input type="text" placeholder="Search records..." 
-                    [(ngModel)]="tableSearch" 
-                    [disabled]="activeSection !== 'lookup' && activeSection !== null"
-                    class="search-input">
+                  <input type="text" placeholder="Search records..." [(ngModel)]="tableSearch"
+                    [disabled]="activeSection !== 'lookup' && activeSection !== null" class="search-input">
                 </div>
-                <button class="btn btn-icon" 
-                  (click)="loadLookupForSelectedTable()"
+                <button class="btn btn-icon" (click)="loadLookupForSelectedTable()"
                   [disabled]="activeSection !== 'lookup' && activeSection !== null">
                   <i class="pi pi-refresh"></i>
                 </button>
@@ -109,21 +102,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let row of tableData | slice:0:100" class="table-row">
+                  <tr *ngFor="let row of getFilteredTableData() | slice:0:100" class="table-row">
                     <td *ngFor="let col of tableColumns" class="table-cell">
                       <span class="cell-value">{{ row[col.name] }}</span>
                     </td>
                     <td class="table-cell actions-cell">
-                      <button class="action-btn edit-btn" 
-                        (click)="openLookupEdit(row)"
-                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
-                        title="Edit">
+                      <button class="action-btn edit-btn" (click)="openLookupEdit(row)"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null" title="Edit">
                         <i class="pi pi-pencil"></i>
                       </button>
-                      <button class="action-btn delete-btn" 
-                        (click)="deleteLookup(row)"
-                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
-                        title="Delete">
+                      <button class="action-btn delete-btn" (click)="deleteLookup(row)"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null" title="Delete">
                         <i class="pi pi-trash"></i>
                       </button>
                     </td>
@@ -141,7 +130,7 @@
           </div>
 
           <!-- Lookup Form -->
-          <div class="form-section" id="lookup-form" 
+          <div class="form-section" id="lookup-form"
             [class.form-disabled]="activeSection !== 'lookup' && activeSection !== null">
             <div class="form-header">
               <h3 class="form-title">
@@ -155,7 +144,7 @@
             <form [formGroup]="lookupForm" (ngSubmit)="submitLookup()" class="dynamic-form">
               <div class="form-grid">
                 <ng-container *ngFor="let col of tableColumns">
-                  <div class="form-group" 
+                  <div class="form-group"
                     *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
                     <label class="form-label">
                       {{ col.name | titlecase }}
@@ -164,37 +153,24 @@
 
                     <ng-container [ngSwitch]="col.name">
                       <!-- LOCATION IDS MULTISELECT -->
-                      <p-multiSelect *ngSwitchCase="'location_ids'"
-                        [options]="locationList"
-                        optionLabel="name"
-                        optionValue="id"
-                        formControlName="location_ids"
-                        placeholder="Select Locations"
-                        display="chip"
+                      <p-multiSelect *ngSwitchCase="'location_ids'" [options]="locationList" optionLabel="name"
+                        optionValue="id" formControlName="location_ids" placeholder="Select Locations" display="chip"
                         [disabled]="activeSection !== 'lookup' && activeSection !== null"
                         class="form-control multiselect">
                       </p-multiSelect>
 
                       <!-- INTEGER INPUT -->
-                      <input *ngSwitchCase="'integer'" 
-                        type="number"
-                        pInputText
-                        [formControlName]="col.name"
+                      <input *ngSwitchCase="'integer'" type="number" pInputText [formControlName]="col.name"
                         [disabled]="(activeSection !== 'lookup' && activeSection !== null) || col.name === lookupPrimaryKey"
-                        placeholder="Enter number"
-                        class="form-control">
+                        placeholder="Enter number" class="form-control">
 
                       <!-- TEXT INPUT (DEFAULT) -->
-                      <input *ngSwitchDefault
-                        type="text"
-                        pInputText
-                        [formControlName]="col.name"
-                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
-                        placeholder="Enter value"
+                      <input *ngSwitchDefault type="text" pInputText [formControlName]="col.name"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null" placeholder="Enter value"
                         class="form-control">
                     </ng-container>
 
-                    <small *ngIf="lookupForm.get(col.name)?.hasError('required') && lookupForm.get(col.name)?.touched" 
+                    <small *ngIf="lookupForm.get(col.name)?.hasError('required') && lookupForm.get(col.name)?.touched"
                       class="error-message">
                       {{ col.name | titlecase }} is required
                     </small>
@@ -203,15 +179,12 @@
               </div>
 
               <div class="form-actions">
-                <button type="submit" 
-                  class="btn btn-primary"
+                <button type="submit" class="btn btn-primary"
                   [disabled]="(activeSection !== 'lookup' && activeSection !== null) || lookupForm.invalid">
                   <i [class]="lookupEditing ? 'pi pi-check' : 'pi pi-plus'"></i>
                   <span>{{ lookupEditing ? 'Update Record' : 'Create Record' }}</span>
                 </button>
-                <button type="button" 
-                  class="btn btn-secondary"
-                  (click)="openLookupAdd()"
+                <button type="button" class="btn btn-secondary" (click)="openLookupAdd()"
                   [disabled]="activeSection !== 'lookup' && activeSection !== null">
                   <i class="pi pi-times"></i>
                   <span>Cancel</span>
@@ -237,13 +210,11 @@
 
             <div class="header-controls">
               <div class="control-buttons ml-auto">
-                <button class="btn btn-secondary" 
-                  (click)="setActiveSection('users'); openUserAddInline()">
+                <button class="btn btn-secondary" (click)="setActiveSection('users'); openUserAddInline()">
                   <i class="pi pi-plus"></i>
                   <span>Add User</span>
                 </button>
-                <button class="btn btn-primary" 
-                  (click)="setActiveSection('users')">
+                <button class="btn btn-primary" (click)="setActiveSection('users')">
                   <i class="pi pi-eye"></i>
                   <span>View Users</span>
                 </button>
@@ -264,13 +235,10 @@
               <div class="records-controls">
                 <div class="search-box">
                   <i class="pi pi-search"></i>
-                  <input type="text" placeholder="Search users..." 
-                    [(ngModel)]="userSearch"
-                    [disabled]="activeSection !== 'users' && activeSection !== null"
-                    class="search-input">
+                  <input type="text" placeholder="Search users..." [(ngModel)]="userSearch"
+                    [disabled]="activeSection !== 'users' && activeSection !== null" class="search-input">
                 </div>
-                <button class="btn btn-icon" 
-                  (click)="loadUserSection()"
+                <button class="btn btn-icon" (click)="loadUserSection()"
                   [disabled]="activeSection !== 'users' && activeSection !== null">
                   <i class="pi pi-refresh"></i>
                 </button>
@@ -289,21 +257,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let row of users | slice:0:200" class="table-row">
+                  <tr *ngFor="let row of getFilteredUsers() | slice:0:200" class="table-row">
                     <td *ngFor="let col of userColumns" class="table-cell">
                       <span class="cell-value">{{ row[col.name] }}</span>
                     </td>
                     <td class="table-cell actions-cell">
-                      <button class="action-btn edit-btn" 
-                        (click)="openUserEditInline(row)"
-                        [disabled]="activeSection !== 'users' && activeSection !== null"
-                        title="Edit">
+                      <button class="action-btn edit-btn" (click)="openUserEditInline(row)"
+                        [disabled]="activeSection !== 'users' && activeSection !== null" title="Edit">
                         <i class="pi pi-pencil"></i>
                       </button>
-                      <button class="action-btn delete-btn" 
-                        (click)="deleteUserInline(row)"
-                        [disabled]="activeSection !== 'users' && activeSection !== null"
-                        title="Delete">
+                      <button class="action-btn delete-btn" (click)="deleteUserInline(row)"
+                        [disabled]="activeSection !== 'users' && activeSection !== null" title="Delete">
                         <i class="pi pi-trash"></i>
                       </button>
                     </td>
@@ -321,7 +285,7 @@
           </div>
 
           <!-- User Form -->
-          <div class="form-section" id="user-inline-form" 
+          <div class="form-section" id="user-inline-form"
             [class.form-disabled]="activeSection !== 'users' && activeSection !== null">
             <div class="form-header">
               <h3 class="form-title">
@@ -335,7 +299,7 @@
             <form [formGroup]="userForm" (ngSubmit)="submitUserInline()" class="dynamic-form">
               <div class="form-grid">
                 <ng-container *ngFor="let col of userColumns">
-                  <div class="form-group" 
+                  <div class="form-group"
                     *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
                     <label class="form-label">
                       {{ col.name | titlecase }}
@@ -373,37 +337,28 @@
                     </ng-container> -->
 
                     <ng-container [ngSwitch]="col.name">
+
+                      <p-select *ngSwitchCase="'role'" [options]="roleList" optionLabel="label" optionValue="value"
+                        formControlName="role" placeholder="Select Role" class="form-control">
+                      </p-select>
                       <!-- LOCATION IDS MULTISELECT -->
-                      <p-multiSelect *ngSwitchCase="'location_ids'"
-                        [options]="locationList"
-                        optionLabel="name"
-                        optionValue="id"
-                        formControlName="location_ids"
-                        placeholder="Select Locations"
-                        display="chip"
+                      <p-multiSelect *ngSwitchCase="'location_ids'" [options]="locationList" optionLabel="name"
+                        optionValue="id" formControlName="location_ids" placeholder="Select Locations" display="chip"
                         class="form-control multiselect">
                       </p-multiSelect>
 
                       <!-- INTEGER INPUT -->
-                      <input *ngSwitchCase="'integer'" 
-                        type="number"
-                        pInputText
-                        [formControlName]="col.name"
+                      <input *ngSwitchCase="'integer'" type="number" pInputText [formControlName]="col.name"
                         [disabled]="(activeSection !== 'lookup' && activeSection !== null) || col.name === lookupPrimaryKey"
-                        placeholder="Enter number"
-                        class="form-control">
+                        placeholder="Enter number" class="form-control">
 
                       <!-- TEXT INPUT (DEFAULT) -->
-                      <input *ngSwitchDefault
-                        type="text"
-                        pInputText
-                        [formControlName]="col.name"
-                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
-                        placeholder="Enter value"
+                      <input *ngSwitchDefault type="text" pInputText [formControlName]="col.name"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null" placeholder="Enter value"
                         class="form-control">
                     </ng-container>
 
-                    <small *ngIf="userForm.get(col.name)?.hasError('required') && userForm.get(col.name)?.touched" 
+                    <small *ngIf="userForm.get(col.name)?.hasError('required') && userForm.get(col.name)?.touched"
                       class="error-message">
                       {{ col.name | titlecase }} is required
                     </small>
@@ -412,15 +367,12 @@
               </div>
 
               <div class="form-actions">
-                <button type="submit" 
-                  class="btn btn-primary"
+                <button type="submit" class="btn btn-primary"
                   [disabled]="(activeSection !== 'users' && activeSection !== null) || userForm.invalid">
                   <i [class]="editingUser ? 'pi pi-check' : 'pi pi-plus'"></i>
                   <span>{{ editingUser ? 'Update User' : 'Create User' }}</span>
                 </button>
-                <button type="button" 
-                  class="btn btn-secondary"
-                  (click)="userFormVisible=false; openUserAddInline()"
+                <button type="button" class="btn btn-secondary" (click)="userFormVisible=false; openUserAddInline()"
                   [disabled]="activeSection !== 'users' && activeSection !== null">
                   <i class="pi pi-times"></i>
                   <span>Cancel</span>
@@ -442,3 +394,4 @@
     </div>
   </div>
 </div>
+<p-toast></p-toast>
