@@ -620,6 +620,7 @@ export const addUser = async (data) => {
   return result.rows[0];
 };
 
+
 async function updateUser(id, userData) {
   const client = await pool.connect();
   try {
