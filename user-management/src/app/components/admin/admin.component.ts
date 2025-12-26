@@ -78,6 +78,7 @@ export class AdminComponent implements OnInit {
     { label: 'Monitor', value: 'monitors' },
     { label: 'Keyboard', value: 'keyboards' },
     { label: 'Mouse', value: 'mice' },
+    { label: 'CPU Speed', value: 'cpu_speeds' }
   ];
 
   constructor(
