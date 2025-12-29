@@ -11,292 +11,6 @@ router.use(authenticateJWT);
 // File upload setup
 const upload = multer({ dest: "uploads/" });
 
-// router.post("/upload", upload.single("file"), async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({ message: "No file uploaded" });
-//     }
-
-//     const workbook = xlsx.readFile(req.file.path);
-//     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-//     const data = xlsx.utils.sheet_to_json(sheet, { defval: null });
-
-//     const LOOKUP_TABLES = {
-//       Model: "models",
-//       "CPU S#": "cpu_serials",
-//       Processor: "processors",
-//       "CPU Speed": "cpu_speeds",
-//       RAM: "rams",
-//       HDD: "hdds",
-//       Monitor: "monitors",
-//       KBD: "keyboards",
-//       Mouse: "mice",
-//       "CD\\DVD": "cd_dvds"
-//     };
-
-//     for (const row of data) {
-//       const {
-//         Hostname,
-//         Name,
-//         Department,
-//         Division,
-//         Category,
-//         Location,
-//         Floor,
-//         IPAddress1,
-//         IPAddress2,
-//         Assettag,
-//         Serial_number,
-//         Printer_type,
-//         warrenty,
-//         "Purchase From": purchaseFrom,
-//         ...rest
-//       } = row;
-
-//       /* ❌ HARD STOP — required fields */
-//       if (
-//         !Hostname?.trim() ||
-//         !Name?.trim() ||
-//         !Location?.trim() ||
-//         !IPAddress1?.trim()
-//       ) {
-//         continue;
-//       }
-
-//       /* ❌ SKIP IF IP EXISTS */
-//       const ipCheck = await pool.query(
-//         `
-//         SELECT id FROM users
-//         WHERE ip_address1 = $1
-//            OR ip_address2 = $1
-//            OR ip_address1 = $2
-//            OR ip_address2 = $2
-//         `,
-//         [IPAddress1, IPAddress2]
-//       );
-
-//       if (ipCheck.rows.length > 0) {
-//         console.log(`⏭️ Skipping ${Hostname} — IP already exists`);
-//         continue;
-//       }
-
-//       /* ---------- LOCATION ---------- */
-//       const locRes = await pool.query(
-//         `
-//         INSERT INTO locations (name, address)
-//         VALUES ($1,'')
-//         ON CONFLICT (name)
-//         DO UPDATE SET name = EXCLUDED.name
-//         RETURNING id
-//         `,
-//         [Location.trim()]
-//       );
-//       const location_id = locRes.rows[0].id;
-
-//       /* ---------- DEPARTMENT ---------- */
-//       let department_id = null;
-//       if (Department?.trim() && !["na", "n/a"].includes(Department.toLowerCase())) {
-//         const deptRes = await pool.query(
-//           `
-//           INSERT INTO departments (name, location_id)
-//           VALUES ($1,$2)
-//           ON CONFLICT (name)
-//           DO UPDATE SET location_id = EXCLUDED.location_id
-//           RETURNING id
-//           `,
-//           [Department.trim(), location_id]
-//         );
-//         department_id = deptRes.rows[0].id;
-//       }
-
-//       /* ---------- DIVISION ---------- */
-//       let division_id = null;
-//       if (Division?.trim() && department_id) {
-//         const divRes = await pool.query(
-//           `
-//           INSERT INTO divisions (name, department_id)
-//           VALUES ($1,$2)
-//           ON CONFLICT (name)
-//           DO UPDATE SET name = EXCLUDED.name
-//           RETURNING id
-//           `,
-//           [Division.trim(), department_id]
-//         );
-//         division_id = divRes.rows[0].id;
-//       }
-
-//       /* ---------- CATEGORY ---------- */
-//       let category_id = null;
-//       if (Category?.trim()) {
-//         const catRes = await pool.query(
-//           `
-//           INSERT INTO categories (name, location_ids)
-//           VALUES ($1, ARRAY[$2::INT])
-//           ON CONFLICT (name)
-//           DO UPDATE SET location_ids = categories.location_ids || EXCLUDED.location_ids
-//           RETURNING id
-//           `,
-//           [Category.trim(), location_id]
-//         );
-//         category_id = catRes.rows[0].id;
-//       }
-
-//       /* ---------- WARRANTY ---------- */
-//       let warranty_id = null;
-//       if (warrenty?.trim()) {
-//         const wRes = await pool.query(
-//           `
-//           INSERT INTO warranties (warranty_name)
-//           VALUES ($1)
-//           ON CONFLICT (warranty_name)
-//           DO UPDATE SET warranty_name = EXCLUDED.warranty_name
-//           RETURNING id
-//           `,
-//           [warrenty.trim()]
-//         );
-//         warranty_id = wRes.rows[0].id;
-//       }
-
-//       /* ---------- PURCHASE FROM ---------- */
-//       let purchase_from_id = null;
-//       if (purchaseFrom?.trim()) {
-//         const pRes = await pool.query(
-//           `
-//           INSERT INTO purchase_from (vendor_name)
-//           VALUES ($1)
-//           ON CONFLICT (vendor_name)
-//           DO UPDATE SET vendor_name = EXCLUDED.vendor_name
-//           RETURNING id
-//           `,
-//           [purchaseFrom.trim()]
-//         );
-//         purchase_from_id = pRes.rows[0].id;
-//       }
-
-//       /* ---------- HARDWARE & SOFTWARE ---------- */
-//       const lookupIds = {};
-//       let softwareStart = false;
-
-//       for (const [rawCol, val] of Object.entries(rest)) {
-//         if (!val) continue;
-
-//         const col = rawCol.trim();
-//         const value = val.toString().trim();
-//         if (!value || ["na", "n/a"].includes(value.toLowerCase())) continue;
-
-//         /* O/S */
-//         if (col === "O/S") {
-//           softwareStart = true;
-//           const osRes = await pool.query(
-//             `
-//             INSERT INTO operating_systems (name)
-//             VALUES ($1)
-//             ON CONFLICT (name)
-//             DO UPDATE SET name = EXCLUDED.name
-//             RETURNING id
-//             `,
-//             [value]
-//           );
-//           lookupIds.os_id = osRes.rows[0].id;
-//           continue;
-//         }
-
-//         /* Hardware */
-//         if (LOOKUP_TABLES[col]) {
-//           const table = LOOKUP_TABLES[col];
-//           const res = await pool.query(
-//             `
-//             INSERT INTO ${table} (name)
-//             VALUES ($1)
-//             ON CONFLICT (name)
-//             DO UPDATE SET name = EXCLUDED.name
-//             RETURNING id
-//             `,
-//             [value]
-//           );
-//           lookupIds[col] = res.rows[0].id;
-//           continue;
-//         }
-
-//         /* Software */
-//         if (softwareStart && ["1", "yes"].includes(value.toLowerCase())) {
-//           const swRes = await pool.query(
-//             `
-//             INSERT INTO software (name, location_ids)
-//             VALUES ($1, ARRAY[$2::INT])
-//             ON CONFLICT (name)
-//             DO UPDATE SET location_ids = software.location_ids || EXCLUDED.location_ids
-//             RETURNING id
-//             `,
-//             [col, location_id]
-//           );
-
-//           lookupIds.software ??= [];
-//           lookupIds.software.push(swRes.rows[0].id);
-//         }
-//       }
-
-//       /* ---------- INSERT USER ---------- */
-//       const insertRes = await pool.query(
-//         `
-//         INSERT INTO users
-//         (hostname, name, department_id, division_id, location_id, category_id,
-//          model_id, cpu_serial_id, processor_id, cpu_speed_id, ram_id, hdd_id,
-//          monitor_id,keyboard_id, mouse_id, cd_dvd_id, os_id,
-//          warranty_id, purchase_from_id,
-//          floor, ip_address1, ip_address2, asset_tag, serial_number, printer_type)
-//         VALUES
-//         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
-//          $13,$14,$15,$16,$17,$18,$19,$20,
-//          $21,$22,$23,$24, $25)
-//         RETURNING id
-//         `,
-//         [
-//           Hostname, Name, department_id, division_id, location_id, category_id,
-//           lookupIds["Model"] || null,
-//           lookupIds["CPU S#"] || null,
-//           lookupIds["Processor"] || null,
-//           lookupIds["CPU Speed"] || null,
-//           lookupIds["RAM"] || null,
-//           lookupIds["HDD"] || null,
-//           lookupIds["Monitor"] || null,
-//           lookupIds["KBD"] || null,
-//           lookupIds["Mouse"] || null,
-//           lookupIds["CD\\DVD"] || null,
-//           lookupIds.os_id || null,
-//           warranty_id,
-//           purchase_from_id,
-//           Floor, IPAddress1, IPAddress2, Assettag,
-//           Serial_number, Printer_type
-//         ]
-//       );
-
-//       const user_id = insertRes.rows[0].id;
-
-//       /* ---------- MAP SOFTWARE ---------- */
-//       if (lookupIds.software?.length) {
-//         for (const swId of lookupIds.software) {
-//           await pool.query(
-//             `
-//             INSERT INTO user_software (user_id, software_id)
-//             VALUES ($1,$2)
-//             ON CONFLICT (user_id, software_id) DO NOTHING
-//             `,
-//             [user_id, swId]
-//           );
-//         }
-//       }
-//     }
-
-//     res.json({ message: "✅ Upload completed successfully" });
-
-//   } catch (error) {
-//     console.error("❌ Upload error:", error);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// });
-
-
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -307,7 +21,6 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = xlsx.utils.sheet_to_json(sheet, { defval: null });
 
-    /* ---------- LOOKUP TABLES (NO MONITOR SERIAL) ---------- */
     const LOOKUP_TABLES = {
       Model: "models",
       "CPU S#": "cpu_serials",
@@ -340,7 +53,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         ...rest
       } = row;
 
-      /* ---------- REQUIRED FIELDS ---------- */
+      /* ❌ HARD STOP — required fields */
       if (
         !Hostname?.trim() ||
         !Name?.trim() ||
@@ -350,7 +63,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         continue;
       }
 
-      /* ---------- DUPLICATE IP CHECK ---------- */
+      /* ❌ SKIP IF IP EXISTS */
       const ipCheck = await pool.query(
         `
         SELECT id FROM users
@@ -471,7 +184,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         const value = val.toString().trim();
         if (!value || ["na", "n/a"].includes(value.toLowerCase())) continue;
 
-        /* ---------- OPERATING SYSTEM ---------- */
+        /* O/S */
         if (col === "O/S") {
           softwareStart = true;
           const osRes = await pool.query(
@@ -488,7 +201,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           continue;
         }
 
-        /* ---------- HARDWARE LOOKUPS ---------- */
+        /* Hardware */
         if (LOOKUP_TABLES[col]) {
           const table = LOOKUP_TABLES[col];
           const res = await pool.query(
@@ -505,7 +218,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           continue;
         }
 
-        /* ---------- SOFTWARE ---------- */
+        /* Software */
         if (softwareStart && ["1", "yes"].includes(value.toLowerCase())) {
           const swRes = await pool.query(
             `
@@ -529,23 +242,17 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         INSERT INTO users
         (hostname, name, department_id, division_id, location_id, category_id,
          model_id, cpu_serial_id, processor_id, cpu_speed_id, ram_id, hdd_id,
-         monitor_id, keyboard_id, mouse_id, cd_dvd_id, os_id,
+         monitor_id,keyboard_id, mouse_id, cd_dvd_id, os_id,
          warranty_id, purchase_from_id,
-         floor, ip_address1, ip_address2, asset_tag,
-         monitor_serial_number, printer_type)
+         floor, ip_address1, ip_address2, asset_tag, serial_number, printer_type)
         VALUES
         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
          $13,$14,$15,$16,$17,$18,$19,$20,
-         $21,$22,$23,$24,$25,$26)
+         $21,$22,$23,$24, $25)
         RETURNING id
         `,
         [
-          Hostname,
-          Name,
-          department_id,
-          division_id,
-          location_id,
-          category_id,
+          Hostname, Name, department_id, division_id, location_id, category_id,
           lookupIds["Model"] || null,
           lookupIds["CPU S#"] || null,
           lookupIds["Processor"] || null,
@@ -559,12 +266,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           lookupIds.os_id || null,
           warranty_id,
           purchase_from_id,
-          Floor,
-          IPAddress1,
-          IPAddress2,
-          Assettag,
-          Serial_number?.toString().trim() || null,
-          Printer_type
+          Floor, IPAddress1, IPAddress2, Assettag,
+          Serial_number, Printer_type
         ]
       );
 
@@ -592,6 +295,303 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
+// router.post("/upload", upload.single("file"), async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({ message: "No file uploaded" });
+//     }
+
+//     const workbook = xlsx.readFile(req.file.path);
+//     const sheet = workbook.Sheets[workbook.SheetNames[0]];
+//     const data = xlsx.utils.sheet_to_json(sheet, { defval: null });
+
+//     /* ---------- LOOKUP TABLES (NO MONITOR SERIAL) ---------- */
+//     const LOOKUP_TABLES = {
+//       Model: "models",
+//       "CPU S#": "cpu_serials",
+//       Processor: "processors",
+//       "CPU Speed": "cpu_speeds",
+//       RAM: "rams",
+//       HDD: "hdds",
+//       Monitor: "monitors",
+//       KBD: "keyboards",
+//       Mouse: "mice",
+//       "CD\\DVD": "cd_dvds"
+//     };
+
+//     for (const row of data) {
+//       const {
+//         Hostname,
+//         Name,
+//         Department,
+//         Division,
+//         Category,
+//         Location,
+//         Floor,
+//         IPAddress1,
+//         IPAddress2,
+//         Assettag,
+//         Serial_number,
+//         Printer_type,
+//         warrenty,
+//         "Purchase From": purchaseFrom,
+//         ...rest
+//       } = row;
+
+//       /* ---------- REQUIRED FIELDS ---------- */
+//       if (
+//         !Hostname?.trim() ||
+//         !Name?.trim() ||
+//         !Location?.trim() ||
+//         !IPAddress1?.trim()
+//       ) {
+//         continue;
+//       }
+
+//       /* ---------- DUPLICATE IP CHECK ---------- */
+//       const ipCheck = await pool.query(
+//         `
+//         SELECT id FROM users
+//         WHERE ip_address1 = $1
+//            OR ip_address2 = $1
+//            OR ip_address1 = $2
+//            OR ip_address2 = $2
+//         `,
+//         [IPAddress1, IPAddress2]
+//       );
+
+//       if (ipCheck.rows.length > 0) {
+//         console.log(`⏭️ Skipping ${Hostname} — IP already exists`);
+//         continue;
+//       }
+
+//       /* ---------- LOCATION ---------- */
+//       const locRes = await pool.query(
+//         `
+//         INSERT INTO locations (name, address)
+//         VALUES ($1,'')
+//         ON CONFLICT (name)
+//         DO UPDATE SET name = EXCLUDED.name
+//         RETURNING id
+//         `,
+//         [Location.trim()]
+//       );
+//       const location_id = locRes.rows[0].id;
+
+//       /* ---------- DEPARTMENT ---------- */
+//       let department_id = null;
+//       if (Department?.trim() && !["na", "n/a"].includes(Department.toLowerCase())) {
+//         const deptRes = await pool.query(
+//           `
+//           INSERT INTO departments (name, location_id)
+//           VALUES ($1,$2)
+//           ON CONFLICT (name)
+//           DO UPDATE SET location_id = EXCLUDED.location_id
+//           RETURNING id
+//           `,
+//           [Department.trim(), location_id]
+//         );
+//         department_id = deptRes.rows[0].id;
+//       }
+
+//       /* ---------- DIVISION ---------- */
+//       let division_id = null;
+//       if (Division?.trim() && department_id) {
+//         const divRes = await pool.query(
+//           `
+//           INSERT INTO divisions (name, department_id)
+//           VALUES ($1,$2)
+//           ON CONFLICT (name)
+//           DO UPDATE SET name = EXCLUDED.name
+//           RETURNING id
+//           `,
+//           [Division.trim(), department_id]
+//         );
+//         division_id = divRes.rows[0].id;
+//       }
+
+//       /* ---------- CATEGORY ---------- */
+//       let category_id = null;
+//       if (Category?.trim()) {
+//         const catRes = await pool.query(
+//           `
+//           INSERT INTO categories (name, location_ids)
+//           VALUES ($1, ARRAY[$2::INT])
+//           ON CONFLICT (name)
+//           DO UPDATE SET location_ids = categories.location_ids || EXCLUDED.location_ids
+//           RETURNING id
+//           `,
+//           [Category.trim(), location_id]
+//         );
+//         category_id = catRes.rows[0].id;
+//       }
+
+//       /* ---------- WARRANTY ---------- */
+//       let warranty_id = null;
+//       if (warrenty?.trim()) {
+//         const wRes = await pool.query(
+//           `
+//           INSERT INTO warranties (warranty_name)
+//           VALUES ($1)
+//           ON CONFLICT (warranty_name)
+//           DO UPDATE SET warranty_name = EXCLUDED.warranty_name
+//           RETURNING id
+//           `,
+//           [warrenty.trim()]
+//         );
+//         warranty_id = wRes.rows[0].id;
+//       }
+
+//       /* ---------- PURCHASE FROM ---------- */
+//       let purchase_from_id = null;
+//       if (purchaseFrom?.trim()) {
+//         const pRes = await pool.query(
+//           `
+//           INSERT INTO purchase_from (vendor_name)
+//           VALUES ($1)
+//           ON CONFLICT (vendor_name)
+//           DO UPDATE SET vendor_name = EXCLUDED.vendor_name
+//           RETURNING id
+//           `,
+//           [purchaseFrom.trim()]
+//         );
+//         purchase_from_id = pRes.rows[0].id;
+//       }
+
+//       /* ---------- HARDWARE & SOFTWARE ---------- */
+//       const lookupIds = {};
+//       let softwareStart = false;
+
+//       for (const [rawCol, val] of Object.entries(rest)) {
+//         if (!val) continue;
+
+//         const col = rawCol.trim();
+//         const value = val.toString().trim();
+//         if (!value || ["na", "n/a"].includes(value.toLowerCase())) continue;
+
+//         /* ---------- OPERATING SYSTEM ---------- */
+//         if (col === "O/S") {
+//           softwareStart = true;
+//           const osRes = await pool.query(
+//             `
+//             INSERT INTO operating_systems (name)
+//             VALUES ($1)
+//             ON CONFLICT (name)
+//             DO UPDATE SET name = EXCLUDED.name
+//             RETURNING id
+//             `,
+//             [value]
+//           );
+//           lookupIds.os_id = osRes.rows[0].id;
+//           continue;
+//         }
+
+//         /* ---------- HARDWARE LOOKUPS ---------- */
+//         if (LOOKUP_TABLES[col]) {
+//           const table = LOOKUP_TABLES[col];
+//           const res = await pool.query(
+//             `
+//             INSERT INTO ${table} (name)
+//             VALUES ($1)
+//             ON CONFLICT (name)
+//             DO UPDATE SET name = EXCLUDED.name
+//             RETURNING id
+//             `,
+//             [value]
+//           );
+//           lookupIds[col] = res.rows[0].id;
+//           continue;
+//         }
+
+//         /* ---------- SOFTWARE ---------- */
+//         if (softwareStart && ["1", "yes"].includes(value.toLowerCase())) {
+//           const swRes = await pool.query(
+//             `
+//             INSERT INTO software (name, location_ids)
+//             VALUES ($1, ARRAY[$2::INT])
+//             ON CONFLICT (name)
+//             DO UPDATE SET location_ids = software.location_ids || EXCLUDED.location_ids
+//             RETURNING id
+//             `,
+//             [col, location_id]
+//           );
+
+//           lookupIds.software ??= [];
+//           lookupIds.software.push(swRes.rows[0].id);
+//         }
+//       }
+
+//       /* ---------- INSERT USER ---------- */
+//       const insertRes = await pool.query(
+//         `
+//         INSERT INTO users
+//         (hostname, name, department_id, division_id, location_id, category_id,
+//          model_id, cpu_serial_id, processor_id, cpu_speed_id, ram_id, hdd_id,
+//          monitor_id, keyboard_id, mouse_id, cd_dvd_id, os_id,
+//          warranty_id, purchase_from_id,
+//          floor, ip_address1, ip_address2, asset_tag,
+//          monitor_serial_number, printer_type)
+//         VALUES
+//         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
+//          $13,$14,$15,$16,$17,$18,$19,$20,
+//          $21,$22,$23,$24,$25,$26)
+//         RETURNING id
+//         `,
+//         [
+//           Hostname,
+//           Name,
+//           department_id,
+//           division_id,
+//           location_id,
+//           category_id,
+//           lookupIds["Model"] || null,
+//           lookupIds["CPU S#"] || null,
+//           lookupIds["Processor"] || null,
+//           lookupIds["CPU Speed"] || null,
+//           lookupIds["RAM"] || null,
+//           lookupIds["HDD"] || null,
+//           lookupIds["Monitor"] || null,
+//           lookupIds["KBD"] || null,
+//           lookupIds["Mouse"] || null,
+//           lookupIds["CD\\DVD"] || null,
+//           lookupIds.os_id || null,
+//           warranty_id,
+//           purchase_from_id,
+//           Floor,
+//           IPAddress1,
+//           IPAddress2,
+//           Assettag,
+//           Serial_number?.toString().trim() || null,
+//           Printer_type
+//         ]
+//       );
+
+//       const user_id = insertRes.rows[0].id;
+
+//       /* ---------- MAP SOFTWARE ---------- */
+//       if (lookupIds.software?.length) {
+//         for (const swId of lookupIds.software) {
+//           await pool.query(
+//             `
+//             INSERT INTO user_software (user_id, software_id)
+//             VALUES ($1,$2)
+//             ON CONFLICT (user_id, software_id) DO NOTHING
+//             `,
+//             [user_id, swId]
+//           );
+//         }
+//       }
+//     }
+
+//     res.json({ message: "✅ Upload completed successfully" });
+
+//   } catch (error) {
+//     console.error("❌ Upload error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
 
 router.get("/download", async (req, res) => {
   try {

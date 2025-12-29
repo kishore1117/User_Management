@@ -135,8 +135,6 @@ export const getAllowedLocations = async (req, res) => {
   try {
     const locationIds = req.user?.location_ids || [];
     const userName = req.user?.username;
-    console.log(req.user);
-
     if (!locationIds.length) {
       return res.json({ data: [] });
     }

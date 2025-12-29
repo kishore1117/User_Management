@@ -362,7 +362,6 @@ export const deleteTableRecord = async (req, res) => {
 
 export const deleteUsersByLocation = async (req, res) => {
   const { location_id } = req.query; 
- console.log("Location ID to delete users from:", location_id);
   // Validation
   if (!location_id) {
     return res.status(400).json({

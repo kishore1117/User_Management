@@ -97,7 +97,6 @@ export class AdminComponent implements OnInit {
   // --- TAB CHANGE HANDLER ---
   onTabChange(newIndex: number) {
     this.activeTabIndex = newIndex;
-    console.log('Tab changed to:', newIndex);
     
     if (newIndex === 0) {
       this.setActiveSection('lookup');
@@ -116,7 +115,6 @@ export class AdminComponent implements OnInit {
     this.activeSection = section;
 
     if (section === 'lookup') {
-      console.log('Selected lookup section');
       if (this.selectedTable) this.loadLookupForSelectedTable();
     } else {
       this.loadUserSection();
@@ -135,9 +133,7 @@ export class AdminComponent implements OnInit {
     this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
-          console.log("Locations loaded:", res.data);
           this.locationList = res.data || [];
-          console.log("Location List after assignment:", this.locationList);
         },
         error: () => {
           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load locations' });
@@ -166,13 +162,10 @@ export class AdminComponent implements OnInit {
       ids = [locationIds];
     }
 
-    console.log('Converted location IDs:', ids);
-    console.log('Available locations:', this.locationList);
 
     // Convert IDs to location objects
     if (ids.length > 0 && this.locationList && this.locationList.length > 0) {
       const result = this.locationList.filter((loc: any) => ids.includes(loc.id));
-      console.log('Result location objects:', result);
       return result;
     }
 
@@ -205,7 +198,6 @@ export class AdminComponent implements OnInit {
   }
 
   loadLookupForSelectedTable() {
-    console.log('Loading lookup for table:', this.selectedTable);
     if (!this.selectedTable) return;
     this.loading = true;
     forkJoin({
@@ -239,7 +231,7 @@ export class AdminComponent implements OnInit {
             };
           })
           .filter((col: any) => !IGNORE_COLUMNS.includes(col.name));
-           console.log('Table Columns:', this.tableColumns);
+
         // rows normalization
         if (rows && Array.isArray((rows as any).rows)) this.tableData = (rows as any).rows;
         else if (Array.isArray(rows)) this.tableData = rows;
@@ -336,9 +328,6 @@ export class AdminComponent implements OnInit {
 
     this.lookupForm = this.fb.group(group);
 
-    console.log('Rebuilt lookup form with values:', this.lookupForm.value);
-    console.log('Location_ids field value:', this.lookupForm.get('location_ids')?.value);
-
     setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
   }
 
@@ -417,7 +406,7 @@ export class AdminComponent implements OnInit {
             isPrimary: !!(c.column_name === 'id' || c.isPrimary || c.primary_key || (c.column_default && String(c.column_default).startsWith('nextval')))
           };
         });
-        console.log('User Columns:', this.userColumns);
+
 
         // rows normalization
         if (!rows) this.users = [];
@@ -470,7 +459,6 @@ export class AdminComponent implements OnInit {
       
       group[col.name] = [initial, validators];
     });
-    console.log('Building user form with controls:', Object.keys(group));
     this.userForm = this.fb.group(group);
     this.userFormVisible = false;
     this.editingUser = false;
@@ -478,7 +466,6 @@ export class AdminComponent implements OnInit {
   }
 
   openUserAddInline() {
-    console.log('Opening user add inline form');
     this.userFormVisible = true;
     this.editingUser = false;
     this.editingUserId = null;
@@ -522,9 +509,6 @@ export class AdminComponent implements OnInit {
     this.userForm = this.fb.group(group);
     this.userFormVisible = true;
 
-    console.log('Rebuilt user form with values:', this.userForm.value);
-    console.log('User location_ids field value:', this.userForm.get('location_ids')?.value);
-
     setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
   }
 
@@ -538,7 +522,6 @@ export class AdminComponent implements OnInit {
       return;
     }
     const payload = { ...this.userForm.value };
-    console.log('Submitting user form, payload:', payload);
 
     // Normalize location_ids
     if (payload.location_ids) {
