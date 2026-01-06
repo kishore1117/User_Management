@@ -157,6 +157,23 @@ export async function getTableRows(tableName, limit = 500) {
     LIMIT $1;
   `;
 }
+else if (safe === 'departments') {
+    query = `
+      SELECT
+        d.id,
+        d.name,
+        COALESCE(
+          (
+            SELECT JSON_AGG(l.name)
+            FROM locations l
+            WHERE l.id = ANY(d.location_ids)
+          ),
+          '[]'::json
+        ) AS location_ids
+      FROM departments d
+      LIMIT $1;
+    `;
+  }
  else {
     query = `SELECT * FROM ${safe} LIMIT $1`;
   }
