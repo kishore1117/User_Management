@@ -372,6 +372,10 @@ export const getDashboardData = async (user) => {
 
 
 // export const getLookupData = async (user) => {
+<<<<<<< HEAD
+=======
+//   console.log(user)
+>>>>>>> 7e2c393 (update department and licence logic)
 //   const locationIds = user?.location_ids || [];
 //   const query = `
 // SELECT 
@@ -565,7 +569,7 @@ export const getLookupData = async (user) => {
     FROM (SELECT 1) AS dummy;
   `;
 
-  const result = await pool.query(query, [locationIds]);
+  const result = await pool.query(query, [isAdmin, locationIds]);
   return result.rows[0];
 };
 
@@ -652,7 +656,18 @@ export const getUserById = async (userId) => {
           WHERE us.user_id = u.id
         ),
         '[]'
-      ) AS software
+      ) AS software,
+
+      COALESCE(
+  (
+    SELECT JSON_AGG(li.name)
+    FROM user_licences ul
+    JOIN licences li ON ul.licence_id = li.id
+    WHERE ul.user_id = u.id
+  ),
+  '[]'
+) AS licences
+
 
     FROM users u
     LEFT JOIN locations l ON u.location_id = l.id
@@ -734,6 +749,9 @@ async function updateUser(id, userData) {
     const softwareNames = userData.software;
     delete userData.software;
 
+    const licenceNames = userData.licences;
+    delete userData.licences;
+
     const cleanData = Object.fromEntries(
       Object.entries(userData).filter(([_, v]) => v !== null && v !== undefined)
     );
@@ -756,6 +774,7 @@ async function updateUser(id, userData) {
       updatedUser = (await client.query(query, values)).rows[0];
     }
 
+    // Handle software
     if (Array.isArray(softwareNames)) {
       if (softwareNames.length === 0) throw new Error("At least one software must be selected.");
 
@@ -776,6 +795,29 @@ async function updateUser(id, userData) {
         await client.query(
           `INSERT INTO user_software (user_id, software_id) VALUES ($1, $2)`,
           [id, swId]
+        );
+      }
+    }
+
+    // Handle licences
+    if (Array.isArray(licenceNames)) {
+      const licRes = await client.query(
+        `SELECT id, name FROM licences WHERE name = ANY($1)`,
+        [licenceNames]
+      );
+
+      if (licRes.rows.length !== licenceNames.length) {
+        throw new Error("Invalid licence name provided");
+      }
+
+      const licenceIds = licRes.rows.map(row => row.id);
+
+      await client.query(`DELETE FROM user_licences WHERE user_id = $1`, [id]);
+
+      for (const licId of licenceIds) {
+        await client.query(
+          `INSERT INTO user_licences (user_id, licence_id) VALUES ($1, $2)`,
+          [id, licId]
         );
       }
     }

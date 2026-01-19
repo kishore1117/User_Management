@@ -49,7 +49,7 @@ export class UserFormComponent implements OnInit {
     this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
-          this.locations = res.data || [];
+          this.locations = res.locations || [];
 
           // auto-select if only one location
           if (this.locations.length === 1) {

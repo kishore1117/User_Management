@@ -73,6 +73,7 @@ export class UserDetailsComponent implements OnInit {
   cdDvds: any[] = [];
   operatingSystems: any[] = [];
   softwareList: any[] = [];
+  licencesList: any[] = [];
   warranties: any[] = [];
   purchaseFrom: any[] = [];
 
@@ -173,7 +174,10 @@ export class UserDetailsComponent implements OnInit {
 
   // For autocomplete
   filteredSoftware: any[] = [];
+  filteredLicences: any[] = [];
   userSoftware: string[] = [];
+  userLicences: string[] = [];
+  licenceInputValue: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -212,6 +216,7 @@ export class UserDetailsComponent implements OnInit {
           this.cdDvds = lookupRes.data.cd_dvds || [];
           this.operatingSystems = lookupRes.data.operating_systems || [];
           this.softwareList = lookupRes.data.software || [];
+          this.licencesList = lookupRes.data.licences || [];
           this.warranties = lookupRes.data.warranties || [];
           this.purchaseFrom = lookupRes.data.purchase_from || [];
         }
@@ -219,12 +224,14 @@ export class UserDetailsComponent implements OnInit {
         // Extract user data
         this.user = (userRes && userRes.user) ? userRes.user : (userRes || {});
         this.userSoftware = Array.isArray(this.user.software) ? [...this.user.software] : [];
+        this.userLicences = Array.isArray(this.user.licences) ? [...this.user.licences] : [];
 
         // Populate form with user data
         this.populateForm();
 
-        // Sync software checkboxes
+        // Sync software and licence checkboxes
         this.syncSoftwareControls();
+        this.syncLicenceControls();
 
         // Ensure form state
         this.ensureFormState();
@@ -270,8 +277,10 @@ export class UserDetailsComponent implements OnInit {
       warranty_id: [''],
       purchase_from_id: [''],
       asset_tag: [''],
-      softwareInput: [''],  // Add this line
-      software: this.fb.array([])
+      softwareInput: [''],
+      licenceInput: [''],
+      software: this.fb.array([]),
+      licence: this.fb.array([])
     });
     this.userForm.disable();
   }
@@ -279,6 +288,11 @@ export class UserDetailsComponent implements OnInit {
   onSoftwareInputChange(value: string) {
     this.softwareInputValue = value;
     this.filterSoftware({ query: value });
+  }
+
+  onLicenceInputChange(value: string) {
+    this.licenceInputValue = value;
+    this.filterLicence({ query: value });
   }
 
   listenToCategoryChanges() {
@@ -303,6 +317,20 @@ export class UserDetailsComponent implements OnInit {
     this.ensureFormState();
   }
 
+  private syncLicenceControls() {
+    const formArray = this.licenceFormArray;
+    if (!formArray) return;
+    formArray.clear();
+
+    for (const lic of this.licencesList) {
+      const name = lic.name || '';
+      const isChecked = this.userLicences.includes(name);
+      formArray.push(new FormControl(isChecked));
+    }
+
+    this.ensureFormState();
+  }
+
   private ensureFormState() {
     const enabled = !!this.isEditing;
     if (enabled) {
@@ -317,10 +345,21 @@ export class UserDetailsComponent implements OnInit {
       if (enabled) ctrl.enable({ emitEvent: false });
       else ctrl.disable({ emitEvent: false });
     });
+
+    const licArr = this.licenceFormArray;
+    if (!licArr) return;
+    licArr.controls.forEach(ctrl => {
+      if (enabled) ctrl.enable({ emitEvent: false });
+      else ctrl.disable({ emitEvent: false });
+    });
   }
 
   get softwareFormArray(): FormArray {
     return this.userForm.get('software') as FormArray;
+  }
+
+  get licenceFormArray(): FormArray {
+    return this.userForm.get('licence') as FormArray;
   }
 
   private populateForm() {
@@ -443,6 +482,14 @@ export class UserDetailsComponent implements OnInit {
     this.userSoftware = selected;
   }
 
+  onLicenceCheckboxChange() {
+    const selected = this.licenceFormArray.controls
+      .map((ctrl, i) => (ctrl as FormControl).value ? this.licencesList[i]?.name : null)
+      .filter(v => v !== null) as string[];
+
+    this.userLicences = selected;
+  }
+
   addSoftware(software: any) {
     if (!software || !software.name) return;
     const name = software.name;
@@ -467,6 +514,30 @@ export class UserDetailsComponent implements OnInit {
     this.filteredSoftware = [];
   }
 
+  addLicence(licence: any) {
+    if (!licence || !licence.name) return;
+    const name = licence.name;
+
+    if (!this.userLicences.includes(name)) {
+      this.userLicences.push(name);
+    }
+
+    const idx = this.licencesList.findIndex(l => l.name === name);
+    if (idx !== -1) {
+      const ctrl = this.licenceFormArray.at(idx) as FormControl;
+      if (ctrl) ctrl.setValue(true);
+    }
+
+    // Clear the input
+    const licenceInputCtrl = this.userForm.get('licenceInput');
+    if (licenceInputCtrl) {
+      licenceInputCtrl.setValue('');
+    }
+
+    this.licenceInputValue = '';
+    this.filteredLicences = [];
+  }
+
   removeSoftware(name: string) {
     if (!name) return;
     this.userSoftware = this.userSoftware.filter(x => x !== name);
@@ -477,8 +548,22 @@ export class UserDetailsComponent implements OnInit {
     }
   }
 
+  removeLicence(name: string) {
+    if (!name) return;
+    this.userLicences = this.userLicences.filter(x => x !== name);
+    const idx = this.licencesList.findIndex(l => l.name === name);
+    if (idx !== -1) {
+      const ctrl = this.licenceFormArray.at(idx) as FormControl;
+      if (ctrl) ctrl.setValue(false);
+    }
+  }
+
   getSoftwareControl(index: number): FormControl {
     return this.softwareFormArray.at(index) as FormControl;
+  }
+
+  getLicenceControl(index: number): FormControl {
+    return this.licenceFormArray.at(index) as FormControl;
   }
 
   updateUser() {
@@ -505,7 +590,7 @@ export class UserDetailsComponent implements OnInit {
 
     // Compare primitive fields
     Object.keys(formValue).forEach(key => {
-      if (key === 'software' || key === 'softwareInput') return;
+      if (key === 'software' || key === 'softwareInput' || key === 'licence' || key === 'licenceInput') return;
 
       const newVal = formValue[key];
       const oldVal = this.originalUser[key];
@@ -542,6 +627,13 @@ export class UserDetailsComponent implements OnInit {
       updatedFields['software'] = newSoftware;
     }
 
+    // Compare licences
+    const oldLicences = Array.isArray(this.originalUser.licences) ? [...this.originalUser.licences] : [];
+    const newLicences = Array.isArray(this.userLicences) ? [...this.userLicences] : [];
+    if (!arraysEqual(oldLicences, newLicences)) {
+      updatedFields['licences'] = newLicences;
+    }
+
     if (Object.keys(updatedFields).length === 0) {
       this.messageService.add({ severity: 'info', summary: 'No Changes', detail: 'Nothing to update' });
       if (wasDisabled) this.userForm.disable();
@@ -568,6 +660,13 @@ export class UserDetailsComponent implements OnInit {
     const query = event.query.toLowerCase();
     this.filteredSoftware = this.softwareList.filter((sw: any) =>
       sw.name.toLowerCase().includes(query) && !this.userSoftware.includes(sw.name)
+    );
+  }
+
+  filterLicence(event: any) {
+    const query = event.query.toLowerCase();
+    this.filteredLicences = this.licencesList.filter((lic: any) =>
+      lic.name.toLowerCase().includes(query) && !this.userLicences.includes(lic.name)
     );
   }
 

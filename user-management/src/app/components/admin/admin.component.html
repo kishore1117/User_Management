@@ -145,7 +145,7 @@
               <div class="form-grid">
                 <ng-container *ngFor="let col of tableColumns">
                   <div class="form-group"
-                    *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
+                    *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at'|| col.name === 'description')">
                     <label class="form-label">
                       {{ col.name | titlecase }}
                       <span *ngIf="!col.nullable && col.name !== lookupPrimaryKey" class="required">*</span>
@@ -155,6 +155,12 @@
                       <!-- LOCATION IDS MULTISELECT -->
                       <p-multiSelect *ngSwitchCase="'location_ids'" [options]="locationList" optionLabel="name"
                         optionValue="id" formControlName="location_ids" placeholder="Select Locations" display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-multiSelect>
+
+                      <p-multiSelect *ngSwitchCase="'department_ids'" [options]="departmentList" optionLabel="name"
+                        optionValue="id" formControlName="department_ids" placeholder="Select Departments" display="chip"
                         [disabled]="activeSection !== 'lookup' && activeSection !== null"
                         class="form-control multiselect">
                       </p-multiSelect>
