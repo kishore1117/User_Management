@@ -57,6 +57,7 @@ export class AdminComponent implements OnInit {
   locations: any[] = [];
   categories: any[] = [];
   locationList: any[] = [];
+  departmentList: any[] = [];
   roleList = [
     { label: 'Admin', value: 'admin' },
     { label: 'User', value: 'user' }
@@ -78,7 +79,8 @@ export class AdminComponent implements OnInit {
     { label: 'Monitor', value: 'monitors' },
     { label: 'Keyboard', value: 'keyboards' },
     { label: 'Mouse', value: 'mice' },
-    { label: 'CPU Speed', value: 'cpu_speeds' }
+    { label: 'CPU Speed', value: 'cpu_speeds' },
+    { label: 'Licences', value: 'licences' }
   ];
 
   constructor(
@@ -136,7 +138,8 @@ export class AdminComponent implements OnInit {
       .subscribe({
         next: (res) => {
           console.log("Locations loaded:", res.data);
-          this.locationList = res.data || [];
+          this.locationList = res.locations || [];
+          this.departmentList = res.departments || [];
           console.log("Location List after assignment:", this.locationList);
         },
         error: () => {
@@ -215,7 +218,7 @@ export class AdminComponent implements OnInit {
       next: ({ schema, rows }) => {
         const rawCols = Array.isArray(schema) ? schema : (schema && Array.isArray((schema as any).columns) ? (schema as any).columns : []);
 
-        const IGNORE_COLUMNS = ['created_at', 'updated_at','id'];
+        const IGNORE_COLUMNS = ['created_at', 'updated_at','id','description'];
 
         this.tableColumns = rawCols
           .map((c: any) => {
@@ -361,6 +364,7 @@ export class AdminComponent implements OnInit {
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Created', detail: 'Record created' });
           this.loadLookupForSelectedTable();
+          this.loadLocations();
         },
         error: (err) => {
           console.error(err);

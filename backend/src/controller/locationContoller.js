@@ -131,31 +131,49 @@ export const getAllLocations = async (req, res) => {
   }
 };
 
+// export const getAllowedLocations = async (req, res) => {
+  
+//   try {
+//     const locationIds = req.user?.location_ids || [];
+//     const userName = req.user?.username;
+//     console.log(req.user);
+
+//     if (!locationIds.length) {
+//       return res.json({ data: [] });
+//     }
+
+//     const result = await pool.query(
+//       `
+//  SELECT DISTINCT l.id, l.name
+// FROM user_access ua
+// JOIN locations l
+//   ON l.id = ANY (ua.location_ids)
+// WHERE ua.username = $1;
+//       `,
+//       [userName]
+//     );
+
+//     res.json({ data: result.rows });
+//   } catch (err) {
+//     console.error('❌ Error fetching allowed locations:', err);
+//     res.status(500).json({ message: 'Failed to fetch locations' });
+//   }
+// };
+
 export const getAllowedLocations = async (req, res) => {
   try {
-    const locationIds = req.user?.location_ids || [];
-    const userName = req.user?.username;
-    console.log(req.user);
+    const [locations, departments] = await Promise.all([
+      pool.query(`SELECT id, name FROM locations ORDER BY name`),
+      pool.query(`SELECT id, name FROM departments ORDER BY name`)
+    ]);
 
-    if (!locationIds.length) {
-      return res.json({ data: [] });
-    }
-
-    const result = await pool.query(
-      `
- SELECT DISTINCT l.id, l.name
-FROM user_access ua
-JOIN locations l
-  ON l.id = ANY (ua.location_ids)
-WHERE ua.username = $1;
-      `,
-      [userName]
-    );
-
-    res.json({ data: result.rows });
+    res.json({
+      locations: locations.rows,
+      departments: departments.rows
+    });
   } catch (err) {
-    console.error('❌ Error fetching allowed locations:', err);
-    res.status(500).json({ message: 'Failed to fetch locations' });
+    console.error('❌ Error fetching admin data:', err);
+    res.status(500).json({ message: 'Failed to fetch data' });
   }
 };
 

@@ -357,16 +357,77 @@
 -- );
 
 
-ALTER TABLE users
-DROP CONSTRAINT IF EXISTS users_monitor_serial_id_fkey;
 
--- 2. Remove old FK column
-ALTER TABLE users
-DROP COLUMN IF EXISTS monitor_serial_id;
 
--- 3. Add text column for serial number
-ALTER TABLE users
-ADD COLUMN monitor_serial_number VARCHAR(255);
+-- ALTER TABLE users
+-- DROP CONSTRAINT IF EXISTS users_monitor_serial_id_fkey;
 
--- 4. Drop lookup table
-DROP TABLE IF EXISTS monitor_serials;
+-- -- 2. Remove old FK column
+-- ALTER TABLE users
+-- DROP COLUMN IF EXISTS monitor_serial_id;
+
+-- -- 3. Add text column for serial number
+-- ALTER TABLE users
+-- ADD COLUMN monitor_serial_number VARCHAR(255);
+
+-- -- 4. Drop lookup table
+-- DROP TABLE IF EXISTS monitor_serials;
+
+ALTER TABLE departments
+DROP CONSTRAINT IF EXISTS departments_location_id_fkey;
+
+
+ALTER TABLE departments
+RENAME COLUMN location_id TO location_ids;
+
+
+
+ALTER TABLE departments
+ALTER COLUMN location_ids
+TYPE INT[]
+USING ARRAY[location_ids];
+
+
+ALTER TABLE divisions
+DROP CONSTRAINT IF EXISTS divisions_department_id_fkey;
+
+
+
+ALTER TABLE divisions
+RENAME COLUMN department_id TO department_ids;
+
+
+ALTER TABLE divisions
+ALTER COLUMN department_ids
+ TYPE INT[]
+USING ARRAY[department_ids];
+
+CREATE TABLE public.licences (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  description TEXT,
+  vendor VARCHAR(150),
+  licence_key TEXT,
+  expiry_date DATE,
+  location_ids INT[],           -- if licence is location based
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE public.user_licences (
+  user_id INT NOT NULL,
+  licence_id INT NOT NULL,
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT user_licences_pkey PRIMARY KEY (user_id, licence_id),
+  CONSTRAINT user_licences_user_id_fkey
+    FOREIGN KEY (user_id)
+    REFERENCES public.users(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT user_licences_licence_id_fkey
+    FOREIGN KEY (licence_id)
+    REFERENCES public.licences(id)
+    ON DELETE CASCADE
+);

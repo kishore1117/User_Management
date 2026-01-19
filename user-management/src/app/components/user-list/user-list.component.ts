@@ -17,7 +17,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 @Component({
   selector: 'app-user-list',
   templateUrl: './user-list.component.html',
-  styleUrls:["./user-list.component.css"],
+  styleUrls: ["./user-list.component.css"],
   standalone: true,
   imports: [
     TableModule,
@@ -50,7 +50,7 @@ export class UserListComponent implements OnInit {
   selectedStatus = '';
   selectedCategory = '';
 
-  constructor(private userService: UserService, private router: Router) {}
+  constructor(private userService: UserService, private router: Router) { }
 
   ngOnInit() {
     this.userService.getAllUsers().subscribe((data: any) => {
@@ -79,15 +79,15 @@ export class UserListComponent implements OnInit {
       value: d,
     }));
   }
-  addUser(){
-     this.router.navigate(['/add']);
+  addUser() {
+    this.router.navigate(['/add']);
   }
 
-  uploadUsers(){
+  uploadUsers() {
     this.router.navigate(['/upload']);
   }
 
-  exportUsers(){
+  exportUsers() {
     this.userService.exportUsers().subscribe((blob: Blob) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -153,6 +153,7 @@ export class UserListComponent implements OnInit {
         (user.name && user.name === 'NA' && status === 'Available IP') ||
         (!user.name || user.name !== 'NA') && status === 'Reserved IP'
     );
+
     this.users = this.filteredUsers;
   }
 
@@ -174,15 +175,17 @@ export class UserListComponent implements OnInit {
   }
 
   getStatus(user: any) {
-    return user.name && user.name !== 'NA' ? 'Reserved IP' : 'Available IP';
-  }
+  return /^n\/?a$/i.test(user?.name ?? '')
+    ? 'Available IP'
+    : 'Reserved IP';
+}
 
   getSeverity(status: string) {
     return status === 'Available IP' ? 'success' : 'danger';
   }
 
-viewUser(id: number) {
-  this.router.navigate(['/user', id]);
-}
+  viewUser(id: number) {
+    this.router.navigate(['/user', id]);
+  }
 }
 
