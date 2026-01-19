@@ -372,10 +372,6 @@ export const getDashboardData = async (user) => {
 
 
 // export const getLookupData = async (user) => {
-<<<<<<< HEAD
-=======
-//   console.log(user)
->>>>>>> 7e2c393 (update department and licence logic)
 //   const locationIds = user?.location_ids || [];
 //   const query = `
 // SELECT 
