@@ -276,6 +276,57 @@
         </div>
       </div>
 
+            <!-- Licence Information Section -->
+      <div class="form-section" *ngIf="licencesList.length > 0">
+        <h2 class="section-title">
+          <i class="pi pi-certificate"></i>
+          Licence Information
+        </h2>
+        <div class="software-input" *ngIf="isEditing">
+          <p-autoComplete formControlName="licenceInput" [suggestions]="filteredLicences"
+            (completeMethod)="filterLicence($event)" (onSelect)="addLicence($event.value)" field="name"
+            placeholder="Search and add licence..." class="w-full">
+            <ng-template let-value pTemplate="item">
+              <div>{{ value.name }}</div>
+            </ng-template>
+          </p-autoComplete>
+        </div>
+
+        <!-- Selected Licence Tags -->
+        <div class="selected-software" *ngIf="userLicences.length > 0">
+          <div class="software-tags">
+            <span *ngFor="let licence of userLicences" class="software-tag">
+              {{ licence }}
+              <button *ngIf="isEditing" type="button" (click)="removeLicence(licence)" class="tag-remove">
+                <i class="pi pi-times"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <div class="software-list">
+          <div class="software-header">
+            <h3>All Licences ({{ licencesList.length }})</h3>
+          </div>
+
+          <div class="software-checkboxes">
+            <div *ngFor="let licence of licencesList; let i = index" class="software-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" [id]="'lic_' + i" [formControl]="getLicenceControl(i)"
+                  (change)="onLicenceCheckboxChange()" [disabled]="!isEditing" class="software-checkbox">
+                <label [for]="'lic_' + i" class="checkbox-label">
+                  {{ licence.name }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="licencesList.length === 0" class="empty-software">
+            <p>No licences available</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Form Actions -->
       <div class="form-actions">
         <button *ngIf="isEditing" pButton type="button" label="Save Changes" icon="pi pi-check" (click)="updateUser()"

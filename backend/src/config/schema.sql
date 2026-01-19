@@ -357,16 +357,49 @@
 -- );
 
 
-ALTER TABLE users
-DROP CONSTRAINT IF EXISTS users_monitor_serial_id_fkey;
+-- ALTER TABLE users
+-- DROP CONSTRAINT IF EXISTS users_monitor_serial_id_fkey;
 
--- 2. Remove old FK column
-ALTER TABLE users
-DROP COLUMN IF EXISTS monitor_serial_id;
+-- -- 2. Remove old FK column
+-- ALTER TABLE users
+-- DROP COLUMN IF EXISTS monitor_serial_id;
 
--- 3. Add text column for serial number
-ALTER TABLE users
-ADD COLUMN monitor_serial_number VARCHAR(255);
+-- -- 3. Add text column for serial number
+-- ALTER TABLE users
+-- ADD COLUMN monitor_serial_number VARCHAR(255);
 
--- 4. Drop lookup table
-DROP TABLE IF EXISTS monitor_serials;
+-- -- 4. Drop lookup table
+-- DROP TABLE IF EXISTS monitor_serials;
+
+BEGIN;
+
+-- 1️⃣ Drop the existing foreign key (arrays cannot have FK)
+ALTER TABLE departments
+DROP CONSTRAINT IF EXISTS departments_location_id_fkey;
+
+-- 2️⃣ Rename column (only if old name exists)
+ALTER TABLE departments
+RENAME COLUMN location_id TO location_ids;
+
+-- 3️⃣ Convert INTEGER → INTEGER[] and retain data
+ALTER TABLE departments
+ALTER COLUMN location_ids
+TYPE INT[]
+USING ARRAY[location_ids];
+
+-- 4️⃣ Optional: set default empty array for future inserts
+ALTER TABLE departments
+ALTER COLUMN location_ids
+SET DEFAULT '{}';
+
+-- 5️⃣ Optional: prevent NULL values (enable only if valid)
+-- ALTER TABLE departments
+-- ALTER COLUMN location_ids
+-- SET NOT NULL;
+
+-- 6️⃣ Add GIN index for fast overlap queries
+CREATE INDEX IF NOT EXISTS idx_departments_location_ids
+ON departments
+USING GIN (location_ids);
+
+COMMIT;

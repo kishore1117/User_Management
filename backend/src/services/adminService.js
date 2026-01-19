@@ -125,7 +125,7 @@ export async function getTableRows(tableName, limit = 500) {
 
   // 🔹 SPECIAL LOGIC FOR CATEGORIES
   if (safe === 'categories') {
-  query = `
+    query = `
     SELECT 
       c.id,
       c.name,
@@ -140,8 +140,59 @@ export async function getTableRows(tableName, limit = 500) {
     FROM categories c
     LIMIT $1;
   `;
-} else if (safe === 'software') {
-  query = `
+  } else if (safe === 'departments') {
+    query = `
+    SELECT 
+      d.id,
+      d.name,
+      COALESCE(
+        (
+          SELECT JSON_AGG(l.name)
+          FROM locations l
+          WHERE l.id = ANY(d.location_ids)
+        ),
+        '[]'::json
+      ) AS location_ids
+    FROM departments d
+    LIMIT $1;
+  `;
+  } else if (safe === 'divisions') {
+    query = `
+SELECT 
+  d.id,
+  d.name,
+  COALESCE(
+    (
+      SELECT JSON_AGG(dep.name)
+      FROM departments dep
+      WHERE dep.id = ANY (d.department_ids)
+    ),
+    '[]'::json
+  ) AS department_ids
+FROM divisions d
+LIMIT $1;
+
+  `;
+  }
+  else if(safe === 'licences'){
+    query = `
+    SELECT 
+      l.id,
+      l.name,
+      COALESCE(
+        (
+          SELECT JSON_AGG(s.name)
+          FROM locations s
+          WHERE s.id = ANY(l.location_ids)
+        ),
+        '[]'::json
+      ) AS location_ids
+    FROM licences l
+    LIMIT $1;
+  `;
+  }
+  else if (safe === 'software') {
+    query = `
     SELECT 
       s.id,
       s.name,
@@ -157,6 +208,23 @@ export async function getTableRows(tableName, limit = 500) {
     LIMIT $1;
   `;
 }
+else if (safe === 'departments') {
+    query = `
+      SELECT
+        d.id,
+        d.name,
+        COALESCE(
+          (
+            SELECT JSON_AGG(l.name)
+            FROM locations l
+            WHERE l.id = ANY(d.location_ids)
+          ),
+          '[]'::json
+        ) AS location_ids
+      FROM departments d
+      LIMIT $1;
+    `;
+  }
  else {
     query = `SELECT * FROM ${safe} LIMIT $1`;
   }
@@ -175,54 +243,131 @@ export async function getTableRows(tableName, limit = 500) {
  * - Only columns present in information_schema are allowed (prevents injection).
  * - Returns the inserted row (RETURNING *).
  */
+// export async function createTableRecord(tableName, data) {
+//   const safe = sanitizeTableName(tableName);
+//   if (!safe) throw new Error('Invalid table name');
+//   if (!data || typeof data !== 'object') throw new Error('Invalid data');
+
+//   // fetch allowed columns
+//   const cols = await getTableColumns(safe);
+//   const allowed = new Set(cols.map(c => c.column_name));
+//   const typeMap = new Map(cols.map(c => [c.column_name, c.data_type]));
+
+//   const keys = Object.keys(data).filter(k => allowed.has(k));
+//   if (keys.length === 0) throw new Error('No valid columns provided');
+
+//   const colsSql = keys.map(k => `"${k}"`).join(', ');
+//   const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+//   const values = keys.map(k => {
+//     let value = data[k];
+//     const colType = typeMap.get(k);
+
+//     // Handle array types: ensure they are actual arrays
+//     if (colType && colType.includes('[]')) {
+//       if (value === null || value === undefined) return null;
+//       if (Array.isArray(value)) return value;
+
+//       // Handle string representation of arrays (e.g., "1,2,3" or "1, 2, 3")
+//       if (typeof value === 'string' && value.trim()) {
+//         try {
+//           return value.split(',').map(v => {
+//             const trimmed = v.trim();
+//             return isNaN(trimmed) ? trimmed : Number(trimmed);
+//           });
+//         } catch (e) {
+//           return [value];
+//         }
+//       }
+
+//       // Convert single value to array
+//       return [value];
+//     }
+//     return value;
+//   });
+
+//   const sql = `INSERT INTO ${safe} (${colsSql}) VALUES (${placeholders}) RETURNING *`;
+//   const result = await pool.query(sql, values);
+//   // Convert array fields in returned row
+//   const convertedRows = convertArrayFields(result.rows, typeMap);
+//   return convertedRows[0];
+// }
+
 export async function createTableRecord(tableName, data) {
   const safe = sanitizeTableName(tableName);
   if (!safe) throw new Error('Invalid table name');
   if (!data || typeof data !== 'object') throw new Error('Invalid data');
 
-  // fetch allowed columns
+  // Fetch allowed columns + data types
   const cols = await getTableColumns(safe);
   const allowed = new Set(cols.map(c => c.column_name));
   const typeMap = new Map(cols.map(c => [c.column_name, c.data_type]));
 
+  // Filter only allowed columns
   const keys = Object.keys(data).filter(k => allowed.has(k));
   if (keys.length === 0) throw new Error('No valid columns provided');
 
   const colsSql = keys.map(k => `"${k}"`).join(', ');
   const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+
   const values = keys.map(k => {
     let value = data[k];
     const colType = typeMap.get(k);
 
-    // Handle array types: ensure they are actual arrays
+    // 🔹 Normalize undefined / empty string
+    if (value === undefined || value === '') {
+      return null;
+    }
+
+    // 🔹 DATE / TIMESTAMP
+    if (colType === 'date' || colType?.includes('timestamp')) {
+      return value ? value : null;
+    }
+
+    // 🔹 ARRAY TYPES (int[], text[], etc.)
     if (colType && colType.includes('[]')) {
-      if (value === null || value === undefined) return null;
+      if (value === null) return null;
+
+      // Already an array
       if (Array.isArray(value)) return value;
 
-      // Handle string representation of arrays (e.g., "1,2,3" or "1, 2, 3")
+      // CSV string → array
       if (typeof value === 'string' && value.trim()) {
-        try {
-          return value.split(',').map(v => {
-            const trimmed = v.trim();
-            return isNaN(trimmed) ? trimmed : Number(trimmed);
-          });
-        } catch (e) {
-          return [value];
-        }
+        return value.split(',').map(v => {
+          const trimmed = v.trim();
+          return isNaN(trimmed) ? trimmed : Number(trimmed);
+        });
       }
 
-      // Convert single value to array
+      // Single value → array
       return [value];
     }
+
+    // 🔹 Numeric columns (extra safety)
+    if (
+      ['integer', 'bigint', 'smallint', 'numeric', 'real', 'double precision']
+        .includes(colType)
+    ) {
+      return value === null ? null : Number(value);
+    }
+
+    // 🔹 Default (text, varchar, etc.)
     return value;
   });
 
-  const sql = `INSERT INTO ${safe} (${colsSql}) VALUES (${placeholders}) RETURNING *`;
+  const sql = `
+    INSERT INTO ${safe} (${colsSql})
+    VALUES (${placeholders})
+    RETURNING *
+  `;
+
   const result = await pool.query(sql, values);
-  // Convert array fields in returned row
+
+  // Convert array fields in returned row (if needed)
   const convertedRows = convertArrayFields(result.rows, typeMap);
+
   return convertedRows[0];
 }
+
 
 /**
  * Update a record in a table by primary key.
