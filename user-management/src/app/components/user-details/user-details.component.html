@@ -45,36 +45,37 @@
 
           <div class="form-group">
             <label for="department">Department</label>
-            <p-select id="department" formControlName="department_id" [options]="departments" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Department" class="w-full">
+            <p-select id="department" formControlName="department_id" [options]="departments" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Department" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="division">Division</label>
-            <p-select id="division" formControlName="division_id" [options]="divisions" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Division" class="w-full">
+            <p-select id="division" formControlName="division_id" [options]="divisions" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Division" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="location">Location</label>
-            <p-select id="location" formControlName="location_id" [options]="locations" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isAdmin" placeholder="Select Location" class="w-full">
+            <p-select id="location" formControlName="location_id" [options]="locations" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isAdmin" placeholder="Select Location" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group">
             <label for="category">Category</label>
-            <p-select id="category" formControlName="category_id" [options]="categories" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Category" class="w-full">
+            <p-select id="category" formControlName="category_id" [options]="categories" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Category" class="w-full">
             </p-select>
           </div>
 
-            <div class="form-group" *ngIf="isPrinterSelected">
+          <div class="form-group" *ngIf="isPrinterSelected">
             <label for="printer_type">Printer Type</label>
-           <p-select id="printer_type" formControlName="printer_type" [options]="printer_type" optionLabel="label" appendTo="body"
-              optionValue="value" [disabled]="!isEditing" placeholder="Select Printer Type" class="w-full">
+            <p-select id="printer_type" formControlName="printer_type" [options]="printer_type" optionLabel="label"
+              appendTo="body" optionValue="value" [disabled]="!isEditing" placeholder="Select Printer Type"
+              class="w-full">
             </p-select>
           </div>
         </div>
@@ -109,16 +110,17 @@
 
           <div class="form-group">
             <label for="warranty">Warranty</label>
-            <p-select id="warranty" formControlName="warranty_id" [options]="warranties" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Warranty" class="w-full">
+            <p-select id="warranty" formControlName="warranty_id" [options]="warranties" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Warranty" class="w-full">
             </p-select>
           </div>
 
 
           <div class="form-group">
             <label for="purchase_from">Purchase From</label>
-            <p-select id="purchase_from" formControlName="purchase_from_id" [options]="purchaseFrom" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Purchase From" class="w-full">
+            <p-select id="purchase_from" formControlName="purchase_from_id" [options]="purchaseFrom" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Purchase From"
+              class="w-full">
             </p-select>
           </div>
 
@@ -126,11 +128,11 @@
             <label for="asset_tag">Asset Tag</label>
             <input pInputText id="asset_tag" formControlName="asset_tag" [disabled]="!isEditing" class="input-field">
           </div>
-          
+
           <div class="form-group" *ngIf="isHardwareFieldVisible('model')">
             <label for="model">Model</label>
-            <p-select id="model" formControlName="model_id" [options]="models" optionLabel="name" optionValue="id" appendTo="body"
-              [disabled]="!isEditing" placeholder="Select Model" class="w-full">
+            <p-select id="model" formControlName="model_id" [options]="models" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select Model" class="w-full">
             </p-select>
           </div>
 
@@ -143,43 +145,43 @@
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('processor')">
             <label for="processor">Processor</label>
-            <p-select id="processor" formControlName="processor_id" [options]="processors" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Processor" class="w-full">
+            <p-select id="processor" formControlName="processor_id" [options]="processors" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Processor" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('cpu_speed')">
             <label for="cpu_speed">CPU Speed</label>
-            <p-select id="cpu_speed" formControlName="cpu_speed_id" [options]="cpuSpeeds" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Speed" class="w-full">
+            <p-select id="cpu_speed" formControlName="cpu_speed_id" [options]="cpuSpeeds" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select CPU Speed" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('ram')">
             <label for="ram">RAM</label>
-            <p-select id="ram" formControlName="ram_id" [options]="rams" optionLabel="name" optionValue="id" appendTo="body"
-              [disabled]="!isEditing" placeholder="Select RAM" class="w-full">
+            <p-select id="ram" formControlName="ram_id" [options]="rams" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select RAM" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('hdd')">
             <label for="hdd">Storage (HDD)</label>
-            <p-select id="hdd" formControlName="hdd_id" [options]="hdds" optionLabel="name" optionValue="id" appendTo="body"
-              [disabled]="!isEditing" placeholder="Select Storage" class="w-full">
+            <p-select id="hdd" formControlName="hdd_id" [options]="hdds" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select Storage" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('os')">
             <label for="os">Operating System</label>
-            <p-select id="os" formControlName="os_id" [options]="operatingSystems" optionLabel="name" optionValue="id" appendTo="body"
-              [disabled]="!isEditing" placeholder="Select OS" class="w-full">
+            <p-select id="os" formControlName="os_id" [options]="operatingSystems" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select OS" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('monitor')">
             <label for="monitor">Monitor</label>
-            <p-select id="monitor" formControlName="monitor_id" [options]="monitors" optionLabel="name" optionValue="id" appendTo="body"
-              [disabled]="!isEditing" placeholder="Select Monitor" class="w-full">
+            <p-select id="monitor" formControlName="monitor_id" [options]="monitors" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select Monitor" class="w-full">
             </p-select>
           </div>
 
@@ -187,35 +189,37 @@
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('keyboard')">
             <label for="keyboard">Keyboard</label>
-            <p-select id="keyboard" formControlName="keyboard_id" [options]="keyboards" optionLabel="name" appendTo="body"
-              optionValue="id" [disabled]="!isEditing" placeholder="Select Keyboard" class="w-full">
+            <p-select id="keyboard" formControlName="keyboard_id" [options]="keyboards" optionLabel="name"
+              appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Keyboard" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('mouse')">
             <label for="mouse">Mouse</label>
-            <p-select id="mouse" formControlName="mouse_id" [options]="mice" optionLabel="name" optionValue="id"appendTo="body"
-              [disabled]="!isEditing" placeholder="Select Mouse" class="w-full">
+            <p-select id="mouse" formControlName="mouse_id" [options]="mice" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select Mouse" class="w-full">
             </p-select>
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('cd_dvd')">
             <label for="cd_dvd">CD/DVD Drive</label>
-            <p-select id="cd_dvd" formControlName="cd_dvd_id" [options]="cdDvds" optionLabel="name" optionValue="id" appendTo="body"
-              [disabled]="!isEditing" placeholder="Select CD/DVD" class="w-full">
+            <p-select id="cd_dvd" formControlName="cd_dvd_id" [options]="cdDvds" optionLabel="name" optionValue="id"
+              appendTo="body" [disabled]="!isEditing" placeholder="Select CD/DVD" class="w-full">
             </p-select>
           </div>
 
-            <div class="form-group">
+          <div class="form-group">
             <label for="serial_number">Serial Number</label>
-            <input pInputText id="serial_number" formControlName="serial_number" [disabled]="!isEditing" class="input-field">
+            <input pInputText id="serial_number" formControlName="serial_number" [disabled]="!isEditing"
+              class="input-field">
           </div>
 
-           <div class="form-group"  *ngIf="isHardwareFieldVisible('monitor_serial')">
+          <div class="form-group" *ngIf="isHardwareFieldVisible('monitor_serial')">
             <label for="serial_number">Monitor Serial</label>
-            <input pInputText id="monitor_serial" formControlName="monitor_serial_number" [disabled]="!isEditing" class="input-field">
+            <input pInputText id="monitor_serial" formControlName="monitor_serial_number" [disabled]="!isEditing"
+              class="input-field">
           </div>
-                    <!-- <div class="form-group" *ngIf="isHardwareFieldVisible('monitor_serial')">
+          <!-- <div class="form-group" *ngIf="isHardwareFieldVisible('monitor_serial')">
             <label for="monitor_serial">Monitor Serial</label>
             <p-select id="monitor_serial" formControlName="monitor_serial_id" [options]="monitorSerials"
               optionLabel="name" optionValue="id" [disabled]="!isEditing" placeholder="Select Monitor Serial" appendTo="body"
@@ -276,7 +280,7 @@
         </div>
       </div>
 
-            <!-- Licence Information Section -->
+      <!-- Licence Information Section -->
       <div class="form-section" *ngIf="licencesList.length > 0">
         <h2 class="section-title">
           <i class="pi pi-certificate"></i>
@@ -314,9 +318,17 @@
               <div class="checkbox-wrapper">
                 <input type="checkbox" [id]="'lic_' + i" [formControl]="getLicenceControl(i)"
                   (change)="onLicenceCheckboxChange()" [disabled]="!isEditing" class="software-checkbox">
-                <label [for]="'lic_' + i" class="checkbox-label">
+                <label [pTooltip]="tooltipContent" tooltipPosition="bottom" [for]="'lic_' + i" class="checkbox-label">
                   {{ licence.name }}
                 </label>
+                <ng-template #tooltipContent>
+                  <div class="flex items-center">
+                    <ol>
+                      <li>Licence key: {{ licence.licence_key }}</li>
+                      <li>Version: {{ licence.version }}</li>
+                    </ol>
+                  </div>
+                </ng-template>
               </div>
             </div>
           </div>

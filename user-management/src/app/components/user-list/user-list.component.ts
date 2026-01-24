@@ -149,9 +149,7 @@ export class UserListComponent implements OnInit {
     }
 
     this.filteredUsers = this.users.filter(
-      (user) =>
-        (user.name && user.name === 'NA' && status === 'Available IP') ||
-        (!user.name || user.name !== 'NA') && status === 'Reserved IP'
+      (user) => this.getStatus(user) === status
     );
 
     this.users = this.filteredUsers;

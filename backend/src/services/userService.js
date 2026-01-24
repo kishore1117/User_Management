@@ -647,18 +647,22 @@ SELECT
   ) AS software,
 
   -- 🔹 LICENCES
-  (
-    SELECT COALESCE(
-      JSON_AGG(jsonb_build_object(
+(
+  SELECT COALESCE(
+    JSON_AGG(
+      jsonb_build_object(
         'id', l.id,
-        'name', l.name,
-        'location_ids', l.location_ids
-      )),
-      '[]'::json
-    )
-    FROM licences l
-    WHERE ($1 OR l.location_ids && $2::INT[])
-  ) AS licences,
+        'name', l.name || ' (' || l.version || ')',
+        'location_ids', l.location_ids,
+        'licence_key', l.licence_key,
+        'version', l.version
+      )
+    ),
+    '[]'::json
+  )
+  FROM licences l
+  WHERE ($1 OR l.location_ids && $2::INT[])
+) AS licences,
 
   -- 🔹 OTHER LOOKUPS
   (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM models) AS models,
@@ -916,9 +920,9 @@ async function updateUser(id, userData) {
         [licenceNames]
       );
 
-      if (licRes.rows.length !== licenceNames.length) {
-        throw new Error("Invalid licence name provided");
-      }
+      // if (licRes.rows.length !== licenceNames.length) {
+      //   throw new Error("Invalid licence name provided");
+      // }
 
       const licenceIds = licRes.rows.map(row => row.id);
 

@@ -451,8 +451,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           `
           INSERT INTO purchase_from (vendor_name)
           VALUES ($1)
-          ON CONFLICT (vendor_name)
-          DO UPDATE SET vendor_name = EXCLUDED.vendor_name
+          ON CONFLICT (_name)
+          DO UPDATE SET _name = EXCLUDED.vendor_name
           RETURNING id
           `,
           [purchaseFrom.trim()]

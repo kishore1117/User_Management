@@ -16,6 +16,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { MessageService } from 'primeng/api';
+import { TooltipModule } from 'primeng/tooltip';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -37,7 +38,8 @@ import { forkJoin } from 'rxjs';
     FloatLabelModule,
     SplitterModule,
     CheckboxModule,
-    AutoCompleteModule
+    AutoCompleteModule,
+    TooltipModule
   ]
 })
 export class UserDetailsComponent implements OnInit {
@@ -188,6 +190,7 @@ export class UserDetailsComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    console.log(this.userLicences)
     this.initForm();
     this.userId = this.route.snapshot.paramMap.get('id');
     const role = localStorage.getItem('userRole');
@@ -517,6 +520,7 @@ export class UserDetailsComponent implements OnInit {
   addLicence(licence: any) {
     if (!licence || !licence.name) return;
     const name = licence.name;
+    console.log(`name: ${name}`);
 
     if (!this.userLicences.includes(name)) {
       this.userLicences.push(name);

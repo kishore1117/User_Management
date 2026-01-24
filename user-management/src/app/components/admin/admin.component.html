@@ -154,13 +154,13 @@
                     <ng-container [ngSwitch]="col.name">
                       <!-- LOCATION IDS MULTISELECT -->
                       <p-multiSelect *ngSwitchCase="'location_ids'" [options]="locationList" optionLabel="name"
-                        optionValue="id" formControlName="location_ids" placeholder="Select Locations" display="chip"
+                        formControlName="location_ids" placeholder="Select Locations" display="chip"
                         [disabled]="activeSection !== 'lookup' && activeSection !== null"
                         class="form-control multiselect">
                       </p-multiSelect>
 
                       <p-multiSelect *ngSwitchCase="'department_ids'" [options]="departmentList" optionLabel="name"
-                        optionValue="id" formControlName="department_ids" placeholder="Select Departments" display="chip"
+                        formControlName="department_ids" placeholder="Select Departments" display="chip"
                         [disabled]="activeSection !== 'lookup' && activeSection !== null"
                         class="form-control multiselect">
                       </p-multiSelect>
@@ -349,7 +349,7 @@
                       </p-select>
                       <!-- LOCATION IDS MULTISELECT -->
                       <p-multiSelect *ngSwitchCase="'location_ids'" [options]="locationList" optionLabel="name"
-                        optionValue="id" formControlName="location_ids" placeholder="Select Locations" display="chip"
+                        formControlName="location_ids" placeholder="Select Locations" display="chip"
                         class="form-control multiselect">
                       </p-multiSelect>
 

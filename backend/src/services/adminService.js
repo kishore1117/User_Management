@@ -112,11 +112,122 @@ export async function getPrimaryKeyColumn(tableName) {
 //   return convertedRows;
 // }
 
+// export async function getTableRows(tableName, limit = 500) {
+//   const safe = sanitizeTableName(tableName);
+//   if (!safe) throw new Error('Invalid table name');
+
+//   // Get column metadata
+//   const cols = await getTableColumns(safe);
+//   const typeMap = new Map(cols.map(c => [c.column_name, c.data_type]));
+
+//   let query = '';
+//   let params = [limit];
+
+//   // 🔹 SPECIAL LOGIC FOR CATEGORIES
+//   if (safe === 'categories') {
+//     query = `
+//     SELECT 
+//       c.id,
+//       c.name,
+//       COALESCE(
+//         (
+//           SELECT JSON_AGG(l.name)
+//           FROM locations l
+//           WHERE l.id = ANY(c.location_ids)
+//         ),
+//         '[]'::json
+//       ) AS location_ids
+//     FROM categories c
+//     LIMIT $1;
+//   `;
+//   } else if (safe === 'departments') {
+//     query = `
+//     SELECT 
+//       d.id,
+//       d.name,
+//       COALESCE(
+//         (
+//           SELECT JSON_AGG(l.name)
+//           FROM locations l
+//           WHERE l.id = ANY(d.location_ids)
+//         ),
+//         '[]'::json
+//       ) AS location_ids
+//     FROM departments d
+//     LIMIT $1;
+//   `;
+//   } else if (safe === 'divisions') {
+//     query = `
+// SELECT 
+//   d.id,
+//   d.name,
+//   COALESCE(
+//     (
+//       SELECT JSON_AGG(dep.name)
+//       FROM departments dep
+//       WHERE dep.id = ANY (d.department_ids)
+//     ),
+//     '[]'::json
+//   ) AS department_ids
+// FROM divisions d
+// LIMIT $1;
+
+//   `;
+//   }
+//   else if(safe === 'licences'){
+//     query = `
+//     SELECT 
+//       l.id,
+//       l.name,
+//       l.licence_key,
+//       l.expiry_date,
+//       l.vendor,
+//       COALESCE(
+//         (
+//           SELECT JSON_AGG(s.name)
+//           FROM locations s
+//           WHERE s.id = ANY(l.location_ids)
+//         ),
+//         '[]'::json
+//       ) AS location_ids
+//     FROM licences l
+//     LIMIT $1;
+//   `;
+//   }
+//   else if (safe === 'software') {
+//     query = `
+//     SELECT 
+//       s.id,
+//       s.name,
+//       COALESCE(
+//         (
+//           SELECT JSON_AGG(l.name)
+//           FROM locations l
+//           WHERE l.id = ANY(s.location_ids)
+//         ),
+//         '[]'::json
+//       ) AS location_ids
+//     FROM software s
+//     LIMIT $1;
+//   `;
+//   }
+//   else {
+//     query = `SELECT * FROM ${safe} LIMIT $1`;
+//   }
+
+//   const result = await pool.query(query, params);
+
+//   // Convert PG arrays correctly
+//   const convertedRows = convertArrayFields(result.rows, typeMap);
+
+//   return convertedRows;
+// }
+
 export async function getTableRows(tableName, limit = 500) {
   const safe = sanitizeTableName(tableName);
   if (!safe) throw new Error('Invalid table name');
 
-  // Get column metadata
+  // 🔹 Get column metadata
   const cols = await getTableColumns(safe);
   const typeMap = new Map(cols.map(c => [c.column_name, c.data_type]));
 
@@ -126,99 +237,120 @@ export async function getTableRows(tableName, limit = 500) {
   // 🔹 SPECIAL LOGIC FOR CATEGORIES
   if (safe === 'categories') {
     query = `
-    SELECT 
-      c.id,
-      c.name,
-      COALESCE(
-        (
-          SELECT JSON_AGG(l.name)
-          FROM locations l
-          WHERE l.id = ANY(c.location_ids)
-        ),
-        '[]'::json
-      ) AS location_ids
-    FROM categories c
-    LIMIT $1;
-  `;
+      SELECT 
+        c.id,
+        c.name,
+        COALESCE(
+          (
+            SELECT JSON_AGG(l.name)
+            FROM locations l
+            WHERE l.id = ANY(c.location_ids)
+          ),
+          '[]'::json
+        ) AS location_ids
+      FROM categories c
+      LIMIT $1;
+    `;
   } else if (safe === 'departments') {
     query = `
-    SELECT 
-      d.id,
-      d.name,
-      COALESCE(
-        (
-          SELECT JSON_AGG(l.name)
-          FROM locations l
-          WHERE l.id = ANY(d.location_ids)
-        ),
-        '[]'::json
-      ) AS location_ids
-    FROM departments d
-    LIMIT $1;
-  `;
+      SELECT 
+        d.id,
+        d.name,
+        COALESCE(
+          (
+            SELECT JSON_AGG(l.name)
+            FROM locations l
+            WHERE l.id = ANY(d.location_ids)
+          ),
+          '[]'::json
+        ) AS location_ids
+      FROM departments d
+      LIMIT $1;
+    `;
   } else if (safe === 'divisions') {
     query = `
-SELECT 
-  d.id,
-  d.name,
-  COALESCE(
-    (
-      SELECT JSON_AGG(dep.name)
-      FROM departments dep
-      WHERE dep.id = ANY (d.department_ids)
-    ),
-    '[]'::json
-  ) AS department_ids
-FROM divisions d
-LIMIT $1;
-
-  `;
-  }
-  else if(safe === 'licences'){
+      SELECT 
+        d.id,
+        d.name,
+        COALESCE(
+          (
+            SELECT JSON_AGG(dep.name)
+            FROM departments dep
+            WHERE dep.id = ANY(d.department_ids)
+          ),
+          '[]'::json
+        ) AS department_ids
+      FROM divisions d
+      LIMIT $1;
+    `;
+  } else if (safe === 'licences') {
     query = `
-    SELECT 
-      l.id,
-      l.name,
-      COALESCE(
-        (
-          SELECT JSON_AGG(s.name)
-          FROM locations s
-          WHERE s.id = ANY(l.location_ids)
-        ),
-        '[]'::json
-      ) AS location_ids
-    FROM licences l
-    LIMIT $1;
-  `;
-  }
-  else if (safe === 'software') {
+      SELECT 
+        l.id,
+        l.name,
+        l.licence_key,
+        l.version,
+        COALESCE(
+          (
+            SELECT JSON_AGG(s.name)
+            FROM locations s
+            WHERE s.id = ANY(l.location_ids)
+          ),
+          '[]'::json
+        ) AS location_ids
+      FROM licences l
+      LIMIT $1;
+    `;
+  } else if (safe === 'software') {
     query = `
-    SELECT 
-      s.id,
-      s.name,
-      COALESCE(
-        (
-          SELECT JSON_AGG(l.name)
-          FROM locations l
-          WHERE l.id = ANY(s.location_ids)
-        ),
-        '[]'::json
-      ) AS location_ids
-    FROM software s
-    LIMIT $1;
-  `;
-  }
-  else {
+      SELECT 
+        s.id,
+        s.name,
+        COALESCE(
+          (
+            SELECT JSON_AGG(l.name)
+            FROM locations l
+            WHERE l.id = ANY(s.location_ids)
+          ),
+          '[]'::json
+        ) AS location_ids
+      FROM software s
+      LIMIT $1;
+    `;
+  } else {
     query = `SELECT * FROM ${safe} LIMIT $1`;
   }
 
   const result = await pool.query(query, params);
 
-  // Convert PG arrays correctly
-  const convertedRows = convertArrayFields(result.rows, typeMap);
+  // 🔹 Convert PG arrays correctly
+  let convertedRows = convertArrayFields(result.rows, typeMap);
+
+  // 🔹 Convert DB date → DD/MM/YYYY
+  convertedRows = convertedRows.map(row => {
+    const updatedRow = { ...row };
+
+    for (const [column, colType] of typeMap.entries()) {
+      if (
+        updatedRow[column] &&
+        (colType === 'date' || colType.includes('timestamp'))
+      ) {
+        const date = new Date(updatedRow[column]);
+        if (!isNaN(date)) {
+          const dd = String(date.getDate()).padStart(2, '0');
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const yyyy = date.getFullYear();
+          updatedRow[column] = `${dd}/${mm}/${yyyy}`;
+        }
+      }
+    }
+
+    return updatedRow;
+  });
 
   return convertedRows;
 }
+
 
 
 /**
@@ -351,6 +483,59 @@ export async function createTableRecord(tableName, data) {
   return convertedRows[0];
 }
 
+function convertDdMmYyyyToDbFormat(value, colType) {
+  if (typeof value !== 'string') return value;
+
+  // Match DD/MM/YYYY
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return value;
+
+  const [, day, month, year] = match;
+
+  // DATE
+  if (colType === 'date') {
+    return `${year}-${month}-${day}`;
+  }
+
+  // TIMESTAMP
+  if (colType.includes('timestamp')) {
+    return `${year}-${month}-${day} 00:00:00`;
+  }
+
+  return value;
+}
+
+function convertDbDateToDdMmYyyy(value, colType) {
+  if (!value) return value;
+
+  // Handle DATE (YYYY-MM-DD)
+  if (colType === 'date') {
+    const date = new Date(value);
+    if (isNaN(date)) return value;
+
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // Handle TIMESTAMP
+  if (colType.includes('timestamp')) {
+    const date = new Date(value);
+    if (isNaN(date)) return value;
+
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  return value;
+}
+
+
 
 /**
  * Update a record in a table by primary key.
@@ -358,57 +543,121 @@ export async function createTableRecord(tableName, data) {
  * - pkValue must be provided.
  * - Returns the updated row (RETURNING *).
  */
+// export async function updateTableRecord(tableName, pkValue, data) {
+//   console.log(data)
+//   const safe = sanitizeTableName(tableName);
+//   if (!safe) throw new Error('Invalid table name');
+//   if (!data || typeof data !== 'object') throw new Error('Invalid data');
+
+//   const pk = await getPrimaryKeyColumn(safe) || 'id';
+//   if (pk == null) throw new Error('Primary key not found');
+
+//   // fetch allowed columns
+//   const cols = await getTableColumns(safe);
+//   const allowed = new Set(cols.map(c => c.column_name));
+//   const typeMap = new Map(cols.map(c => [c.column_name, c.data_type]));
+
+//   // do not allow updating pk via payload
+//   const keys = Object.keys(data).filter(k => allowed.has(k) && k !== pk);
+//   if (keys.length === 0) throw new Error('No valid updatable columns provided');
+
+//   const setClauses = keys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+//   const values = keys.map(k => {
+//     let value = data[k];
+//     const colType = typeMap.get(k);
+
+//     // Handle array types: ensure they are actual arrays
+//     if (colType && colType.includes('[]')) {
+//       if (value === null || value === undefined) return null;
+//       if (Array.isArray(value)) return value;
+
+//       // Handle string representation of arrays (e.g., "1,2,3" or "1, 2, 3")
+//       if (typeof value === 'string' && value.trim()) {
+//         try {
+//           return value.split(',').map(v => {
+//             const trimmed = v.trim();
+//             return isNaN(trimmed) ? trimmed : Number(trimmed);
+//           });
+//         } catch (e) {
+//           return [value];
+//         }
+//       }
+
+//       // Convert single value to array
+//       return [value];
+//     }
+//     return value;
+//   });
+
+//   // add pk value as final param
+//   values.push(pkValue);
+
+//   const sql = `UPDATE ${safe} SET ${setClauses} WHERE "${pk}" = $${values.length} RETURNING *`;
+//   const result = await pool.query(sql, values);
+//   // Convert array fields in returned row
+//   const convertedRows = convertArrayFields(result.rows, typeMap);
+//   return convertedRows[0];
+// }
 export async function updateTableRecord(tableName, pkValue, data) {
+  console.log(data);
   const safe = sanitizeTableName(tableName);
   if (!safe) throw new Error('Invalid table name');
   if (!data || typeof data !== 'object') throw new Error('Invalid data');
 
-  const pk = await getPrimaryKeyColumn(safe) || 'id';
-  if (pk == null) throw new Error('Primary key not found');
+  const pk = (await getPrimaryKeyColumn(safe)) || 'id';
+  if (!pk) throw new Error('Primary key not found');
 
-  // fetch allowed columns
   const cols = await getTableColumns(safe);
   const allowed = new Set(cols.map(c => c.column_name));
   const typeMap = new Map(cols.map(c => [c.column_name, c.data_type]));
 
-  // do not allow updating pk via payload
-  const keys = Object.keys(data).filter(k => allowed.has(k) && k !== pk);
-  if (keys.length === 0) throw new Error('No valid updatable columns provided');
+  const keys = Object.keys(data).filter(
+    k => allowed.has(k) && k !== pk
+  );
 
-  const setClauses = keys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+  if (keys.length === 0)
+    throw new Error('No valid updatable columns provided');
+
+  const setClauses = keys
+    .map((k, i) => `"${k}" = $${i + 1}`)
+    .join(', ');
+
   const values = keys.map(k => {
     let value = data[k];
     const colType = typeMap.get(k);
 
-    // Handle array types: ensure they are actual arrays
+    /* 🔹 ARRAY HANDLING */
     if (colType && colType.includes('[]')) {
-      if (value === null || value === undefined) return null;
+      if (value == null) return null;
       if (Array.isArray(value)) return value;
 
-      // Handle string representation of arrays (e.g., "1,2,3" or "1, 2, 3")
       if (typeof value === 'string' && value.trim()) {
-        try {
-          return value.split(',').map(v => {
-            const trimmed = v.trim();
-            return isNaN(trimmed) ? trimmed : Number(trimmed);
-          });
-        } catch (e) {
-          return [value];
-        }
+        return value.split(',').map(v => {
+          const trimmed = v.trim();
+          return isNaN(trimmed) ? trimmed : Number(trimmed);
+        });
       }
-
-      // Convert single value to array
       return [value];
     }
+
+    /* 🔹 DATE / TIMESTAMP HANDLING */
+    if (colType && (colType === 'date' || colType.includes('timestamp'))) {
+      return convertDdMmYyyyToDbFormat(value, colType);
+    }
+
     return value;
   });
 
-  // add pk value as final param
   values.push(pkValue);
 
-  const sql = `UPDATE ${safe} SET ${setClauses} WHERE "${pk}" = $${values.length} RETURNING *`;
+  const sql = `
+    UPDATE ${safe}
+    SET ${setClauses}
+    WHERE "${pk}" = $${values.length}
+    RETURNING *
+  `;
+
   const result = await pool.query(sql, values);
-  // Convert array fields in returned row
   const convertedRows = convertArrayFields(result.rows, typeMap);
   return convertedRows[0];
 }

@@ -96,6 +96,18 @@ export class AdminComponent implements OnInit {
     this.loadLocations();
   }
 
+  // Compare function for multiSelect to match location objects by ID
+  compareByLocationId = (obj1: any, obj2: any): boolean => {
+    if (!obj1 || !obj2) return false;
+    return obj1?.id === obj2?.id;
+  };
+
+  // Compare function for multiSelect to match department objects by ID
+  compareByDepartmentId = (obj1: any, obj2: any): boolean => {
+    if (!obj1 || !obj2) return false;
+    return obj1?.id === obj2?.id;
+  };
+
   // --- TAB CHANGE HANDLER ---
   onTabChange(newIndex: number) {
     this.activeTabIndex = newIndex;
@@ -183,7 +195,7 @@ export class AdminComponent implements OnInit {
   }
 
   /**
-   * Convert location objects back to IDs for API submission
+   * Convert location/department objects back to IDs for API submission
    */
   private normalizeLocationIds(value: any): number[] {
     if (!value) return [];
@@ -195,7 +207,7 @@ export class AdminComponent implements OnInit {
         if (typeof v === 'object' && v !== null && v.id) return Number(v.id);
         // Otherwise assume it's already an ID
         return Number(v);
-      });
+      }).filter(id => !isNaN(id));
     }
 
     // If it's a comma-separated string
@@ -204,7 +216,14 @@ export class AdminComponent implements OnInit {
     }
 
     // Single value
+    if (typeof value === 'object' && value !== null && value.id) {
+      return [Number(value.id)];
+    }
     return [Number(value)];
+  }
+
+  private normalizeDepartmentIds(value: any): number[] {
+    return this.normalizeLocationIds(value);
   }
 
   loadLookupForSelectedTable() {
@@ -275,8 +294,8 @@ export class AdminComponent implements OnInit {
       let initial: any = '';
       const t = String(col.type || '').toLowerCase();
 
-      // Initialize location_ids as empty array for multiSelect
-      if (col.name === 'location_ids') {
+      // Initialize location_ids and department_ids as empty arrays for multiSelect
+      if (col.name === 'location_ids' || col.name === 'department_ids') {
         initial = [];
       } else if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) {
         initial = null;
@@ -306,43 +325,90 @@ export class AdminComponent implements OnInit {
     this.lookupEditing = true;
     this.lookupEditingId = row[this.lookupPrimaryKey];
 
-    // Prepare edit data with location_ids conversion
+    // Prepare edit data 
     const editData = { ...row };
 
-    // Convert location_ids to location objects for multiSelect
-    if (editData.location_ids) {
-      editData.location_ids = this.convertLocationIdsToObjects(editData.location_ids);
-    } else {
-      editData.location_ids = [];
-    }
+    console.log('=== OPEN LOOKUP EDIT ===');
+    console.log('Row data:', editData);
+    console.log('LocationList available:', this.locationList);
+    console.log('DepartmentList available:', this.departmentList);
 
-    // Rebuild the form with the edit data
+    // Build empty form structure first
     const group: any = {};
     this.tableColumns.forEach(col => {
       const validators = [];
       if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
 
-      const t = String(col.type || '').toLowerCase();
-      let value: any = editData[col.name] ?? null;
-
-      // Special handling for location_ids - ensure it's an array of objects
-      if (col.name === 'location_ids') {
-        value = Array.isArray(editData.location_ids) ? editData.location_ids : [];
+      // Initialize multiSelect fields as empty arrays
+      let initialValue: any = '';
+      if (col.name === 'location_ids' || col.name === 'department_ids') {
+        initialValue = [];
       }
 
       if (col.name === this.lookupPrimaryKey) {
-        group[col.name] = [{ value: value, disabled: true }];
+        group[col.name] = [{ value: editData[col.name], disabled: true }];
       } else {
-        group[col.name] = [value, validators];
+        group[col.name] = [initialValue, validators];
       }
     });
 
     this.lookupForm = this.fb.group(group);
 
-    console.log('Rebuilt lookup form with values:', this.lookupForm.value);
-    console.log('Location_ids field value:', this.lookupForm.get('location_ids')?.value);
+    // Now patch values with a small delay to ensure multiSelect options are rendered
+    setTimeout(() => {
+      const patchData: any = {};
+      
+      this.tableColumns.forEach(col => {
+        let value: any = editData[col.name] ?? null;
 
-    setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        // Special handling for location_ids and department_ids - convert to location objects
+        if ((col.name === 'location_ids' || col.name === 'department_ids') && value) {
+          console.log(`\nProcessing ${col.name}:`, value, 'Type:', typeof value);
+          let ids: number[] = [];
+          
+          if (typeof value === 'string') {
+            ids = value.split(',').map((id: string) => Number(id.trim())).filter((id: number) => !isNaN(id));
+          } else if (Array.isArray(value)) {
+            ids = value.map((id: any) => Number(id)).filter((id: number) => !isNaN(id));
+          } else if (typeof value === 'number') {
+            ids = [value];
+          }
+
+          console.log(`Extracted IDs for ${col.name}:`, ids);
+
+          // Convert IDs to location/department objects for multiSelect display
+          if (col.name === 'location_ids') {
+            if (this.locationList && this.locationList.length > 0) {
+              value = this.locationList.filter((loc: any) => ids.includes(loc.id));
+              console.log('Converted location objects:', value);
+            } else {
+              console.warn('LocationList is empty or not loaded!');
+              value = [];
+            }
+          } else if (col.name === 'department_ids') {
+            if (this.departmentList && this.departmentList.length > 0) {
+              value = this.departmentList.filter((dept: any) => ids.includes(dept.id));
+              console.log('Converted department objects:', value);
+            } else {
+              console.warn('DepartmentList is empty or not loaded!');
+              value = [];
+            }
+          }
+        } else if (col.name === 'location_ids' || col.name === 'department_ids') {
+          // Ensure these are always arrays even if no value
+          value = [];
+        }
+
+        patchData[col.name] = value;
+      });
+
+      console.log('Patch data:', patchData);
+      this.lookupForm.patchValue(patchData);
+      console.log('After patch, form value:', this.lookupForm.value);
+      console.log('=== END LOOKUP EDIT ===\n');
+    }, 100);
+
+    setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), 150);
   }
 
   submitLookup() {
@@ -355,7 +421,8 @@ export class AdminComponent implements OnInit {
 
     const payload = {
       ...raw,
-      location_ids: this.normalizeLocationIds(raw.location_ids)
+      location_ids: this.normalizeLocationIds(raw.location_ids),
+      department_ids: this.normalizeDepartmentIds(raw.department_ids)
     };
 
     if (!this.lookupEditing) {
@@ -495,41 +562,77 @@ export class AdminComponent implements OnInit {
     this.editingUser = true;
     this.editingUserId = user.id || user.user_id || user.uid;
 
-    // Prepare edit data with location_ids conversion
+    // Prepare edit data 
     const editData = { ...user };
 
-    // Convert location_ids to location objects for multiSelect
-    if (editData.location_ids) {
-      editData.location_ids = this.convertLocationIdsToObjects(editData.location_ids);
-    } else {
-      editData.location_ids = [];
-    }
+    console.log('=== OPEN USER EDIT INLINE ===');
+    console.log('User data:', editData);
+    console.log('LocationList available:', this.locationList);
 
-    // Rebuild the form with the edit data
+    // Build empty form structure first
     const group: any = {};
     const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
     this.userColumns.forEach(col => {
       if (ignored.has(col.name)) return;
       const validators = [];
       if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
-
-      let value: any = editData[col.name] ?? null;
-
-      // Special handling for location_ids - ensure it's an array of objects
+      
+      // Initialize multiSelect fields as empty arrays
+      let initialValue: any = '';
       if (col.name === 'location_ids') {
-        value = Array.isArray(editData.location_ids) ? editData.location_ids : [];
+        initialValue = [];
       }
-
-      group[col.name] = [value, validators];
+      
+      group[col.name] = [initialValue, validators];
     });
 
     this.userForm = this.fb.group(group);
     this.userFormVisible = true;
 
-    console.log('Rebuilt user form with values:', this.userForm.value);
-    console.log('User location_ids field value:', this.userForm.get('location_ids')?.value);
+    // Now patch values with a small delay to ensure multiSelect options are rendered
+    setTimeout(() => {
+      const patchData: any = {};
 
-    setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 50);
+      this.userColumns.forEach(col => {
+        if (ignored.has(col.name)) return;
+        
+        let value: any = editData[col.name] ?? null;
+
+        // Special handling for location_ids - convert to location objects for multiSelect
+        if (col.name === 'location_ids' && value) {
+          console.log('Processing location_ids:', value);
+          let ids: number[] = [];
+          if (typeof value === 'string') {
+            ids = value.split(',').map((id: string) => Number(id.trim())).filter((id: number) => !isNaN(id));
+          } else if (Array.isArray(value)) {
+            ids = value.map((id: any) => Number(id)).filter((id: number) => !isNaN(id));
+          } else if (typeof value === 'number') {
+            ids = [value];
+          }
+          console.log('Extracted IDs:', ids);
+          
+          if (this.locationList && this.locationList.length > 0) {
+            value = this.locationList.filter((loc: any) => ids.includes(loc.id));
+            console.log('Converted location objects:', value);
+          } else {
+            console.warn('LocationList is empty or not loaded!');
+            value = [];
+          }
+        } else if (col.name === 'location_ids') {
+          // Ensure location_ids is always an array even if no value
+          value = [];
+        }
+
+        patchData[col.name] = value;
+      });
+
+      console.log('User patch data:', patchData);
+      this.userForm.patchValue(patchData);
+      console.log('After patch, user form value:', this.userForm.value);
+      console.log('=== END USER EDIT INLINE ===\n');
+    }, 100);
+
+    setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 150);
   }
 
   private camelToSnake(s: string) { return s.replace(/([A-Z])/g, '_$1').toLowerCase(); }
