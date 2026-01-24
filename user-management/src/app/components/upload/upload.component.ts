@@ -58,7 +58,7 @@ export class UploadComponent {
     this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
-          this.locations = res.data || [];
+          this.locations = res.locations || [];
           console.log('Loaded locations:', this.locations);
 
           // auto-select if only one location
