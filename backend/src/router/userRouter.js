@@ -12,7 +12,7 @@ router.post("/create",authorizeRoles("admin","user"), addUser);
 router.get("/tableData",authorizeRoles("admin"), getTableRows);
 router.get("/tableSchema", authorizeRoles("admin"), getTableDetails);
 router.get("/lookpData", authorizeRoles("admin","user"), getLookupData);
-router.delete("/bulk-delete",authorizeRoles("admin"), deleteUsersByLocation);
+router.delete("/bulk-delete",authorizeRoles("admin",'user'), deleteUsersByLocation);
 router.get("/", authorizeRoles("admin","user"), getAllUsers);
 router.get("/:id", authorizeRoles("admin","user"),getUserById)
 router.patch("/:id",authorizeRoles("admin","user"), updateUser);

@@ -160,11 +160,58 @@ export const getAllLocations = async (req, res) => {
 //   }
 // };
 
+// export const getAllowedLocations = async (req, res) => {
+//   try {
+//     const [locations, departments] = await Promise.all([
+//       pool.query(`SELECT id, name FROM locations ORDER BY name`),
+//       pool.query(`SELECT id, name FROM departments ORDER BY name`)
+//     ]);
+
+//     res.json({
+//       locations: locations.rows,
+//       departments: departments.rows
+//     });
+//   } catch (err) {
+//     console.error('❌ Error fetching admin data:', err);
+//     res.status(500).json({ message: 'Failed to fetch data' });
+//   }
+// };
+
 export const getAllowedLocations = async (req, res) => {
   try {
+    // Get user details from auth middleware
+    const locationIds = req.user?.location_ids || [];
+    const userName = req.user?.username;
+
+    console.log('Logged-in user:', userName);
+    console.log('Allowed location IDs:', locationIds);
+
+    // If user has no location access, return empty list
+    if (!locationIds.length) {
+      return res.json({
+        locations: [],
+        departments: []
+      });
+    }
+
+    // Fetch only allowed locations + all departments (if needed)
     const [locations, departments] = await Promise.all([
-      pool.query(`SELECT id, name FROM locations ORDER BY name`),
-      pool.query(`SELECT id, name FROM departments ORDER BY name`)
+      pool.query(
+        `
+        SELECT id, name
+        FROM locations
+        WHERE id = ANY ($1)
+        ORDER BY name
+        `,
+        [locationIds]
+      ),
+      pool.query(
+        `
+        SELECT id, name
+        FROM departments
+        ORDER BY name
+        `
+      )
     ]);
 
     res.json({
@@ -172,7 +219,7 @@ export const getAllowedLocations = async (req, res) => {
       departments: departments.rows
     });
   } catch (err) {
-    console.error('❌ Error fetching admin data:', err);
+    console.error('❌ Error fetching allowed locations:', err);
     res.status(500).json({ message: 'Failed to fetch data' });
   }
 };
