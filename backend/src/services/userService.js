@@ -772,9 +772,9 @@ export const getUserById = async (userId) => {
         '[]'
       ) AS software,
 
-      COALESCE(
+     COALESCE(
   (
-    SELECT JSON_AGG(li.name)
+    SELECT JSON_AGG(li.name || ' (' || li.version || ')')
     FROM user_licences ul
     JOIN licences li ON ul.licence_id = li.id
     WHERE ul.user_id = u.id
@@ -864,6 +864,7 @@ async function updateUser(id, userData) {
     delete userData.software;
 
     const licenceNames = userData.licences;
+    console.log('Updating licences with names:', licenceNames);
     delete userData.licences;
 
     const cleanData = Object.fromEntries(
@@ -913,16 +914,23 @@ async function updateUser(id, userData) {
       }
     }
 
-    // Handle licences
+        // Handle licences
     if (Array.isArray(licenceNames)) {
-      const licRes = await client.query(
-        `SELECT id, name FROM licences WHERE name = ANY($1)`,
-        [licenceNames]
-      );
+      // Parse licence names to extract base name and version
+      const parsedLicences = licenceNames.map(fullName => {
+        const match = fullName.match(/^(.+?)\s*\(\s*(.+?)\s*\)$/);
+        if (match) {
+          return { name: match[1].trim(), version: match[2].trim() };
+        }
+        return { name: fullName, version: null };
+      });
 
-      // if (licRes.rows.length !== licenceNames.length) {
-      //   throw new Error("Invalid licence name provided");
-      // }
+      const licRes = await client.query(
+        `SELECT id, name, version FROM licences WHERE (name, version) IN (${
+          parsedLicences.map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`).join(',')
+        })`,
+        parsedLicences.flatMap(l => [l.name, l.version])
+      );
 
       const licenceIds = licRes.rows.map(row => row.id);
 
