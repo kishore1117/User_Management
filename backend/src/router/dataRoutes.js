@@ -341,12 +341,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       } = row;
 
       /* ---------- REQUIRED FIELDS ---------- */
-      if (
-        !Hostname?.trim() ||
-        !Name?.trim() ||
-        !Location?.trim() ||
-        !IPAddress1?.trim()
-      ) {
+      if (!IPAddress1?.trim()) {
+        console.log(`⏭️ Skipping row — missing IP address`);
         continue;
       }
 
@@ -368,27 +364,30 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       }
 
       /* ---------- LOCATION ---------- */
-      const locRes = await pool.query(
-        `
-        INSERT INTO locations (name, address)
-        VALUES ($1,'')
-        ON CONFLICT (name)
-        DO UPDATE SET name = EXCLUDED.name
-        RETURNING id
-        `,
-        [Location.trim()]
-      );
-      const location_id = locRes.rows[0].id;
+      let location_id = null;
+      if (Location?.trim()) {
+        const locRes = await pool.query(
+          `
+          INSERT INTO locations (name, address)
+          VALUES ($1,'')
+          ON CONFLICT (name)
+          DO UPDATE SET name = EXCLUDED.name
+          RETURNING id
+          `,
+          [Location.trim()]
+        );
+        location_id = locRes.rows[0].id;
+      }
 
       /* ---------- DEPARTMENT ---------- */
       let department_id = null;
       if (Department?.trim() && !["na", "n/a"].includes(Department.toLowerCase())) {
         const deptRes = await pool.query(
           `
-          INSERT INTO departments (name, location_id)
-          VALUES ($1,$2)
+          INSERT INTO departments (name, location_ids)
+          VALUES ($1, ARRAY[$2::INT])
           ON CONFLICT (name)
-          DO UPDATE SET location_id = EXCLUDED.location_id
+          DO UPDATE SET location_ids = departments.location_ids || EXCLUDED.location_ids
           RETURNING id
           `,
           [Department.trim(), location_id]
@@ -401,10 +400,10 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       if (Division?.trim() && department_id) {
         const divRes = await pool.query(
           `
-          INSERT INTO divisions (name, department_id)
-          VALUES ($1,$2)
+          INSERT INTO divisions (name, department_ids)
+          VALUES ($1, ARRAY[$2::INT])
           ON CONFLICT (name)
-          DO UPDATE SET name = EXCLUDED.name
+          DO UPDATE SET department_ids = divisions.department_ids || EXCLUDED.department_ids
           RETURNING id
           `,
           [Division.trim(), department_id]
@@ -418,12 +417,12 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         const catRes = await pool.query(
           `
           INSERT INTO categories (name, location_ids)
-          VALUES ($1, ARRAY[$2::INT])
+          VALUES ($1, ARRAY[]::INT[])
           ON CONFLICT (name)
-          DO UPDATE SET location_ids = categories.location_ids || EXCLUDED.location_ids
+          DO UPDATE SET location_ids = categories.location_ids
           RETURNING id
           `,
-          [Category.trim(), location_id]
+          [Category.trim()]
         );
         category_id = catRes.rows[0].id;
       }
@@ -451,8 +450,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           `
           INSERT INTO purchase_from (vendor_name)
           VALUES ($1)
-          ON CONFLICT (_name)
-          DO UPDATE SET _name = EXCLUDED.vendor_name
+          ON CONFLICT (vendor_name)
+          DO UPDATE SET vendor_name = EXCLUDED.vendor_name
           RETURNING id
           `,
           [purchaseFrom.trim()]
@@ -536,7 +535,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         VALUES
         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
          $13,$14,$15,$16,$17,$18,$19,$20,
-         $21,$22,$23,$24,$25,$26)
+         $21,$22,$23,$24,$25)
         RETURNING id
         `,
         [
