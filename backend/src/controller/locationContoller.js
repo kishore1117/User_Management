@@ -180,11 +180,11 @@ export const getAllLocations = async (req, res) => {
 export const getAllowedLocations = async (req, res) => {
   try {
     // Get user details from auth middleware
-    const locationIds = req.user?.location_ids || [];
+    let locationIds = await pool.query(`select location_ids from user_access where username = $1`, [req.user.username]);
     const userName = req.user?.username;
 
-    console.log('Logged-in user:', userName);
-    console.log('Allowed location IDs:', locationIds);
+    locationIds = locationIds.rows[0]?.location_ids || [];
+    console.log("User:", userName, "Allowed Location IDs:", locationIds);
 
     // If user has no location access, return empty list
     if (!locationIds.length) {
