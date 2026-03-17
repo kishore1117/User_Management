@@ -932,6 +932,10 @@ async function updateUser(id, userData) {
         return { name: fullName, version: null };
       });
       console.log('Parsed licences:', parsedLicences);
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
       const licRes = await client.query(
         `SELECT id, name, version FROM licences WHERE (name, version) IN (${
@@ -939,12 +943,18 @@ async function updateUser(id, userData) {
         })`,
         parsedLicences.flatMap(l => [l.name, l.version])
       );
+<<<<<<< Updated upstream
       console.log('Licence query result:', licRes.rows);
 
       const licenceIds = licRes.rows.map(row => row.id);
 
       console.log('Mapped licence IDs:', licenceIds);
 
+=======
+console.log('Licence query result:', licRes.rows);
+      const licenceIds = licRes.rows.map(row => row.id);
+ console.log('Mapped licence IDs:', licenceIds);
+>>>>>>> Stashed changes
       await client.query(`DELETE FROM user_licences WHERE user_id = $1`, [id]);
 
       for (const licId of licenceIds) {
