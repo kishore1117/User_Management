@@ -184,7 +184,6 @@ export const getAllowedLocations = async (req, res) => {
     const userName = req.user?.username;
 
     locationIds = locationIds.rows[0]?.location_ids || [];
-    console.log("User:", userName, "Allowed Location IDs:", locationIds);
 
     // If user has no location access, return empty list
     if (!locationIds.length) {

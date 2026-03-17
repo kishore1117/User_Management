@@ -2,7 +2,14 @@ import db from '../config/db.js';
 const { pool, initDB } = db;
 
 export const getAllUsers = async (req) => {
-  const locationAccess = req.user?.location_ids || [];
+
+  const locationAccessResult = await pool.query(
+    `select location_ids from user_access where username = $1`,
+    [req.user.username]
+  );
+
+  const locationIds =
+    locationAccessResult.rows[0]?.location_ids || [];
 
   const result = await pool.query(
     `
@@ -72,7 +79,7 @@ export const getAllUsers = async (req) => {
     LEFT JOIN user_software us ON u.id = us.user_id
     LEFT JOIN software s ON us.software_id = s.id
 
-    WHERE u.location_id = ANY($1)
+    WHERE u.location_id = ANY($1::int[])
 
     GROUP BY 
       u.id,
@@ -83,7 +90,7 @@ export const getAllUsers = async (req) => {
 
     ORDER BY u.id ASC;
     `,
-    [locationAccess]
+    [locationIds]
   );
 
   return result.rows;
@@ -924,6 +931,7 @@ async function updateUser(id, userData) {
         }
         return { name: fullName, version: null };
       });
+      console.log('Parsed licences:', parsedLicences);
 
       const licRes = await client.query(
         `SELECT id, name, version FROM licences WHERE (name, version) IN (${
@@ -931,8 +939,11 @@ async function updateUser(id, userData) {
         })`,
         parsedLicences.flatMap(l => [l.name, l.version])
       );
+      console.log('Licence query result:', licRes.rows);
 
       const licenceIds = licRes.rows.map(row => row.id);
+
+      console.log('Mapped licence IDs:', licenceIds);
 
       await client.query(`DELETE FROM user_licences WHERE user_id = $1`, [id]);
 

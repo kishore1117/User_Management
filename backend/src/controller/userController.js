@@ -60,7 +60,11 @@ export const getUserById = async (req, res) => {
     }
 
     // Extract user’s authorized locations (from JWT)
-    const userLocations = req.user?.location_ids || [];
+
+    let userLocations = await pool.query(`select location_ids from user_access where username = $1`, [req.user.username]);
+    const userName = req.user?.username;
+
+    userLocations = userLocations.rows[0]?.location_ids || [];
 
     // Check if user has access to this user's location
     if (!userLocations.includes(user.location_id)) {
