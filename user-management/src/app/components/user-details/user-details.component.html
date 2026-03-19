@@ -14,12 +14,17 @@
         <p class="subtitle">{{ user.name || 'Unknown' }}</p>
       </div>
       <div class="header-actions">
+
+        <button *ngIf="!isEditing && user.category_name === 'Laptop'" pButton type="button" label="Handover form" (click)="openHandoverForm()"
+          class="btn-print">
+        </button>
         <button *ngIf="!isEditing" pButton type="button" label="Edit" icon="pi pi-pencil" (click)="enableEdit()"
           class="btn-edit">
         </button>
         <button *ngIf="isEditing" pButton type="button" label="Save" icon="pi pi-check" (click)="updateUser()"
           class="btn-save">
         </button>
+
         <button pButton type="button" label="Back" icon="pi pi-arrow-left" (click)="goBack()" class="btn-back">
         </button>
       </div>
@@ -350,3 +355,127 @@
     </form>
   </div>
 </div>
+
+<!-- Handover Form Modal -->
+<p-dialog [(visible)]="showHandoverModal" [header]="'Laptop Handover Form'" [modal]="true" [style]="{width: '90vw'}"
+  [maximizable]="true" [contentStyle]="{'max-height': '80vh', 'overflow-y': 'auto'}">
+  
+  <form [formGroup]="handoverForm" class="handover-form" *ngIf="handoverForm">
+    <div class="form-section">
+      <h3>Employee Information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name of the Employee:</label>
+          <input pInputText formControlName="employeeName" placeholder="Employee Name">
+        </div>
+        <div class="form-group">
+          <label>Handover Date:</label>
+          <input pInputText type="date" formControlName="handoverDate">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Emp. Code:</label>
+          <input pInputText formControlName="empCode" placeholder="Employee Code">
+        </div>
+        <div class="form-group">
+          <label>Handover By:</label>
+          <input pInputText formControlName="handoverBy" placeholder="Name of person handing over">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Department:</label>
+          <input pInputText formControlName="department" placeholder="Department">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Laptop Specifications</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Model:</label>
+          <input pInputText formControlName="model" placeholder="Laptop Model">
+        </div>
+        <div class="form-group">
+          <label>Serial Number:</label>
+          <input pInputText formControlName="slNo" placeholder="Serial Number">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Processor:</label>
+          <input pInputText formControlName="processor" placeholder="Processor">
+        </div>
+        <div class="form-group">
+          <label>Memory (RAM):</label>
+          <input pInputText formControlName="memory" placeholder="Memory">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>HDD:</label>
+          <input pInputText formControlName="hdd" placeholder="Hard Disk Drive">
+        </div>
+        <div class="form-group">
+          <label>Operating System:</label>
+          <input pInputText formControlName="os" placeholder="OS">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Power Adapter:</label>
+          <p-select formControlName="powerAdapter" [options]="[{label: 'Yes', value: 'Yes'}, {label: 'No', value: 'No'}]"
+            placeholder="Select">
+          </p-select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Asset Details</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Asset Code:</label>
+          <input pInputText formControlName="assetCode" placeholder="Asset Code">
+        </div>
+        <div class="form-group">
+          <label>Quantity:</label>
+          <input pInputText formControlName="qty" placeholder="1">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>Remarks:</label>
+          <textarea pInputTextarea formControlName="remarks" rows="3" placeholder="Any remarks or notes"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Receiver Information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Receiver Name:</label>
+          <input pInputText formControlName="receiverName" placeholder="Receiver Name">
+        </div>
+        <div class="form-group">
+          <label>Receiver Date:</label>
+          <input pInputText type="date" formControlName="receiverDate">
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Cancel" (click)="closeHandoverModal()" class="p-button-secondary"></button>
+    <button pButton type="button" label="Print & Download" (click)="generateHandoverPDF()" class="p-button-success"></button>
+  </ng-template>
+</p-dialog>

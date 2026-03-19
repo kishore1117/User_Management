@@ -55,9 +55,22 @@
             <p-columnFilter field="status" matchMode="equals" [showMenu]="false">
               <ng-template #filter let-value let-filter="filterCallback">
                 <p-select [(ngModel)]="selectedStatus" [options]="ipStatuses" (onChange)="filterByStatus($event.value)"
-                  (onClear)="clearFilter()" placeholder="All statuses" [showClear]="true" styleClass="w-full">
+                  (onClear)="clearFilter()" placeholder="Status" [showClear]="true" styleClass="w-full">
                   <ng-template let-option #item>
                     <p-tag [value]="option.value" [severity]="getSeverity(option.value)"></p-tag>
+                  </ng-template>
+                </p-select>
+              </ng-template>
+            </p-columnFilter>
+          </th>
+          <th>
+            <p-columnFilter field="location_name" matchMode="equals" [showMenu]="false">
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-select [(ngModel)]="selectedLocation" [options]="locations"
+                  (onChange)="filterByLocation($event.value)" (onClear)="clearFilter()" placeholder="All locations"
+                  [showClear]="true" styleClass="w-full">
+                  <ng-template let-option #item>
+                    <p-tag [value]="option.value" class="location-label"></p-tag>
                   </ng-template>
                 </p-select>
               </ng-template>

@@ -18,6 +18,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { MessageService } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
 import { forkJoin } from 'rxjs';
+import { DialogModule } from 'primeng/dialog';
 
 @Component({
   selector: 'app-user-details',
@@ -39,7 +40,8 @@ import { forkJoin } from 'rxjs';
     SplitterModule,
     CheckboxModule,
     AutoCompleteModule,
-    TooltipModule
+    TooltipModule,
+    DialogModule
   ]
 })
 export class UserDetailsComponent implements OnInit {
@@ -56,6 +58,10 @@ export class UserDetailsComponent implements OnInit {
   softwareInputValue: string = '';
   printer_id: number = 49;
   selectedCategory: string = 'Other';
+
+  // Handover form properties
+  handoverForm!: FormGroup;
+  showHandoverModal = false;
 
   // Lookup data
   printer_type: any[] = [{ label: 'Network', value: 'NETWORK' }, { label: 'USB', value: 'USB' }];
@@ -286,6 +292,32 @@ export class UserDetailsComponent implements OnInit {
       licence: this.fb.array([])
     });
     this.userForm.disable();
+
+    // Initialize handover form
+    this.initHandoverForm();
+  }
+
+  private initHandoverForm() {
+    this.handoverForm = this.fb.group({
+      employeeName: [this.user.name || ''],
+      empCode: [''],
+      department: [this.user.department_name || ''],
+      handoverDate: [new Date().toISOString().split('T')[0]],
+      handoverBy: [''],
+      model: [this.user.model || ''],
+      slNo: [this.user.hostname || ''],
+      processor: [this.user.processor || ''],
+      memory: [this.user.ram || ''],
+      hdd: [this.user.hdd || ''],
+      os: [this.user.os || ''],
+      powerAdapter: ['Yes'],
+      assetCode: [this.user.asset_tag || ''],
+      qty: ['1'],
+      remarks: [''],
+      receiverSignature: [''],
+      receiverName: [''],
+      receiverDate: [new Date().toISOString().split('T')[0]]
+    });
   }
 
   onSoftwareInputChange(value: string) {
@@ -721,6 +753,501 @@ export class UserDetailsComponent implements OnInit {
     const selectedCategory = this.categories.find(cat => cat.id === selectedCategoryId);
     const categoryName = selectedCategory?.name || 'Other';
     return this.categoryFieldMap[categoryName]?.software || false;
+  }
+
+  // Get category-specific asset details
+  getCategorySpecificAssetDetails(): string {
+    const categoryName = this.user.category_name || 'Other';
+    const fieldConfig = this.categoryFieldMap[categoryName] || this.categoryFieldMap['Other'];
+    const hardwareFields = fieldConfig.hardware || [];
+    const networkFields = fieldConfig.network || [];
+    
+    let assetDetailsHTML = '';
+    
+    // Map field names to display labels and user object properties
+    const fieldLabelMap: { [key: string]: string } = {
+      'model': 'Model',
+      'cpu_serial': 'CPU Serial',
+      'processor': 'Processor',
+      'cpu_speed': 'CPU Speed',
+      'ram': 'RAM',
+      'hdd': 'HDD',
+      'os': 'Operating System',
+      'monitor': 'Monitor',
+      'monitor_serial': 'Monitor Serial',
+      'keyboard': 'Keyboard',
+      'mouse': 'Mouse',
+      'cd_dvd': 'CD/DVD Drive',
+      'usb': 'USB',
+      'ip_address1': 'IP Address 1',
+      'ip_address2': 'IP Address 2'
+    };
+
+    // Add hardware fields
+    if (hardwareFields.length > 0) {
+      assetDetailsHTML += '<div class="asset-item"><strong style="color: #0066cc;">Hardware Components:</strong></div>';
+      hardwareFields.forEach(field => {
+        const label = fieldLabelMap[field] || field;
+        const value = (this.user as any)[field] || 'N/A';
+        assetDetailsHTML += `<div class="asset-item" style="margin-left: 15px;"><strong>${label}:</strong> ${value}</div>`;
+      });
+    }
+
+    // Add network fields
+    if (networkFields.length > 0) {
+      assetDetailsHTML += '<div class="asset-item"><strong style="color: #0066cc; margin-top: 10px;">Network Information:</strong></div>';
+      networkFields.forEach(field => {
+        const label = fieldLabelMap[field] || field;
+        const value = (this.user as any)[field] || 'N/A';
+        assetDetailsHTML += `<div class="asset-item" style="margin-left: 15px;"><strong>${label}:</strong> ${value}</div>`;
+      });
+    }
+
+    // Add software if applicable
+    if (fieldConfig.software && this.user.software && this.user.software.length > 0) {
+      assetDetailsHTML += `<div class="asset-item"><strong style="color: #0066cc; margin-top: 10px;">Installed Software:</strong></div>`;
+      const softwareList = Array.isArray(this.user.software) ? this.user.software.join(', ') : this.user.software;
+      assetDetailsHTML += `<div class="asset-item" style="margin-left: 15px;"><strong>Software:</strong> ${softwareList}</div>`;
+    }
+
+    return assetDetailsHTML;
+  }
+
+  // printDeclaration() {
+  //   console.log('Printing declaration for user:', this.user);
+  //   const printWindow = window.open('', '_blank');
+  //   if (!printWindow) return;
+
+  //   const categorySpecificDetails = this.getCategorySpecificAssetDetails();
+
+  //   const declarationHTML = `
+  //     <!DOCTYPE html>
+  //     <html lang="en">
+  //     <head>
+  //       <meta charset="UTF-8">
+  //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  //       <title>Asset Declaration Form</title>
+  //       <style>
+  //         body {
+  //           font-family: Arial, sans-serif;
+  //           margin: 20px;
+  //           line-height: 1.6;
+  //         }
+  //         .header {
+  //           text-align: center;
+  //           border-bottom: 2px solid #000;
+  //           padding-bottom: 10px;
+  //           margin-bottom: 20px;
+  //         }
+  //         .company-info {
+  //           margin-bottom: 20px;
+  //         }
+  //         .declaration-title {
+  //           font-size: 18px;
+  //           font-weight: bold;
+  //           margin-bottom: 10px;
+  //         }
+  //         .declaration-text {
+  //           margin-bottom: 20px;
+  //           text-align: justify;
+  //         }
+  //         .asset-details {
+  //           margin-bottom: 20px;
+  //         }
+  //         .asset-details h3 {
+  //           margin-bottom: 10px;
+  //         }
+  //         .asset-list {
+  //           border: 1px solid #ccc;
+  //           padding: 10px;
+  //           background-color: #f9f9f9;
+  //         }
+  //         .asset-item {
+  //           margin-bottom: 5px;
+  //           font-size: 12px;
+  //         }
+  //         .acceptance {
+  //           margin-bottom: 30px;
+  //         }
+  //         .signature-section {
+  //           margin-top: 40px;
+  //         }
+  //         .signature-line {
+  //           border-bottom: 1px solid #000;
+  //           width: 300px;
+  //           display: inline-block;
+  //         }
+  //         .basic-info {
+  //           border-bottom: 1px solid #ddd;
+  //           padding-bottom: 10px;
+  //           margin-bottom: 10px;
+  //         }
+  //         @media print {
+  //           body {
+  //             margin: 0;
+  //           }
+  //         }
+  //       </style>
+  //     </head>
+  //     <body>
+  //       <div class="header">
+  //         <h1>Asset Declaration Form</h1>
+  //       </div>
+
+  //       <div class="company-info">
+  //         <p><strong>Company Name:</strong> Your Company Ltd.</p>
+  //         <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+  //       </div>
+
+  //       <div class="declaration-title">Apec Asset Collection Declaration</div>
+
+  //       <div class="declaration-text">
+  //         I, <strong>${this.user.name || 'N/A'}</strong>, hereby declare that I have collected the following asset(s) with the specified specifications from the company. I acknowledge that I am responsible for the proper care and maintenance of these assets. I understand that I will be held liable for any damage, loss, or misuse of the assets until they are returned to the company in good condition.
+  //       </div>
+
+  //       <div class="asset-details">
+  //         <h3>Asset Information:</h3>
+  //         <div class="asset-list">
+  //           <div class="basic-info">
+  //             <div class="asset-item"><strong>Employee Name:</strong> ${this.user.name || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Hostname:</strong> ${this.user.hostname || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Location:</strong> ${this.user.location_name || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Department:</strong> ${this.user.department_name || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Asset Category:</strong> ${this.user.category_name || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Asset Tag:</strong> ${this.user.asset_tag || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Warranty:</strong> ${this.user.warranty || 'N/A'}</div>
+  //             <div class="asset-item"><strong>Purchase From:</strong> ${this.user.purchase_from || 'N/A'}</div>
+  //           </div>
+  //           ${categorySpecificDetails}
+  //         </div>
+  //       </div>
+
+  //       <div class="acceptance">
+  //         <strong>Acceptance & Responsibility:</strong>
+  //         <p style="margin-top: 10px; text-align: justify;">
+  //           I accept full responsibility for the assets listed above and agree to return them in the same condition as received, barring normal wear and tear. I understand that I will be held accountable for any damage, loss, or theft of these assets during my custody.
+  //         </p>
+  //       </div>
+
+  //       <div class="signature-section">
+  //         <p>Signature: <span class="signature-line"></span></p>
+  //         <p>Employee Name: ${this.user.name || 'N/A'}</p>
+  //         <p>Date: ${new Date().toLocaleDateString()}</p>
+  //         <p style="margin-top: 30px; font-size: 12px; border-top: 1px solid #000; padding-top: 10px;">
+  //           <strong>For Office Use:</strong>
+  //         </p>
+  //         <p style="font-size: 12px;">Issued by: _________________________ Date: _____________</p>
+  //       </div>
+  //     </body>
+  //     </html>
+  //   `;
+
+  //   printWindow.document.write(declarationHTML);
+  //   printWindow.document.close();
+  //   printWindow.focus();
+  //   printWindow.print();
+  // }
+
+  openHandoverForm() {
+    this.initHandoverForm();
+    this.showHandoverModal = true;
+  }
+
+  closeHandoverModal() {
+    this.showHandoverModal = false;
+  }
+
+  generateHandoverPDF() {
+    const formData = this.handoverForm.value;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const handoverHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title></title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+            font-size: 12px;
+          }
+          .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+          }
+          .content {
+            flex: 1;
+            padding-bottom: 180px; /* reserve space for fixed footer */
+          }
+          .logo-section {
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+          }
+          .logo-image {
+            width: 80px;
+            height: 40px;
+          }
+          .logo-text-section {
+            text-align: left;
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0066cc;
+            margin: 0;
+            letter-spacing: 2px;
+          }
+          .company-tagline {
+            font-size: 10px;
+            color: #666;
+            margin: 5px 0 0 0;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 15px;
+          }
+          .header h1 {
+            margin: 10px 0;
+            font-size: 16px;
+            letter-spacing: 2px;
+          }
+          .company-info {
+            font-size: 11px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            text-align: center;
+          }
+          .form-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 11px;
+          }
+          .form-header-item {
+            display: flex;
+            gap: 10px;
+          }
+          .form-header-item label {
+            font-weight: bold;
+            min-width: 140px;
+          }
+          .form-header-item input {
+            border: none;
+            border-bottom: 1px solid #000;
+            width: 180px;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            padding: 2px;
+            background: transparent;
+          }
+          .intro-text {
+            margin: 15px 0;
+            font-size: 11px;
+            line-height: 1.5;
+            text-align: justify;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 11px;
+          }
+          table, th, td {
+            border: 1px solid #000;
+          }
+          th {
+            background-color: #f0f0f0;
+            padding: 5px;
+            text-align: left;
+            font-weight: bold;
+          }
+          td {
+            padding: 5px;
+            min-height: 20px;
+            vertical-align: top;
+          }
+          .section-title {
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            text-decoration: underline;
+          }
+          .acknowledgement {
+            line-height: 1.6;
+            text-align: justify;
+            font-size: 11px;
+            margin: 15px 0;
+          }
+          .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 20px 20px;
+            border-top: 1px solid #ccc;
+            background: #fff;
+          }
+          .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+          }
+          .signature-block {
+            text-align: center;
+            width: 45%;
+            font-size: 10px;
+          }
+          .signature-space {
+            margin: 20px 0 5px 0;
+            min-height: 30px;
+          }
+          .signature-label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 5px;
+          }
+          @media print {
+            body {
+              margin: 0;
+              padding: 10px;
+            }
+            .page-wrapper {
+              min-height: auto;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="page-wrapper">
+          <div class="content">
+            <div class="logo-section">
+              <div class="logo-text-section">
+                <p class="logo-text" style='color:#000'>APEX LABORATORIES</p>
+              </div>
+            </div>
+
+            <div class="header">
+              <h1>LAPTOP HANDOVER FORM</h1>
+            </div>
+
+            <div class="company-info">
+              <div>SIDCO Garment Complex, III Floor, Guindy, Chennai-600032, Tamilnadu, India.</div>
+              <div>Ph: 044 4222 5000 | www.apexlab.com</div>
+            </div>
+
+            <div class="form-header">
+              <div class="form-header-item">
+                <label>Name of the Employee:</label>
+                <input type="text" value="${formData.employeeName}" readonly>
+              </div>
+              <div class="form-header-item">
+                <label>Handover Date:</label>
+                <input type="text" value="${formData.handoverDate}" readonly>
+              </div>
+            </div>
+
+            <div class="form-header">
+              <div class="form-header-item">
+                <label>Emp. Code:</label>
+                <input type="text" value="${formData.empCode}" readonly style="width: 80px;">
+              </div>
+              <div class="form-header-item">
+                <label>Handover By:</label>
+                <input type="text" value="${formData.handoverBy}" readonly>
+              </div>
+            </div>
+
+            <div class="form-header">
+              <div class="form-header-item">
+                <label>Department:</label>
+                <input type="text" value="${formData.department}" readonly>
+              </div>
+            </div>
+
+            <div class="intro-text">
+              <p><strong>Dear Sir / Madam</strong></p>
+              <p>Please find the below is the assets handed over to you, to support you in carrying out your assignment in a most Proficient manner.</p>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 5%;">Sl. No</th>
+                  <th style="width: 30%;">Particulars</th>
+                  <th style="width: 15%;">Asset code</th>
+                  <th style="width: 10%;">Qty</th>
+                  <th style="width: 40%;">Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>01</td>
+                  <td>
+                    <div><strong>Model:</strong> ${formData.model}</div>
+                    <div><strong>Sl No:</strong> ${formData.slNo}</div>
+                    <div><strong>Processor:</strong> ${formData.processor}</div>
+                    <div><strong>Memory:</strong> ${formData.memory}</div>
+                    <div><strong>HDD:</strong> ${formData.hdd}</div>
+                    <div><strong>OS:</strong> ${formData.os}</div>
+                    <div><strong>Power Adapter:</strong> ${formData.powerAdapter}</div>
+                  </td>
+                  <td>${formData.assetCode}</td>
+                  <td>${formData.qty}</td>
+                  <td>${formData.remarks}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="section-title">Acknowledgement and Declaration by Employee</div>
+
+            <div class="acknowledgement">
+              I, <strong>${formData.employeeName}</strong>, hereby acknowledge that I have received the above mentioned asset. I understand that this asset belongs to Apex laboratories Pvt Ltd and is under my possession for carrying out my office work. I hereby assure that I will take care of the assets of the company to the best possible extent. If the Company needs to replace this property as result of violation of this agreement, I agree to pay for its replacement cost.
+            </div>
+          </div>
+
+          <div class="footer">
+            <div class="signature-section">
+              <div class="signature-block">
+                <p style="margin: 0; font-weight: bold;">For Apex Laboratories Pvt Ltd.</p>
+                <p style="margin: 0;">Signature</p>
+                <div class="signature-space"></div>
+                <p class="signature-label">Information Technology</p>
+                <p style="margin: 5px 0 0 0;">Date: ${formData.handoverDate}</p>
+              </div>
+
+              <div class="signature-block">
+                <p style="margin: 0; font-weight: bold;">Receiver's</p>
+                <div class="signature-space"></div>
+                <p class="signature-label">Name: ${formData.receiverName}</p>
+                <p style="margin: 5px 0 0 0;">Date: ${formData.receiverDate}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(handoverHTML);
+    printWindow.document.close();
+    // Clear the document title so browser print headers are less intrusive
+    printWindow.document.title = '';
+    printWindow.focus();
+    printWindow.print();
   }
 
   goBack() {

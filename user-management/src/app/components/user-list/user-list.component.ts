@@ -47,8 +47,10 @@ export class UserListComponent implements OnInit {
   // Status filters
   ipStatuses: any[] = [];
   Categorys: any[] = [];
+  locations: any[] = [];
   selectedStatus = '';
   selectedCategory = '';
+  selectedLocation = '';
 
   constructor(private userService: UserService, private router: Router) { }
 
@@ -60,6 +62,7 @@ export class UserListComponent implements OnInit {
       this.prepareDepartments();
       this.prepareStatuses();
       this.prepareCategories();
+      this.prepareLocations();
 
       this.loading = false;
     });
@@ -99,18 +102,11 @@ export class UserListComponent implements OnInit {
   }
 
   prepareStatuses() {
-    const unique = new Set<string>();
-
-    this.users.forEach((user) => {
-      const status =
-        user.name && user.name !== 'NA' ? 'Reserved IP' : 'Available IP';
-      unique.add(status);
-    });
-
-    this.ipStatuses = Array.from(unique).map((s) => ({
-      label: s,
-      value: s,
-    }));
+    // Always include both status options
+    this.ipStatuses = [
+      { label: 'Available IP', value: 'Available IP' },
+      { label: 'Reserved IP', value: 'Reserved IP' }
+    ];
   }
 
   prepareCategories() {
@@ -125,6 +121,21 @@ export class UserListComponent implements OnInit {
     this.Categorys = Array.from(unique).map((c) => ({
       label: c,
       value: c,
+    }));
+  }
+
+  prepareLocations() {
+    const unique = new Set<string>();
+
+    this.users.forEach((user) => {
+      if (user.location_name) {
+        unique.add(user.location_name);
+      }
+    });
+
+    this.locations = Array.from(unique).map((l) => ({
+      label: l,
+      value: l,
     }));
   }
 
@@ -166,9 +177,22 @@ export class UserListComponent implements OnInit {
     this.users = this.filteredUsers;
   }
 
+  filterByLocation(location: string) {
+    if (!location) {
+      this.filteredUsers = [...this.users];
+      return;
+    }
+    this.filteredUsers = this.users.filter(
+      (user) => user.location_name === location
+    );
+    this.users = this.filteredUsers;
+  }
+
   clearFilter() {
     this.selectedStatus = '';
     this.selectedDepartments = [];
+    this.selectedCategory = '';
+    this.selectedLocation = '';
     this.ngOnInit(); // Re-initialize to fetch all users again
   }
 
