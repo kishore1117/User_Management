@@ -2,14 +2,7 @@ import db from '../config/db.js';
 const { pool, initDB } = db;
 
 export const getAllUsers = async (req) => {
-
-  const locationAccessResult = await pool.query(
-    `select location_ids from user_access where username = $1`,
-    [req.user.username]
-  );
-
-  const locationIds =
-    locationAccessResult.rows[0]?.location_ids || [];
+  const locationAccess = req.user?.location_ids || [];
 
   const result = await pool.query(
     `
@@ -79,7 +72,7 @@ export const getAllUsers = async (req) => {
     LEFT JOIN user_software us ON u.id = us.user_id
     LEFT JOIN software s ON us.software_id = s.id
 
-    WHERE u.location_id = ANY($1::int[])
+    WHERE u.location_id = ANY($1)
 
     GROUP BY 
       u.id,
@@ -90,7 +83,7 @@ export const getAllUsers = async (req) => {
 
     ORDER BY u.id ASC;
     `,
-    [locationIds]
+    [locationAccess]
   );
 
   return result.rows;
@@ -379,7 +372,6 @@ export const getDashboardData = async (user) => {
 
 
 // export const getLookupData = async (user) => {
-//   console.log(user)
 //   const locationIds = user?.location_ids || [];
 //   const query = `
 // SELECT 
@@ -475,220 +467,103 @@ export const getDashboardData = async (user) => {
 // };
 export const getLookupData = async (user) => {
   const locationIds = user?.location_ids || [];
-  const isAdmin = user?.role === 'admin';
 
-//   const query = `
-//   SELECT
-//     -- 🔹 LOCATIONS
-//     (
-//       SELECT COALESCE(
-//         JSON_AGG(jsonb_build_object('id', l.id, 'name', l.name)),
-//         '[]'::json
-//       )
-//       FROM locations l
-//       WHERE ($1 OR l.id = ANY($2::INT[]))
-//     ) AS locations,
+  const query = `
+    SELECT 
+      -- 🔹 DEPARTMENTS FILTERED BY USER LOCATION IDS
+      (
+        SELECT COALESCE(
+          JSON_AGG(jsonb_build_object('id', id, 'name', name)),
+          '[]'::json
+        )
+        FROM departments
+        WHERE location_ids && $1::INT[]
+      ) AS departments,
 
-//     -- 🔹 DEPARTMENTS (filtered by locations)
-//     (
-//       SELECT COALESCE(
-//         JSON_AGG(jsonb_build_object(
-//           'id', d.id,
-//           'name', d.name,
-//           'location_ids', d.location_ids
-//         )),
-//         '[]'::json
-//       )
-//       FROM departments d
-//       WHERE (
-//         $1
-//         OR d.location_ids && $2::INT[]
-//       )
-//     ) AS departments,
+      -- 🔹 MASTER LOOKUPS
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM divisions) AS divisions,
 
-//     -- 🔹 DIVISIONS (filtered by allowed departments)
-//     (
-//       SELECT COALESCE(
-//         JSON_AGG(jsonb_build_object(
-//           'id', v.id,
-//           'name', v.name,
-//           'department_ids', v.department_ids
-//         )),
-//         '[]'::json
-//       )
-//       FROM divisions v
-//       WHERE (
-//         $1
-//         OR v.department_ids && (
-//           SELECT ARRAY_AGG(d.id)
-//           FROM departments d
-//           WHERE d.location_ids && $2::INT[]
-//         )
-//       )
-//     ) AS divisions,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM locations) AS locations,
 
-//     -- 🔹 CATEGORIES (location based)
-//     (
-//       SELECT COALESCE(
-//         JSON_AGG(jsonb_build_object('id', id, 'name', name)),
-//         '[]'::json
-//       )
-//       FROM categories
-//       WHERE ($1 OR location_ids && $2::INT[])
-//     ) AS categories,
+      -- 🔹 FILTERED CATEGORIES BASED ON LOCATION IDS
+      (
+        SELECT COALESCE(
+          JSON_AGG(jsonb_build_object('id', id, 'name', name)),
+          '[]'::json
+        )
+        FROM categories
+        WHERE location_ids && $1::INT[]
+      ) AS categories,
 
-//     -- 🔹 SOFTWARE (location based)
-//     (
-//       SELECT COALESCE(
-//         JSON_AGG(jsonb_build_object(
-//           'id', s.id,
-//           'name', s.name,
-//           'location_ids', s.location_ids
-//         )),
-//         '[]'::json
-//       )
-//       FROM software s
-//       WHERE ($1 OR s.location_ids && $2::INT[])
-//     ) AS software,
+      -- 🔹 OTHER LOOKUPS
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM models) AS models,
 
-//  (
-//   SELECT COALESCE(
-//     JSON_AGG(jsonb_build_object(
-//         'id', l.id,
-//         'name', l.name,
-//         'location_ids', l.location_ids
-//       )),
-//       '[]'::json
-//   )
-//   FROM licences l
-//   WHERE ($1 OR l.location_ids && $2::INT[])
-// ) AS licences
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM cpu_serials) AS cpu_serials,
 
-//     -- 🔹 OTHER MASTER LOOKUPS (ADMIN / USER SAME)
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM models) AS models,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cpu_serials) AS cpu_serials,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM processors) AS processors,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cpu_speeds) AS cpu_speeds,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM rams) AS rams,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM hdds) AS hdds,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM monitors) AS monitors,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM keyboards) AS keyboards,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM mice) AS mice,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cd_dvds) AS cd_dvds,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM operating_systems) AS operating_systems,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', warranty_name)) FROM warranties) AS warranties,
-//     (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', vendor_name)) FROM purchase_from) AS purchase_from
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM processors) AS processors,
 
-//   FROM (SELECT 1) AS dummy;
-//   `;
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM cpu_speeds) AS cpu_speeds,
 
-const query = `
-SELECT
-  -- 🔹 LOCATIONS
-  (
-    SELECT COALESCE(
-      JSON_AGG(jsonb_build_object('id', l.id, 'name', l.name)),
-      '[]'::json
-    )
-    FROM locations l
-    WHERE ($1 OR l.id = ANY($2::INT[]))
-  ) AS locations,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM rams) AS rams,
 
-  -- 🔹 DEPARTMENTS
-  (
-    SELECT COALESCE(
-      JSON_AGG(jsonb_build_object(
-        'id', d.id,
-        'name', d.name,
-        'location_ids', d.location_ids
-      )),
-      '[]'::json
-    )
-    FROM departments d
-    WHERE ($1 OR d.location_ids && $2::INT[])
-  ) AS departments,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM hdds) AS hdds,
 
-  -- 🔹 DIVISIONS
-  (
-    SELECT COALESCE(
-      JSON_AGG(jsonb_build_object(
-        'id', v.id,
-        'name', v.name,
-        'department_ids', v.department_ids
-      )),
-      '[]'::json
-    )
-    FROM divisions v
-    WHERE (
-      $1
-      OR v.department_ids && (
-        SELECT ARRAY_AGG(d.id)
-        FROM departments d
-        WHERE d.location_ids && $2::INT[]
-      )
-    )
-  ) AS divisions,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM monitors) AS monitors,
 
-  -- 🔹 CATEGORIES
-  (
-    SELECT COALESCE(
-      JSON_AGG(jsonb_build_object('id', id, 'name', name)),
-      '[]'::json
-    )
-    FROM categories
-    WHERE ($1 OR location_ids && $2::INT[])
-  ) AS categories,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM keyboards) AS keyboards,
 
-  -- 🔹 SOFTWARE
-  (
-    SELECT COALESCE(
-      JSON_AGG(jsonb_build_object(
-        'id', s.id,
-        'name', s.name,
-        'location_ids', s.location_ids
-      )),
-      '[]'::json
-    )
-    FROM software s
-    WHERE ($1 OR s.location_ids && $2::INT[])
-  ) AS software,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM mice) AS mice,
 
-  -- 🔹 LICENCES
-(
-  SELECT COALESCE(
-    JSON_AGG(
-      jsonb_build_object(
-        'id', l.id,
-        'name', l.name || ' (' || l.version || ')',
-        'location_ids', l.location_ids,
-        'licence_key', l.licence_key,
-        'version', l.version
-      )
-    ),
-    '[]'::json
-  )
-  FROM licences l
-  WHERE ($1 OR l.location_ids && $2::INT[])
-) AS licences,
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM cd_dvds) AS cd_dvds,
 
-  -- 🔹 OTHER LOOKUPS
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM models) AS models,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cpu_serials) AS cpu_serials,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM processors) AS processors,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cpu_speeds) AS cpu_speeds,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM rams) AS rams,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM hdds) AS hdds,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM monitors) AS monitors,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM keyboards) AS keyboards,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM mice) AS mice,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM cd_dvds) AS cd_dvds,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', name)) FROM operating_systems) AS operating_systems,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', warranty_name)) FROM warranties) AS warranties,
-  (SELECT JSON_AGG(jsonb_build_object('id', id, 'name', vendor_name)) FROM purchase_from) AS purchase_from
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', name)), '[]'::json)
+       FROM operating_systems) AS operating_systems,
 
-FROM (SELECT 1) AS dummy;
-`;
+      -- 🔹 SOFTWARE FILTERED BY USER LOCATIONS
+      (
+        SELECT COALESCE(
+          JSON_AGG(
+            jsonb_build_object(
+              'id', s.id,
+              'name', s.name,
+              'location_ids',
+                COALESCE(
+                  (
+                    SELECT JSON_AGG(l.name)
+                    FROM locations l
+                    WHERE l.id = ANY(s.location_ids)
+                  ),
+                  '[]'::json
+                )
+            )
+          ),
+          '[]'::json
+        )
+        FROM software s
+        WHERE s.location_ids && $1::INT[]
+      ) AS software,
 
+      -- 🔹 NEW LOOKUPS
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', warranty_name)), '[]'::json)
+       FROM warranties) AS warranties,
+
+      (SELECT COALESCE(JSON_AGG(jsonb_build_object('id', id, 'name', vendor_name)), '[]'::json)
+       FROM purchase_from) AS purchase_from
+
+    FROM (SELECT 1) AS dummy;
+  `;
 
   const result = await pool.query(query, [isAdmin, locationIds]);
   return result.rows[0];
@@ -779,9 +654,9 @@ export const getUserById = async (userId) => {
         '[]'
       ) AS software,
 
-     COALESCE(
+      COALESCE(
   (
-    SELECT JSON_AGG(li.name || ' (' || li.version || ')')
+    SELECT JSON_AGG(li.name)
     FROM user_licences ul
     JOIN licences li ON ul.licence_id = li.id
     WHERE ul.user_id = u.id
@@ -871,7 +746,6 @@ async function updateUser(id, userData) {
     delete userData.software;
 
     const licenceNames = userData.licences;
-    console.log('Updating licences with names:', licenceNames);
     delete userData.licences;
 
     const cleanData = Object.fromEntries(
@@ -921,40 +795,19 @@ async function updateUser(id, userData) {
       }
     }
 
-        // Handle licences
+    // Handle licences
     if (Array.isArray(licenceNames)) {
-      // Parse licence names to extract base name and version
-      const parsedLicences = licenceNames.map(fullName => {
-        const match = fullName.match(/^(.+?)\s*\(\s*(.+?)\s*\)$/);
-        if (match) {
-          return { name: match[1].trim(), version: match[2].trim() };
-        }
-        return { name: fullName, version: null };
-      });
-      console.log('Parsed licences:', parsedLicences);
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
-
       const licRes = await client.query(
-        `SELECT id, name, version FROM licences WHERE (name, version) IN (${
-          parsedLicences.map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`).join(',')
-        })`,
-        parsedLicences.flatMap(l => [l.name, l.version])
+        `SELECT id, name FROM licences WHERE name = ANY($1)`,
+        [licenceNames]
       );
-<<<<<<< Updated upstream
-      console.log('Licence query result:', licRes.rows);
+
+      if (licRes.rows.length !== licenceNames.length) {
+        throw new Error("Invalid licence name provided");
+      }
 
       const licenceIds = licRes.rows.map(row => row.id);
 
-      console.log('Mapped licence IDs:', licenceIds);
-
-=======
-console.log('Licence query result:', licRes.rows);
-      const licenceIds = licRes.rows.map(row => row.id);
- console.log('Mapped licence IDs:', licenceIds);
->>>>>>> Stashed changes
       await client.query(`DELETE FROM user_licences WHERE user_id = $1`, [id]);
 
       for (const licId of licenceIds) {
