@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
+
+interface FilterState {
+  selectedDepartments: any[];
+  selectedStatus: string;
+  selectedCategory: string;
+  selectedLocation: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -10,7 +18,55 @@ export class UserService {
   private lookupUrl = `${environment.apiBaseUrl}/lookupData`;
   private userAccessUrl = `${environment.apiBaseUrl}/user-access`;
 
-  constructor(private http: HttpClient) {}
+  // Filter state management
+  private filterState = new BehaviorSubject<FilterState>({
+    selectedDepartments: [],
+    selectedStatus: '',
+    selectedCategory: '',
+    selectedLocation: ''
+  });
+
+  filterState$ = this.filterState.asObservable();
+
+  constructor(private http: HttpClient) {
+    this.loadFilterState();
+  }
+
+  // Save filter state to sessionStorage
+  saveFilterState(filters: FilterState): void {
+    this.filterState.next(filters);
+    sessionStorage.setItem('userListFilters', JSON.stringify(filters));
+  }
+
+  // Load filter state from sessionStorage
+  private loadFilterState(): void {
+    const saved = sessionStorage.getItem('userListFilters');
+    if (saved) {
+      try {
+        const filters = JSON.parse(saved);
+        this.filterState.next(filters);
+      } catch (e) {
+        console.error('Error loading filter state:', e);
+      }
+    }
+  }
+
+  // Get current filter state
+  getFilterState(): FilterState {
+    return this.filterState.value;
+  }
+
+  // Clear filter state
+  clearFilterState(): void {
+    const emptyFilters: FilterState = {
+      selectedDepartments: [],
+      selectedStatus: '',
+      selectedCategory: '',
+      selectedLocation: ''
+    };
+    this.filterState.next(emptyFilters);
+    sessionStorage.removeItem('userListFilters');
+  }
 
   getAllUsers(): Observable<any> {
     return this.http.get(`${this.baseUrl}`);

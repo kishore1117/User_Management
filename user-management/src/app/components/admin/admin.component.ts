@@ -112,7 +112,7 @@ export class AdminComponent implements OnInit {
   // --- TAB CHANGE HANDLER ---
   onTabChange(newIndex: number) {
     this.activeTabIndex = newIndex;
-    console.log('Tab changed to:', newIndex);
+  
     
     if (newIndex === 0) {
       this.setActiveSection('lookup');
@@ -131,7 +131,7 @@ export class AdminComponent implements OnInit {
     this.activeSection = section;
 
     if (section === 'lookup') {
-      console.log('Selected lookup section');
+
       if (this.selectedTable) this.loadLookupForSelectedTable();
     } else {
       this.loadUserSection();
@@ -150,11 +150,9 @@ export class AdminComponent implements OnInit {
     this.http.get<any>(`${environment.apiBaseUrl}/locations/allowed`)
       .subscribe({
         next: (res) => {
-          console.log("Locations loaded:", res.data);
           this.locationList = res.locations || [];
           this.departmentList = res.departments || [];
           this.categoryList = res.categories || [];
-          console.log("Location List after assignment:", this.locationList);
         },
         error: () => {
           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load locations' });
@@ -183,13 +181,9 @@ export class AdminComponent implements OnInit {
       ids = [locationIds];
     }
 
-    console.log('Converted location IDs:', ids);
-    console.log('Available locations:', this.locationList);
-
     // Convert IDs to location objects
     if (ids.length > 0 && this.locationList && this.locationList.length > 0) {
       const result = this.locationList.filter((loc: any) => ids.includes(loc.id));
-      console.log('Result location objects:', result);
       return result;
     }
 
@@ -229,7 +223,6 @@ export class AdminComponent implements OnInit {
   }
 
   loadLookupForSelectedTable() {
-    console.log('Loading lookup for table:', this.selectedTable);
     if (!this.selectedTable) return;
     this.loading = true;
     forkJoin({
@@ -263,7 +256,6 @@ export class AdminComponent implements OnInit {
             };
           })
           .filter((col: any) => !IGNORE_COLUMNS.includes(col.name));
-           console.log('Table Columns:', this.tableColumns);
         // rows normalization
         if (rows && Array.isArray((rows as any).rows)) this.tableData = (rows as any).rows;
         else if (Array.isArray(rows)) this.tableData = rows;
@@ -330,11 +322,6 @@ export class AdminComponent implements OnInit {
     // Prepare edit data 
     const editData = { ...row };
 
-    console.log('=== OPEN LOOKUP EDIT ===');
-    console.log('Row data:', editData);
-    console.log('LocationList available:', this.locationList);
-    console.log('DepartmentList available:', this.departmentList);
-
     // Build empty form structure first
     const group: any = {};
     this.tableColumns.forEach(col => {
@@ -365,7 +352,6 @@ export class AdminComponent implements OnInit {
 
         // Special handling for location_ids and department_ids - convert to location objects
         if ((col.name === 'location_ids' || col.name === 'department_ids' || col.name === 'category_ids') && value) {
-          console.log(`\nProcessing ${col.name}:`, value, 'Type:', typeof value);
           let ids: number[] = [];
           
           if (typeof value === 'string') {
@@ -376,13 +362,11 @@ export class AdminComponent implements OnInit {
             ids = [value];
           }
 
-          console.log(`Extracted IDs for ${col.name}:`, ids);
 
           // Convert IDs to location/department objects for multiSelect display
           if (col.name === 'location_ids') {
             if (this.locationList && this.locationList.length > 0) {
               value = this.locationList.filter((loc: any) => ids.includes(loc.id));
-              console.log('Converted location objects:', value);
             } else {
               console.warn('LocationList is empty or not loaded!');
               value = [];
@@ -390,7 +374,6 @@ export class AdminComponent implements OnInit {
           } else if (col.name === 'department_ids') {
             if (this.departmentList && this.departmentList.length > 0) {
               value = this.departmentList.filter((dept: any) => ids.includes(dept.id));
-              console.log('Converted department objects:', value);
             } 
             
             else {
@@ -400,7 +383,7 @@ export class AdminComponent implements OnInit {
           } else if (col.name === 'category_ids') {
             if (this.categoryList && this.categoryList.length > 0) {
               value = this.categoryList.filter((cat: any) => ids.includes(cat.id));
-              console.log('Converted category objects:', value);
+
             } else {
               console.warn('CategoryList is empty or not loaded!');
               value = [];
@@ -414,10 +397,8 @@ export class AdminComponent implements OnInit {
         patchData[col.name] = value;
       });
 
-      console.log('Patch data:', patchData);
+    
       this.lookupForm.patchValue(patchData);
-      console.log('After patch, form value:', this.lookupForm.value);
-      console.log('=== END LOOKUP EDIT ===\n');
     }, 100);
 
     setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), 150);
@@ -501,7 +482,7 @@ export class AdminComponent implements OnInit {
             isPrimary: !!(c.column_name === 'id' || c.isPrimary || c.primary_key || (c.column_default && String(c.column_default).startsWith('nextval')))
           };
         });
-        console.log('User Columns:', this.userColumns);
+     
 
         // rows normalization
         if (!rows) this.users = [];
@@ -554,7 +535,7 @@ export class AdminComponent implements OnInit {
       
       group[col.name] = [initial, validators];
     });
-    console.log('Building user form with controls:', Object.keys(group));
+   
     this.userForm = this.fb.group(group);
     this.userFormVisible = false;
     this.editingUser = false;
@@ -562,7 +543,7 @@ export class AdminComponent implements OnInit {
   }
 
   openUserAddInline() {
-    console.log('Opening user add inline form');
+   
     this.userFormVisible = true;
     this.editingUser = false;
     this.editingUserId = null;
@@ -578,9 +559,7 @@ export class AdminComponent implements OnInit {
     // Prepare edit data 
     const editData = { ...user };
 
-    console.log('=== OPEN USER EDIT INLINE ===');
-    console.log('User data:', editData);
-    console.log('LocationList available:', this.locationList);
+
 
     // Build empty form structure first
     const group: any = {};
@@ -613,7 +592,7 @@ export class AdminComponent implements OnInit {
 
         // Special handling for location_ids - convert to location objects for multiSelect
         if (col.name === 'location_ids' && value) {
-          console.log('Processing location_ids:', value);
+      
           let ids: number[] = [];
           if (typeof value === 'string') {
             ids = value.split(',').map((id: string) => Number(id.trim())).filter((id: number) => !isNaN(id));
@@ -622,11 +601,9 @@ export class AdminComponent implements OnInit {
           } else if (typeof value === 'number') {
             ids = [value];
           }
-          console.log('Extracted IDs:', ids);
           
           if (this.locationList && this.locationList.length > 0) {
             value = this.locationList.filter((loc: any) => ids.includes(loc.id));
-            console.log('Converted location objects:', value);
           } else {
             console.warn('LocationList is empty or not loaded!');
             value = [];
@@ -639,10 +616,7 @@ export class AdminComponent implements OnInit {
         patchData[col.name] = value;
       });
 
-      console.log('User patch data:', patchData);
       this.userForm.patchValue(patchData);
-      console.log('After patch, user form value:', this.userForm.value);
-      console.log('=== END USER EDIT INLINE ===\n');
     }, 100);
 
     setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 150);
@@ -658,7 +632,6 @@ export class AdminComponent implements OnInit {
       return;
     }
     const payload = { ...this.userForm.value };
-    console.log('Submitting user form, payload:', payload);
 
     // Normalize location_ids
     if (payload.location_ids) {

@@ -1,23 +1,6 @@
 import db from '../config/db.js';
 const { pool, initDB } = db;
 
-/* 🟢 Create a new location */
-// export const createLocation = async (req, res) => {
-//   const { name, address } = req.body;
-//   if (!name) return res.status(400).json({ message: "Name is required" });
-
-//   try {
-//     const result = await pool.query(
-//       `INSERT INTO locations (name, address)
-//        VALUES ($1, $2) RETURNING *`,
-//       [name, address]
-//     );
-//     res.status(201).json(result.rows[0]);
-//   } catch (err) {
-//     console.error("❌ Error creating location:", err);
-//     res.status(500).json({ error: "Failed to create location" });
-//   }
-// };
 
 export const removeLocationFromAllAdmins = async (locationId) => {
   const client = await pool.connect();
@@ -130,52 +113,6 @@ export const getAllLocations = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch locations" });
   }
 };
-
-// export const getAllowedLocations = async (req, res) => {
-  
-//   try {
-//     const locationIds = req.user?.location_ids || [];
-//     const userName = req.user?.username;
-//     console.log(req.user);
-
-//     if (!locationIds.length) {
-//       return res.json({ data: [] });
-//     }
-
-//     const result = await pool.query(
-//       `
-//  SELECT DISTINCT l.id, l.name
-// FROM user_access ua
-// JOIN locations l
-//   ON l.id = ANY (ua.location_ids)
-// WHERE ua.username = $1;
-//       `,
-//       [userName]
-//     );
-
-//     res.json({ data: result.rows });
-//   } catch (err) {
-//     console.error('❌ Error fetching allowed locations:', err);
-//     res.status(500).json({ message: 'Failed to fetch locations' });
-//   }
-// };
-
-// export const getAllowedLocations = async (req, res) => {
-//   try {
-//     const [locations, departments] = await Promise.all([
-//       pool.query(`SELECT id, name FROM locations ORDER BY name`),
-//       pool.query(`SELECT id, name FROM departments ORDER BY name`)
-//     ]);
-
-//     res.json({
-//       locations: locations.rows,
-//       departments: departments.rows
-//     });
-//   } catch (err) {
-//     console.error('❌ Error fetching admin data:', err);
-//     res.status(500).json({ message: 'Failed to fetch data' });
-//   }
-// };
 
 export const getAllowedLocations = async (req, res) => {
   try {

@@ -59,7 +59,7 @@ export class UploadComponent {
       .subscribe({
         next: (res) => {
           this.locations = res.locations || [];
-          console.log('Loaded locations:', this.locations);
+       
 
           // auto-select if only one location
           if (this.locations.length === 1) {

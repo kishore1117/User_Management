@@ -1,5 +1,4 @@
-
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { TableModule } from 'primeng/table';
@@ -13,6 +12,8 @@ import { TagModule } from 'primeng/tag';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-user-list',
@@ -33,7 +34,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
     CommonModule
   ],
 })
-export class UserListComponent implements OnInit {
+export class UserListComponent implements OnInit, OnDestroy {
   users: any[] = [];
   filteredUsers: any[] = [];
   loading = true;
@@ -52,19 +53,84 @@ export class UserListComponent implements OnInit {
   selectedCategory = '';
   selectedLocation = '';
 
+  private destroy$ = new Subject<void>();
+
   constructor(private userService: UserService, private router: Router) { }
 
   ngOnInit() {
+    // Load users
     this.userService.getAllUsers().subscribe((data: any) => {
       this.users = data.users;
-      this.filteredUsers = [...data.users];
 
       this.prepareDepartments();
       this.prepareStatuses();
       this.prepareCategories();
       this.prepareLocations();
 
+      // Load saved filter state and apply filters
+      this.restoreFilterState();
+
       this.loading = false;
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // Restore filter state from service
+  restoreFilterState() {
+    const savedFilters = this.userService.getFilterState();
+    
+    this.selectedDepartments = savedFilters.selectedDepartments || [];
+    this.selectedStatus = savedFilters.selectedStatus || '';
+    this.selectedCategory = savedFilters.selectedCategory || '';
+    this.selectedLocation = savedFilters.selectedLocation || '';
+
+    // Apply all filters
+    this.applyAllFilters();
+  }
+
+  // Apply all active filters
+  applyAllFilters() {
+    this.filteredUsers = [...this.users];
+
+    // Apply department filter
+    if (this.selectedDepartments && this.selectedDepartments.length > 0) {
+      const selectedValues = this.selectedDepartments.map((d: any) => d.value);
+      this.filteredUsers = this.filteredUsers.filter((user) =>
+        selectedValues.includes(user.department_name)
+      );
+    }
+
+    // Apply status filter
+    if (this.selectedStatus) {
+      this.filteredUsers = this.filteredUsers.filter(
+        (user) => this.getStatus(user) === this.selectedStatus
+      );
+    }
+
+    // Apply category filter
+    if (this.selectedCategory) {
+      this.filteredUsers = this.filteredUsers.filter(
+        (user) => user.category_name === this.selectedCategory
+      );
+    }
+
+    // Apply location filter
+    if (this.selectedLocation) {
+      this.filteredUsers = this.filteredUsers.filter(
+        (user) => user.location_name === this.selectedLocation
+      );
+    }
+
+    // Save filter state to service
+    this.userService.saveFilterState({
+      selectedDepartments: this.selectedDepartments,
+      selectedStatus: this.selectedStatus,
+      selectedCategory: this.selectedCategory,
+      selectedLocation: this.selectedLocation
     });
   }
 
@@ -140,52 +206,23 @@ export class UserListComponent implements OnInit {
   }
 
   filterByDepartment(selectedDepartments: any[]) {
-    if (!selectedDepartments || selectedDepartments.length === 0) {
-      this.filteredUsers = [...this.users];
-      return;
-    }
-
-    const selectedValues = selectedDepartments.map((d) => d.value);
-
-    this.filteredUsers = this.users.filter((user) =>
-      selectedValues.includes(user.department_name)
-    );
-
+    this.selectedDepartments = selectedDepartments || [];
+    this.applyAllFilters();
   }
 
   filterByStatus(status: string) {
-    if (!status) {
-      this.filteredUsers = [...this.users];
-      return;
-    }
-
-    this.filteredUsers = this.users.filter(
-      (user) => this.getStatus(user) === status
-    );
-
-    this.users = this.filteredUsers;
+    this.selectedStatus = status || '';
+    this.applyAllFilters();
   }
 
   filterByCategory(category: string) {
-    if (!category) {
-      this.filteredUsers = [...this.users];
-      return;
-    }
-    this.filteredUsers = this.users.filter(
-      (user) => user.category_name === category
-    );
-    this.users = this.filteredUsers;
+    this.selectedCategory = category || '';
+    this.applyAllFilters();
   }
 
   filterByLocation(location: string) {
-    if (!location) {
-      this.filteredUsers = [...this.users];
-      return;
-    }
-    this.filteredUsers = this.users.filter(
-      (user) => user.location_name === location
-    );
-    this.users = this.filteredUsers;
+    this.selectedLocation = location || '';
+    this.applyAllFilters();
   }
 
   clearFilter() {
@@ -193,7 +230,8 @@ export class UserListComponent implements OnInit {
     this.selectedDepartments = [];
     this.selectedCategory = '';
     this.selectedLocation = '';
-    this.ngOnInit(); // Re-initialize to fetch all users again
+    this.userService.clearFilterState();
+    this.filteredUsers = [...this.users];
   }
 
   getStatus(user: any) {

@@ -96,141 +96,6 @@ export const getAllUsers = async (req) => {
   return result.rows;
 };
 
-// export const getDashboardData = async (user) => {
-//   try {
-//     const locationIds = user?.location_ids || [];
-
-//     if (!locationIds.length) {
-//       return {
-//         summary: { total_users: 0, available_ips: 0, reserved_ips: 0 },
-//         location: [],
-//         department: [],
-//         division: [],
-//         category: [],
-//         model: [],
-//         ram: [],
-//         os: [],
-//         processor: [],
-//         warranty: [],
-//         software: []
-//       };
-//     }
-
-//     /* ================= SUMMARY (LOCATION NAME BASED IP LOGIC) ================= */
-//     const summary = (
-//       await pool.query(
-//         `
-//  SELECT
-//           COUNT(u.id)::int AS total_users,
-
-//           COUNT(u.id) FILTER (
-//             WHERE u.name = 'NA'
-//           )::int AS available_ips,
-
-//           COUNT(u.id) FILTER (
-//             WHERE u.name IS NOT NULL
-//               AND u.name <> 'NA'
-//           )::int AS reserved_ips
-
-//         FROM users u
-//         WHERE u.location_id = ANY($1::int[])
-//         `,
-//         [locationIds]
-//       )
-//     ).rows[0];
-
-//     /* ================= GENERIC LOOKUP (STRICT LOCATION BASED) ================= */
-//     const lookupByLocation = async (table, userCol) => {
-//       const query = `
-//         SELECT
-//           l.name AS name,
-//           COUNT(u.id)::int AS count
-//         FROM ${table} l
-//         JOIN users u
-//           ON u.${userCol} = l.id
-//          AND u.location_id = ANY($1::int[])
-//         GROUP BY l.name
-//         ORDER BY count DESC, name ASC
-//       `;
-//       return (await pool.query(query, [locationIds])).rows;
-//     };
-
-//     /* ================= LOCATION ================= */
-//     const location = (
-//       await pool.query(
-//         `
-//         SELECT
-//           l.name AS name,
-//           COUNT(u.id)::int AS count
-//         FROM locations l
-//         JOIN users u
-//           ON u.location_id = l.id
-//          AND u.location_id = ANY($1::int[])
-//         GROUP BY l.name
-//         ORDER BY count DESC, name ASC
-//         `,
-//         [locationIds]
-//       )
-//     ).rows;
-
-//     /* ================= WARRANTY ================= */
-//     const warranty = (
-//       await pool.query(
-//         `
-//         SELECT
-//           w.warranty_name AS name,
-//           COUNT(u.id)::int AS count
-//         FROM warranties w
-//         JOIN users u
-//           ON u.warranty_id = w.id
-//          AND u.location_id = ANY($1::int[])
-//         GROUP BY w.warranty_name
-//         ORDER BY count DESC, name ASC
-//         `,
-//         [locationIds]
-//       )
-//     ).rows;
-
-//     /* ================= SOFTWARE ================= */
-//     const software = (
-//       await pool.query(
-//         `
-//         SELECT
-//           s.name AS name,
-//           COUNT(us.user_id)::int AS count
-//         FROM software s
-//         JOIN user_software us ON us.software_id = s.id
-//         JOIN users u
-//           ON u.id = us.user_id
-//          AND u.location_id = ANY($1::int[])
-//         GROUP BY s.name
-//         ORDER BY count DESC, name ASC
-//         `,
-//         [locationIds]
-//       )
-//     ).rows;
-
-//     /* ================= FINAL RESPONSE ================= */
-//     return {
-//       summary,
-//       location,
-//       department: await lookupByLocation('departments', 'department_id'),
-//       division: await lookupByLocation('divisions', 'division_id'),
-//       category: await lookupByLocation('categories', 'category_id'),
-//       model: await lookupByLocation('models', 'model_id'),
-//       ram: await lookupByLocation('rams', 'ram_id'),
-//       os: await lookupByLocation('operating_systems', 'os_id'),
-//       processor: await lookupByLocation('processors', 'processor_id'),
-//       warranty,
-//       software
-//     };
-
-//   } catch (error) {
-//     console.error('Dashboard Metrics Error:', error);
-//     throw error;
-//   }
-// };
-
 
 export const getDashboardData = async (user) => {
   try {
@@ -696,7 +561,7 @@ async function updateUser(id, userData) {
     delete userData.software;
 
     const licenceNames = userData.licences;
-    console.log('Updating licences with names:', licenceNames);
+    
     delete userData.licences;
 
     const cleanData = Object.fromEntries(
@@ -756,7 +621,7 @@ async function updateUser(id, userData) {
         }
         return { name: fullName, version: null };
       });
-      console.log('Parsed licences:', parsedLicences);
+      
 
       const licRes = await client.query(
         `SELECT id, name, version FROM licences WHERE (name, version) IN (${
@@ -764,11 +629,11 @@ async function updateUser(id, userData) {
         })`,
         parsedLicences.flatMap(l => [l.name, l.version])
       );
-      console.log('Licence query result:', licRes.rows);
+     
 
       const licenceIds = licRes.rows.map(row => row.id);
 
-      console.log('Mapped licence IDs:', licenceIds);
+    
 
       await client.query(`DELETE FROM user_licences WHERE user_id = $1`, [id]);
 
