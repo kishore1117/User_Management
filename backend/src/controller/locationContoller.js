@@ -194,7 +194,7 @@ export const getAllowedLocations = async (req, res) => {
     }
 
     // Fetch only allowed locations + all departments (if needed)
-    const [locations, departments] = await Promise.all([
+    const [locations, departments, categories] = await Promise.all([
       pool.query(
         `
         SELECT id, name
@@ -210,12 +210,16 @@ export const getAllowedLocations = async (req, res) => {
         FROM departments
         ORDER BY name
         `
+      ),
+      pool.query(
+        `SELECT id, name FROM categories ORDER BY name`
       )
     ]);
 
     res.json({
       locations: locations.rows,
-      departments: departments.rows
+      departments: departments.rows,
+      categories: categories.rows
     });
   } catch (err) {
     console.error('❌ Error fetching allowed locations:', err);
