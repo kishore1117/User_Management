@@ -58,6 +58,7 @@ export class AdminComponent implements OnInit {
   categories: any[] = [];
   locationList: any[] = [];
   departmentList: any[] = [];
+  categoryList: any[] = [];
   roleList = [
     { label: 'Admin', value: 'admin' },
     { label: 'User', value: 'user' }
@@ -152,6 +153,7 @@ export class AdminComponent implements OnInit {
           console.log("Locations loaded:", res.data);
           this.locationList = res.locations || [];
           this.departmentList = res.departments || [];
+          this.categoryList = res.categories || [];
           console.log("Location List after assignment:", this.locationList);
         },
         error: () => {
@@ -341,7 +343,7 @@ export class AdminComponent implements OnInit {
 
       // Initialize multiSelect fields as empty arrays
       let initialValue: any = '';
-      if (col.name === 'location_ids' || col.name === 'department_ids') {
+      if (col.name === 'location_ids' || col.name === 'department_ids' || col.name === 'category_ids') {
         initialValue = [];
       }
 
@@ -389,12 +391,22 @@ export class AdminComponent implements OnInit {
             if (this.departmentList && this.departmentList.length > 0) {
               value = this.departmentList.filter((dept: any) => ids.includes(dept.id));
               console.log('Converted department objects:', value);
-            } else {
+            } 
+            
+            else {
               console.warn('DepartmentList is empty or not loaded!');
               value = [];
             }
+          } else if (col.name === 'category_ids') {
+            if (this.categoryList && this.categoryList.length > 0) {
+              value = this.categoryList.filter((cat: any) => ids.includes(cat.id));
+              console.log('Converted category objects:', value);
+            } else {
+              console.warn('CategoryList is empty or not loaded!');
+              value = [];
+            }
           }
-        } else if (col.name === 'location_ids' || col.name === 'department_ids') {
+        } else if (col.name === 'location_ids' || col.name === 'department_ids' || col.name === 'category_ids') {
           // Ensure these are always arrays even if no value
           value = [];
         }
@@ -422,7 +434,8 @@ export class AdminComponent implements OnInit {
     const payload = {
       ...raw,
       location_ids: this.normalizeLocationIds(raw.location_ids),
-      department_ids: this.normalizeDepartmentIds(raw.department_ids)
+      department_ids: this.normalizeDepartmentIds(raw.department_ids),
+      category_ids: this.normalizeDepartmentIds(raw.category_ids)
     };
 
     if (!this.lookupEditing) {

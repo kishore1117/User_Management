@@ -165,6 +165,12 @@
                         class="form-control multiselect">
                       </p-multiSelect>
 
+                      <p-multiSelect *ngSwitchCase="'category_ids'" [options]="categoryList" optionLabel="name"
+                        formControlName="category_ids" placeholder="Select Categories" display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-multiSelect>
+
                       <!-- INTEGER INPUT -->
                       <input *ngSwitchCase="'integer'" type="number" pInputText [formControlName]="col.name"
                         [disabled]="(activeSection !== 'lookup' && activeSection !== null) || col.name === lookupPrimaryKey"

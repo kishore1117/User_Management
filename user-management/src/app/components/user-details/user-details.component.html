@@ -57,7 +57,7 @@
 
           <div class="form-group">
             <label for="division">Division</label>
-            <p-select id="division" formControlName="division_id" [options]="divisions" optionLabel="name"
+            <p-select id="division" formControlName="division_id" [options]="filteredDivisions" optionLabel="name"
               appendTo="body" optionValue="id" [disabled]="!isEditing" placeholder="Select Division" class="w-full">
             </p-select>
           </div>

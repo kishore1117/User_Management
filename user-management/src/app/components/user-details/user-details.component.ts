@@ -67,6 +67,8 @@ export class UserDetailsComponent implements OnInit {
   printer_type: any[] = [{ label: 'Network', value: 'NETWORK' }, { label: 'USB', value: 'USB' }];
   departments: any[] = [];
   divisions: any[] = [];
+  filteredDivisions: any[] = [];
+  filteredModels: any[] = [];
   locations: any[] = [];
   categories: any[] = [];
   models: any[] = [];
@@ -246,6 +248,10 @@ export class UserDetailsComponent implements OnInit {
         this.ensureFormState();
 
         this.originalUser = JSON.parse(JSON.stringify(this.user));
+        
+        // Initialize filtered divisions with all divisions
+        this.filteredDivisions = [...this.divisions];
+        this.filteredModels = [...this.models];
         this.loading = false;
       },
       error: (err) => {
@@ -255,6 +261,7 @@ export class UserDetailsComponent implements OnInit {
       }
     });
      this.listenToCategoryChanges();
+     this.listenToDepartmentChanges();
   }
 
   private initForm() {
@@ -334,6 +341,37 @@ export class UserDetailsComponent implements OnInit {
     this.userForm.get('category_id')?.valueChanges.subscribe(catId => {
       if(catId === this.printer_id){
         this.isPrinterSelected = true;
+      }
+    });
+
+  }
+
+  listenToDepartmentChanges() {
+    this.userForm.get('department_id')?.valueChanges.subscribe(deptId => {
+      if (deptId) {
+        // Filter divisions based on department_ids array
+        // Divisions have a department_ids array field
+        this.filteredDivisions = this.divisions.filter(div => {
+          // Check if division's department_ids array contains the selected department
+          if (Array.isArray(div.department_ids)) {
+            return div.department_ids.includes(deptId);
+          }
+          // Fallback: check single department_id field if it exists
+          return div.department_id === deptId;
+        });
+        
+        // Reset division selection if current division doesn't belong to new department
+        const currentDivisionId = this.userForm.get('division_id')?.value;
+        if (currentDivisionId && this.filteredDivisions.length > 0) {
+          const divisionExists = this.filteredDivisions.some(div => div.id === currentDivisionId);
+          if (!divisionExists) {
+            this.userForm.get('division_id')?.setValue(null, { emitEvent: false });
+          }
+        }
+      } else {
+        // If no department selected, show all divisions
+        this.filteredDivisions = [...this.divisions];
+        this.userForm.get('division_id')?.setValue(null, { emitEvent: false });
       }
     });
   }
@@ -812,141 +850,6 @@ export class UserDetailsComponent implements OnInit {
 
     return assetDetailsHTML;
   }
-
-  // printDeclaration() {
-  //   console.log('Printing declaration for user:', this.user);
-  //   const printWindow = window.open('', '_blank');
-  //   if (!printWindow) return;
-
-  //   const categorySpecificDetails = this.getCategorySpecificAssetDetails();
-
-  //   const declarationHTML = `
-  //     <!DOCTYPE html>
-  //     <html lang="en">
-  //     <head>
-  //       <meta charset="UTF-8">
-  //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  //       <title>Asset Declaration Form</title>
-  //       <style>
-  //         body {
-  //           font-family: Arial, sans-serif;
-  //           margin: 20px;
-  //           line-height: 1.6;
-  //         }
-  //         .header {
-  //           text-align: center;
-  //           border-bottom: 2px solid #000;
-  //           padding-bottom: 10px;
-  //           margin-bottom: 20px;
-  //         }
-  //         .company-info {
-  //           margin-bottom: 20px;
-  //         }
-  //         .declaration-title {
-  //           font-size: 18px;
-  //           font-weight: bold;
-  //           margin-bottom: 10px;
-  //         }
-  //         .declaration-text {
-  //           margin-bottom: 20px;
-  //           text-align: justify;
-  //         }
-  //         .asset-details {
-  //           margin-bottom: 20px;
-  //         }
-  //         .asset-details h3 {
-  //           margin-bottom: 10px;
-  //         }
-  //         .asset-list {
-  //           border: 1px solid #ccc;
-  //           padding: 10px;
-  //           background-color: #f9f9f9;
-  //         }
-  //         .asset-item {
-  //           margin-bottom: 5px;
-  //           font-size: 12px;
-  //         }
-  //         .acceptance {
-  //           margin-bottom: 30px;
-  //         }
-  //         .signature-section {
-  //           margin-top: 40px;
-  //         }
-  //         .signature-line {
-  //           border-bottom: 1px solid #000;
-  //           width: 300px;
-  //           display: inline-block;
-  //         }
-  //         .basic-info {
-  //           border-bottom: 1px solid #ddd;
-  //           padding-bottom: 10px;
-  //           margin-bottom: 10px;
-  //         }
-  //         @media print {
-  //           body {
-  //             margin: 0;
-  //           }
-  //         }
-  //       </style>
-  //     </head>
-  //     <body>
-  //       <div class="header">
-  //         <h1>Asset Declaration Form</h1>
-  //       </div>
-
-  //       <div class="company-info">
-  //         <p><strong>Company Name:</strong> Your Company Ltd.</p>
-  //         <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-  //       </div>
-
-  //       <div class="declaration-title">Apec Asset Collection Declaration</div>
-
-  //       <div class="declaration-text">
-  //         I, <strong>${this.user.name || 'N/A'}</strong>, hereby declare that I have collected the following asset(s) with the specified specifications from the company. I acknowledge that I am responsible for the proper care and maintenance of these assets. I understand that I will be held liable for any damage, loss, or misuse of the assets until they are returned to the company in good condition.
-  //       </div>
-
-  //       <div class="asset-details">
-  //         <h3>Asset Information:</h3>
-  //         <div class="asset-list">
-  //           <div class="basic-info">
-  //             <div class="asset-item"><strong>Employee Name:</strong> ${this.user.name || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Hostname:</strong> ${this.user.hostname || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Location:</strong> ${this.user.location_name || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Department:</strong> ${this.user.department_name || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Asset Category:</strong> ${this.user.category_name || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Asset Tag:</strong> ${this.user.asset_tag || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Warranty:</strong> ${this.user.warranty || 'N/A'}</div>
-  //             <div class="asset-item"><strong>Purchase From:</strong> ${this.user.purchase_from || 'N/A'}</div>
-  //           </div>
-  //           ${categorySpecificDetails}
-  //         </div>
-  //       </div>
-
-  //       <div class="acceptance">
-  //         <strong>Acceptance & Responsibility:</strong>
-  //         <p style="margin-top: 10px; text-align: justify;">
-  //           I accept full responsibility for the assets listed above and agree to return them in the same condition as received, barring normal wear and tear. I understand that I will be held accountable for any damage, loss, or theft of these assets during my custody.
-  //         </p>
-  //       </div>
-
-  //       <div class="signature-section">
-  //         <p>Signature: <span class="signature-line"></span></p>
-  //         <p>Employee Name: ${this.user.name || 'N/A'}</p>
-  //         <p>Date: ${new Date().toLocaleDateString()}</p>
-  //         <p style="margin-top: 30px; font-size: 12px; border-top: 1px solid #000; padding-top: 10px;">
-  //           <strong>For Office Use:</strong>
-  //         </p>
-  //         <p style="font-size: 12px;">Issued by: _________________________ Date: _____________</p>
-  //       </div>
-  //     </body>
-  //     </html>
-  //   `;
-
-  //   printWindow.document.write(declarationHTML);
-  //   printWindow.document.close();
-  //   printWindow.focus();
-  //   printWindow.print();
-  // }
 
   openHandoverForm() {
     this.initHandoverForm();
