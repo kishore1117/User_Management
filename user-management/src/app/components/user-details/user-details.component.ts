@@ -249,9 +249,14 @@ export class UserDetailsComponent implements OnInit {
 
         this.originalUser = JSON.parse(JSON.stringify(this.user));
         
-        // Initialize filtered divisions with all divisions
+        // Initialize filtered divisions and models
         this.filteredDivisions = [...this.divisions];
         this.filteredModels = [...this.models];
+        
+        // Apply category and department filters based on loaded data
+        this.applyDepartmentFilter();
+        this.applyCategoryFilter();
+        
         this.loading = false;
       },
       error: (err) => {
@@ -342,38 +347,83 @@ export class UserDetailsComponent implements OnInit {
       if(catId === this.printer_id){
         this.isPrinterSelected = true;
       }
+      this.applyCategoryFilter();
     });
+  }
 
+  applyCategoryFilter() {
+    const catId = this.userForm.get('category_id')?.value;
+    
+    // Filter models based on category_ids array
+    if (catId) {
+      this.filteredModels = this.models.filter(model => {
+        // Check if model's category_ids array contains the selected category
+        if (Array.isArray(model.category_ids)) {
+          return model.category_ids.includes(catId);
+        }
+        // Fallback: check single category_id field if it exists
+        return model.category_id === catId;
+      });
+      
+      // If no models found for this category, show all models
+      if (this.filteredModels.length === 0) {
+        this.filteredModels = [...this.models];
+      }
+      
+      // Reset model selection if current model doesn't belong to new category
+      const currentModelId = this.userForm.get('model_id')?.value;
+      if (currentModelId && this.filteredModels.length > 0) {
+        const modelExists = this.filteredModels.some(model => model.id === currentModelId);
+        if (!modelExists) {
+          this.userForm.get('model_id')?.setValue(null, { emitEvent: false });
+        }
+      }
+    } else {
+      // If no category selected, show all models
+      this.filteredModels = [...this.models];
+      this.userForm.get('model_id')?.setValue(null, { emitEvent: false });
+    }
   }
 
   listenToDepartmentChanges() {
     this.userForm.get('department_id')?.valueChanges.subscribe(deptId => {
-      if (deptId) {
-        // Filter divisions based on department_ids array
-        // Divisions have a department_ids array field
-        this.filteredDivisions = this.divisions.filter(div => {
-          // Check if division's department_ids array contains the selected department
-          if (Array.isArray(div.department_ids)) {
-            return div.department_ids.includes(deptId);
-          }
-          // Fallback: check single department_id field if it exists
-          return div.department_id === deptId;
-        });
-        
-        // Reset division selection if current division doesn't belong to new department
-        const currentDivisionId = this.userForm.get('division_id')?.value;
-        if (currentDivisionId && this.filteredDivisions.length > 0) {
-          const divisionExists = this.filteredDivisions.some(div => div.id === currentDivisionId);
-          if (!divisionExists) {
-            this.userForm.get('division_id')?.setValue(null, { emitEvent: false });
-          }
-        }
-      } else {
-        // If no department selected, show all divisions
-        this.filteredDivisions = [...this.divisions];
-        this.userForm.get('division_id')?.setValue(null, { emitEvent: false });
-      }
+      this.applyDepartmentFilter();
     });
+  }
+
+  applyDepartmentFilter() {
+    const deptId = this.userForm.get('department_id')?.value;
+    
+    if (deptId) {
+      // Filter divisions based on department_ids array
+      // Divisions have a department_ids array field
+      this.filteredDivisions = this.divisions.filter(div => {
+        // Check if division's department_ids array contains the selected department
+        if (Array.isArray(div.department_ids)) {
+          return div.department_ids.includes(deptId);
+        }
+        // Fallback: check single department_id field if it exists
+        return div.department_id === deptId;
+      });
+      
+      // If no divisions found for this department, show all divisions
+      if (this.filteredDivisions.length === 0) {
+        this.filteredDivisions = [...this.divisions];
+      }
+      
+      // Reset division selection if current division doesn't belong to new department
+      const currentDivisionId = this.userForm.get('division_id')?.value;
+      if (currentDivisionId && this.filteredDivisions.length > 0) {
+        const divisionExists = this.filteredDivisions.some(div => div.id === currentDivisionId);
+        if (!divisionExists) {
+          this.userForm.get('division_id')?.setValue(null, { emitEvent: false });
+        }
+      }
+    } else {
+      // If no department selected, show all divisions
+      this.filteredDivisions = [...this.divisions];
+      this.userForm.get('division_id')?.setValue(null, { emitEvent: false });
+    }
   }
 
   private syncSoftwareControls() {

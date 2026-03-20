@@ -297,7 +297,7 @@ export class AdminComponent implements OnInit {
       const t = String(col.type || '').toLowerCase();
 
       // Initialize location_ids and department_ids as empty arrays for multiSelect
-      if (col.name === 'location_ids' || col.name === 'department_ids') {
+      if (col.name === 'location_ids' || col.name === 'department_ids' || col.name === 'category_ids') {
         initial = [];
       } else if (t.includes('int') || t.includes('numeric') || t.includes('decimal')) {
         initial = null;
@@ -364,7 +364,7 @@ export class AdminComponent implements OnInit {
         let value: any = editData[col.name] ?? null;
 
         // Special handling for location_ids and department_ids - convert to location objects
-        if ((col.name === 'location_ids' || col.name === 'department_ids') && value) {
+        if ((col.name === 'location_ids' || col.name === 'department_ids' || col.name === 'category_ids') && value) {
           console.log(`\nProcessing ${col.name}:`, value, 'Type:', typeof value);
           let ids: number[] = [];
           

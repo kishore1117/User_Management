@@ -136,7 +136,7 @@
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('model')">
             <label for="model">Model</label>
-            <p-select id="model" formControlName="model_id" [options]="models" optionLabel="name" optionValue="id"
+            <p-select id="model" formControlName="model_id" [options]="filteredModels" optionLabel="name" optionValue="id"
               appendTo="body" [disabled]="!isEditing" placeholder="Select Model" class="w-full">
             </p-select>
           </div>
