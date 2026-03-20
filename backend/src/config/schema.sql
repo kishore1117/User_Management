@@ -432,8 +432,10 @@
 --     ON DELETE CASCADE
 -- );
 
-alter table licences
-rename column vendor to version;
+-- alter table licences
+-- rename column vendor to version;
 
-alter table licences 
-drop column expiry_date;
+-- alter table licences 
+-- drop column expiry_date;
+
+ALTER TABLE models ALTER COLUMN category_ids SET NOT null;

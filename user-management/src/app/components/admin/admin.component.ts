@@ -713,6 +713,39 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  // Convert IDs to display names for reference fields
+  getDisplayValue(columnName: string, value: any): string {
+    // Handle category_ids
+    if (columnName === 'category_ids' && value) {
+      const ids = Array.isArray(value) ? value : [value];
+      return ids.map(id => {
+        const category = this.categoryList.find((c: any) => c.id === id);
+        return category ? category.name : id;
+      }).join(', ');
+    }
+
+    // Handle department_ids
+    if (columnName === 'department_ids' && value) {
+      const ids = Array.isArray(value) ? value : [value];
+      return ids.map(id => {
+        const dept = this.departmentList.find((d: any) => d.id === id);
+        return dept ? dept.name : id;
+      }).join(', ');
+    }
+
+    // Handle location_ids
+    if (columnName === 'location_ids' && value) {
+      const ids = Array.isArray(value) ? value : [value];
+      return ids.map(id => {
+        const loc = this.locationList.find((l: any) => l.id === id);
+        return loc ? loc.name : id;
+      }).join(', ');
+    }
+
+    // Default: return the value as-is
+    return String(value || '');
+  }
+
   // SEARCH FILTER METHODS
   getFilteredTableData(): any[] {
     if (!this.tableSearch.trim()) {

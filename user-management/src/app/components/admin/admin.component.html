@@ -104,7 +104,7 @@
                 <tbody>
                   <tr *ngFor="let row of getFilteredTableData() | slice:0:100" class="table-row">
                     <td *ngFor="let col of tableColumns" class="table-cell">
-                      <span class="cell-value">{{ row[col.name] }}</span>
+                      <span class="cell-value">{{ getDisplayValue(col.name, row[col.name]) }}</span>
                     </td>
                     <td class="table-cell actions-cell">
                       <button class="action-btn edit-btn" (click)="openLookupEdit(row)"
