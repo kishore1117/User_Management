@@ -8,12 +8,265 @@ import { authenticateJWT } from "../middleware/authMiddleware.js";
 const router = express.Router();
 router.use(authenticateJWT);
 
-// File upload setup
+const TABLE_EXTRA_COLUMNS = {
+  models: {
+    category_ids: "ARRAY[]::INT[]"
+  },
+  departments: {
+    location_ids: "ARRAY[]::INT[]"
+  },
+  divisions: {
+    department_ids: "ARRAY[]::INT[]"
+  },
+  software: {
+    location_ids: "ARRAY[]::INT[]"
+  }
+};
+
+const TABLE_COLUMN_MAP = {
+  models: "name",
+  processors: "name",
+  cpu_serials: "name",
+  cpu_speeds: "name",
+  rams: "name",
+  hdds: "name",
+  monitors: "name",
+  keyboards: "name",
+  mice: "name",
+  cd_dvds: "name",
+  operating_systems: "name",
+
+  warranties: "warranty_name",
+  purchase_from: "vendor_name",
+
+  locations: "name",
+  departments: "name",
+  divisions: "name",
+  categories: "name",
+  software: "name"
+};
+
+const VALID_TABLES = Object.keys(TABLE_COLUMN_MAP);
+
+const NORMALIZATION_CONFIG = {
+   Model: {
+    enabled: true,
+    transforms: [
+      { regex: /[^a-zA-Z0-9]/g, replace: "" }
+    ],
+    finalFormat: "uppercase"
+  },
+Processor: {
+  enabled: true,
+  transforms: [
+    { regex: /^\s+|\s+$/g, replace: "" },              // trim
+
+    { regex: /[^a-zA-Z0-9]/g, replace: "" },           // remove junk chars & spaces
+
+    { regex: /(intel)(i[3579])/i, replace: "$1 $2" },  // fix IntelI5 → Intel I5
+
+    { regex: /(amd)(ryzen[3579])/i, replace: "$1 $2" }, // optional AMD support
+
+  ],
+  finalFormat: "uppercase"
+},
+
+  Location: {
+    enabled: true,
+    transforms: [
+      { regex: /^\s+|\s+$/g, replace: "" },
+      { regex: /\s+/g, replace: " " }
+    ],
+    finalFormat: "titlecase"
+  },
+
+  Department:{
+  enabled: true,
+  transforms: [
+    { regex: /^\s+|\s+$/g, replace: "" }, // remove leading/trailing spaces
+    { regex: /\s+/g, replace: " " }       // normalize multiple spaces
+  ],
+  finalFormat: "titlecase"
+},
+
+  Division: {
+  enabled: true,
+  transforms: [
+    { regex: /^\s+|\s+$/g, replace: "" }, // remove leading/trailing spaces
+    { regex: /\s+/g, replace: " " }       // normalize multiple spaces
+  ],
+  finalFormat: "titlecase"
+},
+
+  Category: {
+  enabled: true,
+  transforms: [
+    { regex: /^\s+|\s+$/g, replace: "" }, // remove leading/trailing spaces
+    { regex: /\s+/g, replace: " " }       // normalize multiple spaces
+  ],
+  finalFormat: "titlecase"
+},
+
+  "CPU S#": {
+    enabled: true,
+    transforms: [
+      { regex: /^\s+|\s+$/g, replace: "" }
+    ],
+    finalFormat: "titlecase"
+  },
+  "CPU Speed": {
+    enabled: true,
+    transforms: [
+      { regex: /^\s+|\s+$/g, replace: "" },              // trim
+      { regex: /(\d+(?:\.\d+)?)\s*ghz/i, replace: "$1 GHZ" }, // normalize GHz
+      { regex: /\s+/g, replace: " " }                    // clean spaces
+    ],
+    finalFormat: "uppercase"
+  },
+
+"RAM": {
+  enabled: true,
+  transforms: [
+    { regex: /^\s+|\s+$/g, replace: "" },                    // trim
+    { regex: /(\d+(?:\.\d+)?)\s*(kb|mb|gb|tb).*/gi, replace: "$1$2" }, // 🔥 extract size only
+    { regex: /\s+/g, replace: "" }                           // remove spaces
+  ],
+  finalFormat: "uppercase"
+},
+
+HDD: {
+  enabled: true,
+  transforms: [
+    { regex: /^\s+|\s+$/g, replace: "" },
+    { regex: /(\d+)\s*(kb|mb|gb|tb)/gi, replace: "$1$2" },
+    { regex: /\s+/g, replace: "" }
+  ],
+  finalFormat: "uppercase"
+},
+
+  Monitor: {
+    enabled: true,
+    transforms: [
+      { regex: /[^a-zA-Z0-9]/g, replace: "" } // remove ALL spaces + junk
+    ],
+    finalFormat: "titlecase"
+  },
+
+  KBD: {
+    enabled: true,
+    transforms: [
+      { regex: /[^a-zA-Z0-9]/g, replace: "" } // remove ALL spaces + junk
+    ],
+    finalFormat: "titlecase"
+  },
+
+  Mouse: {
+    enabled: true,
+    transforms: [
+      { regex: /[^a-zA-Z0-9]/g, replace: "" } // remove ALL spaces + junk
+    ],
+    finalFormat: "titlecase"
+  },
+
+  "CD\\DVD": {
+    enabled: true,
+    transforms: [
+      { regex: /[^a-zA-Z0-9]/g, replace: "" } // remove ALL spaces + junk
+    ],
+    finalFormat: "titlecase"
+  },
+
+  Assettag: { enabled: false },
+  IPAddress1: { enabled: false },
+  IPAddress2: { enabled: false }
+};
+
+const applyFinalFormat = (value, format) => {
+  if (!value) return value;
+
+  switch (format) {
+    case "lowercase":
+      return value.toLowerCase();
+    case "uppercase":
+      return value.toUpperCase();
+    case "titlecase":
+      return value.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    default:
+      return value;
+  }
+};
+
+const normalizeField = (column, value) => {
+  if (!value) return null;
+
+  const config = NORMALIZATION_CONFIG[column];
+
+  if (!config || !config.enabled) {
+    return value.toString().trim();
+  }
+
+  let result = value.toString().trim();
+
+  if (config.transforms?.length) {
+    for (const { regex, replace } of config.transforms) {
+      result = result.replace(regex, replace);
+    }
+  }
+
+  result = result.replace(/\s+/g, " ").trim();
+  result = applyFinalFormat(result, config.finalFormat);
+
+  return result;
+};
+
+const insertLookup = async (table, column, value, client) => {
+  if (!value) return null;
+
+  if (!VALID_TABLES.includes(table)) {
+    throw new Error(`Invalid table: ${table}`);
+  }
+
+  const normalized = normalizeField(column, value);
+  if (!normalized) return null;
+
+  const columnName = TABLE_COLUMN_MAP[table];
+  const extraCols = TABLE_EXTRA_COLUMNS[table];
+
+  let columns = [columnName];
+  let values = ["$1"];
+  let queryValues = [normalized];
+
+  // 🔥 Add extra required columns dynamically
+  if (extraCols) {
+    let i = 2;
+
+    for (const [col, defaultVal] of Object.entries(extraCols)) {
+      columns.push(col);
+      values.push(defaultVal); // directly injected SQL (safe here)
+    }
+  }
+
+  const query = `
+    INSERT INTO ${table} (${columns.join(", ")})
+    VALUES (${values.join(", ")})
+    ON CONFLICT (${columnName})
+    DO UPDATE SET ${columnName} = EXCLUDED.${columnName}
+    RETURNING id
+  `;
+
+  const res = await client.query(query, queryValues);
+
+  return res.rows[0].id;
+};
+
 const upload = multer({ dest: "uploads/" });
 
-
 router.post("/upload", upload.single("file"), async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query("BEGIN");
+
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
@@ -22,13 +275,12 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = xlsx.utils.sheet_to_json(sheet, { defval: null });
 
-    /* ---------- LOOKUP TABLES (NO MONITOR SERIAL) ---------- */
     const LOOKUP_TABLES = {
       Model: "models",
       "CPU S#": "cpu_serials",
       Processor: "processors",
       "CPU Speed": "cpu_speeds",
-      RAM: "rams",
+      "RAM": "rams",
       HDD: "hdds",
       Monitor: "monitors",
       KBD: "keyboards",
@@ -36,280 +288,186 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       "CD\\DVD": "cd_dvds"
     };
 
+    let success = 0;
+    let skipped = 0;
+
     for (const row of data) {
-      const {
-        Hostname,
-        Name,
-        Department,
-        Division,
-        Category,
-        Location,
-        Floor,
-        IPAddress1,
-        IPAddress2,
-        Assettag,
-        Serial_number,
-        Printer_type,
-        warrenty,
-        "Purchase From": purchaseFrom,
-        ...rest
-      } = row;
+      await client.query("SAVEPOINT row_save");
 
-      /* ---------- REQUIRED FIELDS ---------- */
-      if (!IPAddress1?.trim()) {
-    
-        continue;
-      }
-
-      /* ---------- DUPLICATE IP CHECK ---------- */
-      const ipCheck = await pool.query(
-        `
-        SELECT id FROM users
-        WHERE ip_address1 = $1
-           OR ip_address2 = $1
-           OR ip_address1 = $2
-           OR ip_address2 = $2
-        `,
-        [IPAddress1, IPAddress2]
-      );
-
-      if (ipCheck.rows.length > 0) {
-       
-        continue;
-      }
-
-      /* ---------- LOCATION ---------- */
-      let location_id = null;
-      if (Location?.trim()) {
-        const locRes = await pool.query(
-          `
-          INSERT INTO locations (name, address)
-          VALUES ($1,'')
-          ON CONFLICT (name)
-          DO UPDATE SET name = EXCLUDED.name
-          RETURNING id
-          `,
-          [Location.trim()]
-        );
-        location_id = locRes.rows[0].id;
-      }
-
-      /* ---------- DEPARTMENT ---------- */
-      let department_id = null;
-      if (Department?.trim() && !["na", "n/a"].includes(Department.toLowerCase())) {
-        const deptRes = await pool.query(
-          `
-          INSERT INTO departments (name, location_ids)
-          VALUES ($1, ARRAY[$2::INT])
-          ON CONFLICT (name)
-          DO UPDATE SET location_ids = departments.location_ids || EXCLUDED.location_ids
-          RETURNING id
-          `,
-          [Department.trim(), location_id]
-        );
-        department_id = deptRes.rows[0].id;
-      }
-
-      /* ---------- DIVISION ---------- */
-      let division_id = null;
-      if (Division?.trim() && department_id) {
-        const divRes = await pool.query(
-          `
-          INSERT INTO divisions (name, department_ids)
-          VALUES ($1, ARRAY[$2::INT])
-          ON CONFLICT (name)
-          DO UPDATE SET department_ids = divisions.department_ids || EXCLUDED.department_ids
-          RETURNING id
-          `,
-          [Division.trim(), department_id]
-        );
-        division_id = divRes.rows[0].id;
-      }
-
-      /* ---------- CATEGORY ---------- */
-      let category_id = null;
-      if (Category?.trim()) {
-        const catRes = await pool.query(
-          `
-          INSERT INTO categories (name, location_ids)
-          VALUES ($1, ARRAY[]::INT[])
-          ON CONFLICT (name)
-          DO UPDATE SET location_ids = categories.location_ids
-          RETURNING id
-          `,
-          [Category.trim()]
-        );
-        category_id = catRes.rows[0].id;
-      }
-
-      /* ---------- WARRANTY ---------- */
-      let warranty_id = null;
-      if (warrenty?.trim()) {
-        const wRes = await pool.query(
-          `
-          INSERT INTO warranties (warranty_name)
-          VALUES ($1)
-          ON CONFLICT (warranty_name)
-          DO UPDATE SET warranty_name = EXCLUDED.warranty_name
-          RETURNING id
-          `,
-          [warrenty.trim()]
-        );
-        warranty_id = wRes.rows[0].id;
-      }
-
-      /* ---------- PURCHASE FROM ---------- */
-      let purchase_from_id = null;
-      if (purchaseFrom?.trim()) {
-        const pRes = await pool.query(
-          `
-          INSERT INTO purchase_from (vendor_name)
-          VALUES ($1)
-          ON CONFLICT (vendor_name)
-          DO UPDATE SET vendor_name = EXCLUDED.vendor_name
-          RETURNING id
-          `,
-          [purchaseFrom.trim()]
-        );
-        purchase_from_id = pRes.rows[0].id;
-      }
-
-      /* ---------- HARDWARE & SOFTWARE ---------- */
-      const lookupIds = {};
-      let softwareStart = false;
-
-      for (const [rawCol, val] of Object.entries(rest)) {
-        if (!val) continue;
-
-        const col = rawCol.trim();
-        const value = val.toString().trim();
-        if (!value || ["na", "n/a"].includes(value.toLowerCase())) continue;
-
-        /* ---------- OPERATING SYSTEM ---------- */
-        if (col === "O/S") {
-          softwareStart = true;
-          const osRes = await pool.query(
-            `
-            INSERT INTO operating_systems (name)
-            VALUES ($1)
-            ON CONFLICT (name)
-            DO UPDATE SET name = EXCLUDED.name
-            RETURNING id
-            `,
-            [value]
-          );
-          lookupIds.os_id = osRes.rows[0].id;
-          continue;
-        }
-
-        /* ---------- HARDWARE LOOKUPS ---------- */
-        if (LOOKUP_TABLES[col]) {
-          const table = LOOKUP_TABLES[col];
-          const res = await pool.query(
-            `
-            INSERT INTO ${table} (name)
-            VALUES ($1)
-            ON CONFLICT (name)
-            DO UPDATE SET name = EXCLUDED.name
-            RETURNING id
-            `,
-            [value]
-          );
-          lookupIds[col] = res.rows[0].id;
-          continue;
-        }
-
-        /* ---------- SOFTWARE ---------- */
-        if (softwareStart && ["1", "yes"].includes(value.toLowerCase())) {
-          const swRes = await pool.query(
-            `
-            INSERT INTO software (name, location_ids)
-            VALUES ($1, ARRAY[$2::INT])
-            ON CONFLICT (name)
-            DO UPDATE SET location_ids = software.location_ids || EXCLUDED.location_ids
-            RETURNING id
-            `,
-            [col, location_id]
-          );
-
-          lookupIds.software ??= [];
-          lookupIds.software.push(swRes.rows[0].id);
-        }
-      }
-
-      /* ---------- INSERT USER ---------- */
-      const insertRes = await pool.query(
-        `
-        INSERT INTO users
-        (hostname, name, department_id, division_id, location_id, category_id,
-         model_id, cpu_serial_id, processor_id, cpu_speed_id, ram_id, hdd_id,
-         monitor_id, keyboard_id, mouse_id, cd_dvd_id, os_id,
-         warranty_id, purchase_from_id,
-         floor, ip_address1, ip_address2, asset_tag,
-         monitor_serial_number, printer_type)
-        VALUES
-        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
-         $13,$14,$15,$16,$17,$18,$19,$20,
-         $21,$22,$23,$24,$25)
-        RETURNING id
-        `,
-        [
+      try {
+        let {
           Hostname,
           Name,
-          department_id,
-          division_id,
-          location_id,
-          category_id,
-          lookupIds["Model"] || null,
-          lookupIds["CPU S#"] || null,
-          lookupIds["Processor"] || null,
-          lookupIds["CPU Speed"] || null,
-          lookupIds["RAM"] || null,
-          lookupIds["HDD"] || null,
-          lookupIds["Monitor"] || null,
-          lookupIds["KBD"] || null,
-          lookupIds["Mouse"] || null,
-          lookupIds["CD\\DVD"] || null,
-          lookupIds.os_id || null,
-          warranty_id,
-          purchase_from_id,
+          Department,
+          Division,
+          Category,
+          Location,
           Floor,
           IPAddress1,
           IPAddress2,
           Assettag,
-          Serial_number?.toString().trim() || null,
-          Printer_type
-        ]
-      );
+          Serial_number,
+          Printer_type,
+          warrenty,
+          "Purchase From": purchaseFrom,
+          ...rest
+        } = row;
 
-      const user_id = insertRes.rows[0].id;
+        // Normalize IPs
+        IPAddress1 = normalizeField("IPAddress1", IPAddress1);
+        IPAddress2 = normalizeField("IPAddress2", IPAddress2);
 
-      /* ---------- MAP SOFTWARE ---------- */
-      if (lookupIds.software?.length) {
-        for (const swId of lookupIds.software) {
-          await pool.query(
-            `
-            INSERT INTO user_software (user_id, software_id)
-            VALUES ($1,$2)
-            ON CONFLICT (user_id, software_id) DO NOTHING
-            `,
-            [user_id, swId]
-          );
+        if (!IPAddress1) {
+          skipped++;
+          await client.query("ROLLBACK TO SAVEPOINT row_save");
+          continue;
         }
+
+        // Duplicate IP check
+        const ipCheck = await client.query(
+          `SELECT id FROM users 
+       WHERE ip_address1=$1 OR ip_address2=$1 
+          OR ip_address1=$2 OR ip_address2=$2`,
+          [IPAddress1, IPAddress2]
+        );
+
+        if (ipCheck.rows.length > 0) {
+          skipped++;
+          await client.query("ROLLBACK TO SAVEPOINT row_save");
+          continue;
+        }
+
+        // Lookup inserts (IMPORTANT: pass client)
+        const location_id = await insertLookup("locations", "Location", Location, client);
+        const department_id = await insertLookup("departments", "Department", Department, client);
+        const division_id = await insertLookup("divisions", "Division", Division, client);
+        const category_id = await insertLookup("categories", "Category", Category, client);
+        const warranty_id = await insertLookup("warranties", "warrenty", warrenty, client);
+        const purchase_from_id = await insertLookup("purchase_from", "Purchase From", purchaseFrom, client);
+
+        const lookupIds = {};
+        let softwareStart = false;
+
+        for (const [col, val] of Object.entries(rest)) {
+          // Trim column name to remove trailing/leading spaces
+          const trimmedCol = col.trim();
+          
+          if (!val) continue;
+
+          const normalized = normalizeField(trimmedCol, val);
+          if (!normalized) continue;
+
+          if (trimmedCol === "O/S") {
+            softwareStart = true;
+            lookupIds.os_id = await insertLookup("operating_systems", trimmedCol, val, client);
+            continue;
+          }
+
+          if (LOOKUP_TABLES[trimmedCol]) {
+            lookupIds[trimmedCol] = await insertLookup(LOOKUP_TABLES[trimmedCol], trimmedCol, val, client);
+            continue;
+          }
+
+          const truthy = ["1", "yes", "y", "true"];
+
+          if (softwareStart && truthy.includes(normalized.toLowerCase())) {
+            const swId = await insertLookup("software", trimmedCol, trimmedCol, client);
+            lookupIds.software ??= [];
+            lookupIds.software.push(swId);
+          }
+        }
+
+        // Insert user
+        const userRes = await client.query(
+          `
+      INSERT INTO users
+      (hostname, name, department_id, division_id, location_id, category_id,
+       model_id, cpu_serial_id, processor_id, cpu_speed_id, ram_id, hdd_id,
+       monitor_id, keyboard_id, mouse_id, cd_dvd_id, os_id,
+       warranty_id, purchase_from_id,
+       floor, ip_address1, ip_address2, asset_tag,
+       monitor_serial_number, printer_type)
+      VALUES
+      ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
+       $13,$14,$15,$16,$17,$18,$19,$20,
+       $21,$22,$23,$24,$25)
+      RETURNING id
+      `,
+          [
+            normalizeField("Hostname", Hostname),
+            normalizeField("Name", Name),
+            department_id,
+            division_id,
+            location_id,
+            category_id,
+            lookupIds["Model"] || null,
+            lookupIds["CPU S#"] || null,
+            lookupIds["Processor"] || null,
+            lookupIds["CPU Speed"] || null,
+            lookupIds["RAM"] || null,
+            lookupIds["HDD"] || null,
+            lookupIds["Monitor"] || null,
+            lookupIds["KBD"] || null,
+            lookupIds["Mouse"] || null,
+            lookupIds["CD\\DVD"] || null,
+            lookupIds.os_id || null,
+            warranty_id,
+            purchase_from_id,
+            normalizeField("Floor", Floor),
+            IPAddress1,
+            IPAddress2,
+            normalizeField("Assettag", Assettag),
+            normalizeField("Serial_number", Serial_number),
+            normalizeField("Printer_type", Printer_type)
+          ]
+        );
+
+        const user_id = userRes.rows[0].id;
+
+        // Map software
+        if (lookupIds.software?.length) {
+          for (const swId of lookupIds.software) {
+            await client.query(
+              `INSERT INTO user_software (user_id, software_id)
+           VALUES ($1,$2)
+           ON CONFLICT DO NOTHING`,
+              [user_id, swId]
+            );
+          }
+        }
+
+        success++;
+
+      } catch (err) {
+        console.error("Row failed:", err.message);
+
+        // 🔥 KEY FIX
+        await client.query("ROLLBACK TO SAVEPOINT row_save");
+
+        skipped++;
       }
     }
 
-    res.json({ message: "✅ Upload completed successfully" });
+    await client.query("COMMIT");
 
-  } catch (error) {
-    console.error("❌ Upload error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.json({
+      message: "Upload completed",
+      success,
+      skipped
+    });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ error: "Upload failed" });
+  } finally {
+    client.release();
   }
 });
 
 router.get("/download", async (req, res) => {
   try {
-  
+
     const locationAccess = req.user?.location_ids || [];
 
     if (!Array.isArray(locationAccess) || locationAccess.length === 0) {
