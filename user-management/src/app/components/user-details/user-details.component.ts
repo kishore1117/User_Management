@@ -88,97 +88,115 @@ export class UserDetailsComponent implements OnInit {
   purchaseFrom: any[] = [];
 
   // Category-based field visibility mapping
-  categoryFieldMap: { [key: string]: { hardware: string[], network: string[], software: boolean } } = {
-    // Map category names to visible hardware, network, and software fields
+  categoryFieldMap: { [key: string]: { hardware: string[], network: string[], software: boolean, licence: boolean } } = {
+    // Map category names to visible hardware, network, software, and licence fields
     'Desktop': {
       hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
       network: ['ip_address1'],
-      software: true
+      software: true,
+      licence: true
     },
     'Laptop': {
       hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os'],
       network: ['ip_address1'],
-      software: true
+      software: true,
+      licence: true
     },
     // 'Monitor': {
     //   hardware: ['model', 'monitor_serial'],
     //   network: [],
-    //   software: false
+    //   software: false,
+    //   licence: false
     // },
     // 'Keyboard': {
     //   hardware: ['model'],
     //   network: [],
-    //   software: false
+    //   software: false,
+    //   licence: false
     // },
     // 'Mouse': {
     //   hardware: ['model'],
     //   network: [],
-    //   software: false
+    //   software: false,
+    //   licence: false
     // },
     'Firewall':{
       hardware: ['model', 'processor','ram', 'hdd', 'os'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: true
     },
     'Printer': {
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: true
     },
     'Storage':{
       hardware: ['model', 'processor','ram', 'hdd', 'os'],
       network: ['ip_address1', 'ip_address2'],
-      software: false
+      software: false,
+      licence: true
     },
     'Server':{
       hardware: ['model', 'processor','cpu_speed', 'ram', 'hdd', 'os'],
       network: ['ip_address1', 'ip_address2'],
-      software: true
+      software: true,
+      licence: true
     },
     'IP Phone':{
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: true
     },
     'CCTV':{
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: false
     },
     'Biomatric':{
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: false
     },
     'Network Switch':{
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: false
     } ,
     'Router': {
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: false
     },
     'Switch': {
       hardware: ['model'],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: false
     },
     'Other': {
       hardware: [],
       network: ['ip_address1'],
-      software: true
+      software: true,
+      licence: true
     },
     'N/A':{
       hardware: [],
       network: ['ip_address1'],
-      software: false
+      software: false,
+      licence: false
     },
     'Instrumentation machines':{
       hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
       network: ['ip_address1', 'ip_address2'],
-      software: true
+      software: true,
+      licence: true
     }
   };
 
@@ -841,6 +859,13 @@ export class UserDetailsComponent implements OnInit {
     const selectedCategory = this.categories.find(cat => cat.id === selectedCategoryId);
     const categoryName = selectedCategory?.name || 'Other';
     return this.categoryFieldMap[categoryName]?.software || false;
+  }
+
+  shouldShowLicence(): boolean {
+    const selectedCategoryId = this.userForm.get('category_id')?.value;
+    const selectedCategory = this.categories.find(cat => cat.id === selectedCategoryId);
+    const categoryName = selectedCategory?.name || 'Other';
+    return this.categoryFieldMap[categoryName]?.licence || false;
   }
 
   // Get category-specific asset details

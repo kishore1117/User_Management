@@ -286,7 +286,7 @@
       </div>
 
       <!-- Licence Information Section -->
-      <div class="form-section" *ngIf="licencesList.length > 0">
+      <div class="form-section" *ngIf="shouldShowLicence() && licencesList.length > 0">
         <h2 class="section-title">
           <i class="pi pi-certificate"></i>
           Other Licence
