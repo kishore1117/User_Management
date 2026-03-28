@@ -1,0 +1,42 @@
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="logo-section">
+                <img src="../assets/logo/apex-logo.png">
+                <!-- <i class="pi pi-check-circle"></i>  -->
+                <h1>Asset Management</h1>
+            </div>
+            <!-- <p class="tagline">Secure Access to Your Infrastructure</p> -->
+        </div>
+
+        <form (submit)="resetPassword()" class="login-form">
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <i class="pi pi-lock"></i>
+                    <input id="password" type="password" [(ngModel)]="password" (input)="onInputChange()"
+                        name="password" placeholder="Enter your password" class="form-input" required />
+                </div>
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="input-wrapper">
+                    <i class="pi pi-lock"></i>
+                    <input id="confirmPassword" type="password" [(ngModel)]="confirmPassword" (input)="onInputChange()"
+                        name="confirmPassword" placeholder="Confirm your password" class="form-input" required />
+                </div>
+            </div>
+
+            <button type="submit" [disabled]="disableSubmit()" [class.disabled-btn]="disableSubmit()"
+                class="login-button">
+                <i class="pi pi-sign-in"></i>
+                Reset Password
+            </button>
+        </form>
+    </div>
+
+    <!-- Decorative Background -->
+    <div class="login-background">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+</div>

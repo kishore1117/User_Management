@@ -10,7 +10,7 @@ export class JwtExpiryService {
   private warningTimer: any;
   isAuthenticated:any
   private LOGOUT_BEFORE_MS = 0;                 // exact expiry
-  private WARNING_BEFORE_MS = 5 * 60 * 1000;    // 5 mins before
+  private WARNING_BEFORE_MS = 1 * 60 * 1000;    // 5 mins before
 
   constructor(
     private router: Router,
@@ -61,6 +61,7 @@ export class JwtExpiryService {
         sessionStorage.removeItem('authToken');
         window.location.reload();
         localStorage.removeItem('userRole');
+        this.router.navigate(['/']);
         this.messageService.add({ severity: 'info', summary: 'Logout successful', detail: 'You have been logged out.' });
     }
 

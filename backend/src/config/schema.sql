@@ -179,3 +179,8 @@ alter table users drop constraint users_cpu_speed_id_fkey;
 
  ALTER TABLE users
  ALTER COLUMN cpu_speed_id DROP NOT NULL;
+
+ALTER TABLE user_access 
+ADD COLUMN email VARCHAR(255)  UNIQUE,
+ADD COLUMN reset_token TEXT,
+ADD COLUMN reset_token_expiry BIGINT;

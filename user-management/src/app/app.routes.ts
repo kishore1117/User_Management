@@ -7,6 +7,9 @@ import { UserListComponent } from './components/user-list/user-list.component';
 import { UserDetailsComponent } from './components/user-details/user-details.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { AppComponent } from './app.component';
+import { ResetpageComponent } from './components/resetpage/resetpage.component';
+import { authGuard } from './services/auth.guard';
+import { ForgetPasswordComponent } from './components/forget-password/forget-password.component';
 
 export const appRoutes: Routes = [
   // {
@@ -22,32 +25,41 @@ export const appRoutes: Routes = [
   {
     path: "users",
     component: UserListComponent,
-    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+    canActivate: [authGuard]
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+    canActivate: [authGuard]
   },
   {
     path: 'add',
     component: UserFormComponent,
-    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+    canActivate: [authGuard]
   },
   {
     path: 'find',
     component: UserSearchComponent,
-    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+    canActivate: [authGuard]
   },
   {
     path: 'upload',
     component: UploadComponent,
-    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+    canActivate: [authGuard]
   },
   {
     path: 'user/:id',
     component: UserDetailsComponent,
-    canActivate: [() => localStorage.getItem('isAuthenticated') === 'true']
+    canActivate: [authGuard]
+  },
+  {
+    path:'reset-password',
+    component:ResetpageComponent,
+
+  },
+  {
+    path:'forgot-password',
+    component:ForgetPasswordComponent,
   },
   {
     path:'admin',

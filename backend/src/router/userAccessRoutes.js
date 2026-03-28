@@ -1,10 +1,12 @@
 import express from "express";
-import { createUserAccess , updateUserAccess, deleteUserAccess, getAllUserAccess, getUserAccessById, loginUserAccess } from '../controller/userAccessController.js';
+import { createUserAccess , updateUserAccess, deleteUserAccess, getAllUserAccess, getUserAccessById, loginUserAccess, forgotPassword, resetPassword } from '../controller/userAccessController.js';
 import { authenticateJWT } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/roleMiddleware.js";
 const router = express.Router();
 
 router.post("/login", loginUserAccess);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.use(authenticateJWT);
 
 router.post("/", authorizeRoles("admin"), createUserAccess);

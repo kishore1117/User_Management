@@ -1,6 +1,6 @@
 <div class="app-wrapper">
   <!-- Login Section -->
-  <div *ngIf="!isAuthenticated" class="login-container">
+  <div *ngIf="!isAuthenticated && !isPublicRoute()" class="login-container">
     <div class="login-card">
       <div class="login-header">
         <div class="logo-section">
@@ -42,6 +42,10 @@
           </div>
         </div>
 
+        <div class="forgot-password">
+          <a routerLink="/forgot-password">Forgot Password?</a>
+        </div>
+
         <button type="submit" class="login-button">
           <i class="pi pi-sign-in"></i>
           Sign In
@@ -62,9 +66,9 @@
   </div>
 
   <!-- Main Application Section -->
-  <div *ngIf="isAuthenticated" class="app-main">
+  <div *ngIf="isAuthenticated || isPublicRoute()" class="app-main">
     <!-- Navigation Bar -->
-    <nav class="navbar">
+    <nav class="navbar" *ngIf="!isPublicRoute()">
       <div class="nav-left">
         <div class="logo">
           <img src="../assets/logo/apex-logo.png">

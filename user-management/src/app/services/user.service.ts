@@ -158,4 +158,12 @@ export class UserService {
   deleteUser(id:any): Observable<any>{
     return this.http.delete(`${this.baseUrl}/${id}`);
   }
+
+  sendPasswordResetEmail(email: string): Observable<any> {
+    return this.http.post(`${this.userAccessUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, userId: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.userAccessUrl}/reset-password`, { token, userId, newPassword });
+  }
 }

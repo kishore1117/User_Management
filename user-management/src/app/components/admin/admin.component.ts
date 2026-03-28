@@ -515,10 +515,13 @@ export class AdminComponent implements OnInit {
   }
 
   private buildUserFormFromColumns() {
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'password', 'reset_token', 'reset_token_expiry']);
+    
+    // Filter out ignored columns
+    const visibleColumns = this.userColumns.filter(col => !ignored.has(col.name));
+    
     const group: any = {};
-    const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
-    this.userColumns.forEach(col => {
-      if (ignored.has(col.name)) return;
+    visibleColumns.forEach(col => {
       const validators = [];
       if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
       const t = String(col.type || '').toLowerCase();
@@ -746,6 +749,12 @@ export class AdminComponent implements OnInit {
         return cellValue.includes(searchTerm);
       });
     });
+  }
+
+  // Get visible user columns (filtered out ignored columns)
+  getVisibleUserColumns(): any[] {
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'password', 'reset_token', 'reset_token_expiry']);
+    return this.userColumns.filter(col => !ignored.has(col.name));
   }
 
   // GET TABLE LABEL BY VALUE

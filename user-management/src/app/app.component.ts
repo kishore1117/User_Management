@@ -121,6 +121,11 @@ export class AppComponent implements OnInit {
     ];
   }
 
+  isPublicRoute(): boolean {
+  return this.currentRoute.includes('/reset-password') || this.currentRoute.includes('/forgot-password');
+  
+}
+
   ngOnDestroy() {
     if (this.logoutTimer) {
       clearTimeout(this.logoutTimer);

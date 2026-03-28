@@ -262,7 +262,7 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th *ngFor="let col of userColumns" class="table-header">
+                    <th *ngFor="let col of getVisibleUserColumns()" class="table-header">
                       {{ col.name | titlecase }}
                     </th>
                     <th class="table-header">Actions</th>
@@ -270,7 +270,7 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let row of getFilteredUsers() | slice:0:200" class="table-row">
-                    <td *ngFor="let col of userColumns" class="table-cell">
+                    <td *ngFor="let col of getVisibleUserColumns()" class="table-cell">
                       <span class="cell-value">{{ row[col.name] }}</span>
                     </td>
                     <td class="table-cell actions-cell">
@@ -310,9 +310,8 @@
 
             <form [formGroup]="userForm" (ngSubmit)="submitUserInline()" class="dynamic-form">
               <div class="form-grid">
-                <ng-container *ngFor="let col of userColumns">
-                  <div class="form-group"
-                    *ngIf="!(col.name === 'id' || col.name === 'created_at' || col.name === 'updated_at')">
+                <ng-container *ngFor="let col of getVisibleUserColumns()">
+                  <div class="form-group">
                     <label class="form-label">
                       {{ col.name | titlecase }}
                       <span *ngIf="!col.nullable" class="required">*</span>

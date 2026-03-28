@@ -170,7 +170,7 @@
           </div>
 
           <div class="form-group" *ngIf="isHardwareFieldVisible('hdd')">
-            <label for="hdd">Storage (HDD)</label>
+            <label for="hdd">Storage</label>
             <p-select id="hdd" formControlName="hdd_id" [options]="hdds" optionLabel="name" optionValue="id"
               appendTo="body" [disabled]="!isEditing" placeholder="Select Storage" class="w-full">
             </p-select>
