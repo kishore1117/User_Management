@@ -562,15 +562,14 @@ export class AdminComponent implements OnInit {
     // Prepare edit data 
     const editData = { ...user };
 
-
-
     // Build empty form structure first
     const group: any = {};
     const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
     this.userColumns.forEach(col => {
       if (ignored.has(col.name)) return;
-      const validators = [];
-      if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
+      const validators: any[] = [];
+      // Don't apply required validators in edit mode - allow empty/null values
+      // if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
       
       // Initialize multiSelect fields as empty arrays
       let initialValue: any = '';
