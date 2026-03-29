@@ -184,3 +184,40 @@ ALTER TABLE user_access
 ADD COLUMN email VARCHAR(255)  UNIQUE,
 ADD COLUMN reset_token TEXT,
 ADD COLUMN reset_token_expiry BIGINT;
+
+
+-- CREATE TABLE category_mapping (
+--     id SERIAL PRIMARY KEY,
+--     category_id INT NOT NULL,
+--     field_name VARCHAR(100) NOT NULL,
+--     field_type VARCHAR(20) NOT NULL CHECK (field_type IN ('hardware', 'network', 'software', 'licence')),
+--     is_enabled BOOLEAN DEFAULT TRUE,
+
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+--     CONSTRAINT fk_category
+--         FOREIGN KEY (category_id)
+--         REFERENCES categories(id)
+--         ON DELETE CASCADE,
+
+--     CONSTRAINT unique_category_field
+--         UNIQUE (category_id, field_name)
+-- );
+
+CREATE OR REPLACE FUNCTION add_location_to_admin()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE user_access
+  SET location_ids = array_append(location_ids, NEW.id)
+  WHERE role = 'admin';
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trg_add_location_to_admin
+AFTER INSERT ON locations
+FOR EACH ROW
+EXECUTE FUNCTION add_location_to_admin();
