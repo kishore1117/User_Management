@@ -59,6 +59,9 @@ export class AdminComponent implements OnInit {
   locationList: any[] = [];
   departmentList: any[] = [];
   categoryList: any[] = [];
+  fieldList: any[] = [{ 'id': 1, 'name': 'model' }, { 'id': 2, 'name': 'cpu_serial' }, { 'id': 3, 'name': 'processor' }, { 'id': 4, 'name': 'cpu_speed' }, { 'id': 5, 'name': 'ram' }, { 'id': 6, 'name': 'hdd' }, { 'id': 7, 'name': 'os' }, { 'id': 8, 'name': 'monitor' }, { 'id': 9, 'name': 'monitor_serial' }, { 'id': 10, 'name': 'keyboard' }, { 'id': 11, 'name': 'mouse' },{'id':12,'name':'ip_address1'},{'id':13,'name':'ip_address2'}];
+  fieldTypesList: any[] = [{id:1,name:'hardware'},{id:2,name:'software'},{id:3,name:'network'},{id:4,name:'licence'}];
+  isEnabledList: any[] = [{id:true,name:'true'},{id:false,name:'false'}];
   roleList = [
     { label: 'Admin', value: 'admin' },
     { label: 'User', value: 'user' }
@@ -81,7 +84,8 @@ export class AdminComponent implements OnInit {
     { label: 'Keyboard', value: 'keyboards' },
     { label: 'Mouse', value: 'mice' },
     { label: 'CPU Speed', value: 'cpu_speeds' },
-    { label: 'Licences', value: 'licences' }
+    { label: 'Licences', value: 'licences' },
+    { label: 'Category mapping', value: 'category_mapping' }
   ];
 
   constructor(
@@ -322,6 +326,11 @@ export class AdminComponent implements OnInit {
     // Prepare edit data 
     const editData = { ...row };
 
+    // Ensure lookup lists are loaded before opening edit form
+    if (!this.locationList.length || !this.departmentList.length || !this.categoryList.length) {
+      this.loadLocations();
+    }
+
     // Build empty form structure first
     const group: any = {};
     this.tableColumns.forEach(col => {
@@ -343,14 +352,16 @@ export class AdminComponent implements OnInit {
 
     this.lookupForm = this.fb.group(group);
 
-    // Now patch values with a small delay to ensure multiSelect options are rendered
+    // Delay to ensure multiSelect options and data are ready
+    const patchDelay = this.locationList.length && this.departmentList.length && this.categoryList.length ? 50 : 300;
+    
     setTimeout(() => {
       const patchData: any = {};
       
       this.tableColumns.forEach(col => {
         let value: any = editData[col.name] ?? null;
 
-        // Special handling for location_ids and department_ids - convert to location objects
+        // Special handling for multiSelect array fields - convert to location/department objects
         if ((col.name === 'location_ids' || col.name === 'department_ids' || col.name === 'category_ids') && value) {
           let ids: number[] = [];
           
@@ -362,30 +373,23 @@ export class AdminComponent implements OnInit {
             ids = [value];
           }
 
-
           // Convert IDs to location/department objects for multiSelect display
           if (col.name === 'location_ids') {
             if (this.locationList && this.locationList.length > 0) {
               value = this.locationList.filter((loc: any) => ids.includes(loc.id));
             } else {
-              console.warn('LocationList is empty or not loaded!');
               value = [];
             }
           } else if (col.name === 'department_ids') {
             if (this.departmentList && this.departmentList.length > 0) {
               value = this.departmentList.filter((dept: any) => ids.includes(dept.id));
-            } 
-            
-            else {
-              console.warn('DepartmentList is empty or not loaded!');
+            } else {
               value = [];
             }
           } else if (col.name === 'category_ids') {
             if (this.categoryList && this.categoryList.length > 0) {
               value = this.categoryList.filter((cat: any) => ids.includes(cat.id));
-
             } else {
-              console.warn('CategoryList is empty or not loaded!');
               value = [];
             }
           }
@@ -393,15 +397,30 @@ export class AdminComponent implements OnInit {
           // Ensure these are always arrays even if no value
           value = [];
         }
+        // Special handling for single-value select fields - convert IDs to objects
+        else if ((col.name === 'category_id' || col.name === 'field_name' || col.name === 'field_type') && value) {
+          let selectedObject = null;
+          const id = value;
+
+          if (col.name === 'category_id' && this.categoryList) {
+            selectedObject = this.categoryList.find((cat: any) => cat.id == id || cat.name == id);
+          } else if (col.name === 'field_name' && this.fieldList) {
+            selectedObject = this.fieldList.find((f: any) => f.id == id || f.name == id);
+          } else if (col.name === 'field_type' && this.fieldTypesList) {
+            selectedObject = this.fieldTypesList.find((f: any) => f.id == id || f.name == id);
+          }
+
+          value = selectedObject || value;
+        }
 
         patchData[col.name] = value;
       });
 
-    
+      console.log('Patch data:', patchData);
       this.lookupForm.patchValue(patchData);
-    }, 100);
+    }, patchDelay);
 
-    setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), 150);
+    setTimeout(() => document.getElementById('lookup-form')?.scrollIntoView({ behavior: 'smooth' }), patchDelay + 50);
   }
 
   submitLookup() {
@@ -412,12 +431,18 @@ export class AdminComponent implements OnInit {
     }
     const raw = this.lookupForm.getRawValue ? this.lookupForm.getRawValue() : {};
 
-    const payload = {
-      ...raw,
-      location_ids: this.normalizeLocationIds(raw.location_ids),
-      department_ids: this.normalizeDepartmentIds(raw.department_ids),
-      category_ids: this.normalizeDepartmentIds(raw.category_ids)
-    };
+    const payload: any = { ...raw };
+
+    // Normalize array fields - convert objects to IDs
+    payload.location_ids = this.normalizeLocationIds(raw.location_ids);
+    payload.department_ids = this.normalizeDepartmentIds(raw.department_ids);
+    payload.category_ids = this.normalizeDepartmentIds(raw.category_ids);
+
+    // For category_mapping: keep objects as-is (backend will extract .id and .name)
+    // category_id: keep as object with { id }
+    // field_name: keep as object with { name }
+    // field_type: keep as object with { name }
+    // is_enabled: keep as object with { name }
 
     if (!this.lookupEditing) {
       if (this.lookupPrimaryKey in payload) delete payload[this.lookupPrimaryKey];
@@ -515,15 +540,18 @@ export class AdminComponent implements OnInit {
   }
 
   private buildUserFormFromColumns() {
-    const ignored = new Set(['created_at', 'updated_at', 'id', 'password', 'reset_token', 'reset_token_expiry']);
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'reset_token', 'reset_token_expiry']);
     
-    // Filter out ignored columns
+    // Filter out ignored columns, but include password for add mode
     const visibleColumns = this.userColumns.filter(col => !ignored.has(col.name));
     
     const group: any = {};
     visibleColumns.forEach(col => {
       const validators = [];
-      if (!col.nullable && !col.isPrimary) validators.push(Validators.required);
+      // Password is required when adding, optional when editing
+      if (!col.nullable && !col.isPrimary) {
+        validators.push(Validators.required);
+      }
       const t = String(col.type || '').toLowerCase();
       let initial: any = '';
       
@@ -559,12 +587,17 @@ export class AdminComponent implements OnInit {
     this.editingUser = true;
     this.editingUserId = user.id || user.user_id || user.uid;
 
+    // Ensure lookup lists are loaded before opening edit form
+    if (!this.locationList.length) {
+      this.loadLocations();
+    }
+
     // Prepare edit data 
     const editData = { ...user };
 
     // Build empty form structure first
     const group: any = {};
-    const ignored = new Set(['created_at', 'updated_at', 'id', 'password_hash']);
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'password', 'password_hash', 'reset_token', 'reset_token_expiry']);
     this.userColumns.forEach(col => {
       if (ignored.has(col.name)) return;
       const validators: any[] = [];
@@ -583,7 +616,9 @@ export class AdminComponent implements OnInit {
     this.userForm = this.fb.group(group);
     this.userFormVisible = true;
 
-    // Now patch values with a small delay to ensure multiSelect options are rendered
+    // Delay to ensure multiSelect options and data are ready
+    const patchDelay = this.locationList.length ? 50 : 300;
+    
     setTimeout(() => {
       const patchData: any = {};
 
@@ -619,9 +654,9 @@ export class AdminComponent implements OnInit {
       });
 
       this.userForm.patchValue(patchData);
-    }, 100);
+    }, patchDelay);
 
-    setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), 150);
+    setTimeout(() => document.getElementById('user-inline-form')?.scrollIntoView({ behavior: 'smooth' }), patchDelay + 50);
   }
 
   private camelToSnake(s: string) { return s.replace(/([A-Z])/g, '_$1').toLowerCase(); }
@@ -698,6 +733,14 @@ export class AdminComponent implements OnInit {
         return category ? category.name : id;
       }).join(', ');
     }
+        if (columnName === 'category_id' && value) {
+      const ids = Array.isArray(value) ? value : [value];
+      return ids.map(id => {
+        const category = this.categoryList.find((c: any) => c.id === id);
+        return category ? category.name : id;
+      }).join(', ');
+    }
+
 
     // Handle department_ids
     if (columnName === 'department_ids' && value) {
@@ -752,7 +795,7 @@ export class AdminComponent implements OnInit {
 
   // Get visible user columns (filtered out ignored columns)
   getVisibleUserColumns(): any[] {
-    const ignored = new Set(['created_at', 'updated_at', 'id', 'password', 'reset_token', 'reset_token_expiry']);
+    const ignored = new Set(['created_at', 'updated_at', 'id', 'password', 'password_hash', 'reset_token', 'reset_token_expiry']);
     return this.userColumns.filter(col => !ignored.has(col.name));
   }
 

@@ -171,6 +171,29 @@
                         class="form-control multiselect">
                       </p-multiSelect>
 
+                      <p-select *ngSwitchCase="'category_id'" [options]="categoryList" optionLabel="name"
+                        formControlName="category_id" placeholder="Select Categories" display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-select>
+
+                      <p-select *ngSwitchCase="'field_name'" [options]="fieldList" optionLabel="name"
+                        formControlName="field_name" placeholder="Select Field" display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-select>
+
+                      <p-select *ngSwitchCase="'field_type'" [options]="fieldTypesList" optionLabel="name"
+                        formControlName="field_type" placeholder="Select Field type" display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-select>
+
+                      <p-select *ngSwitchCase="'is_enabled'" [options]="isEnabledList" optionLabel="name"
+                        formControlName="is_enabled" placeholder="Select Enabled Status" display="chip"
+                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
+                        class="form-control multiselect">
+                      </p-select>
                       <!-- INTEGER INPUT -->
                       <input *ngSwitchCase="'integer'" type="number" pInputText [formControlName]="col.name"
                         [disabled]="(activeSection !== 'lookup' && activeSection !== null) || col.name === lookupPrimaryKey"
@@ -317,36 +340,6 @@
                       <span *ngIf="!col.nullable" class="required">*</span>
                     </label>
 
-                    <!-- <ng-container [ngSwitch]="(col.type || 'text')">
-
-                                
-                      <p-multiSelect *ngSwitchCase="'location_ids'"
-                        [options]="locationList"
-                        optionLabel="name"
-                        optionValue="id"
-                        formControlName="location_ids"
-                        placeholder="Select Locations"
-                        display="chip"
-                        [disabled]="activeSection !== 'lookup' && activeSection !== null"
-                        class="form-control multiselect">
-                      </p-multiSelect>
-                      <input *ngSwitchCase="'integer'" 
-                        type="number"
-                        pInputText
-                        [formControlName]="col.name"
-                        [disabled]="activeSection !== 'users' && activeSection !== null"
-                        placeholder="Enter number"
-                        class="form-control">
-
-                      <input *ngSwitchDefault
-                        type="text"
-                        pInputText
-                        [formControlName]="col.name"
-                        [disabled]="activeSection !== 'users' && activeSection !== null"
-                        placeholder="Enter value"
-                        class="form-control">
-                    </ng-container> -->
-
                     <ng-container [ngSwitch]="col.name">
 
                       <p-select *ngSwitchCase="'role'" [options]="roleList" optionLabel="label" optionValue="value"
@@ -375,6 +368,23 @@
                     </small>
                   </div>
                 </ng-container>
+
+                <!-- PASSWORD FIELD - ONLY WHEN ADDING NEW USER -->
+                <div class="form-group" *ngIf="!editingUser && userForm.get('password')">
+                  <label class="form-label">
+                    Password
+                    <span class="required">*</span>
+                  </label>
+
+                  <input type="password" pInputText formControlName="password"
+                    [disabled]="activeSection !== 'users' && activeSection !== null"
+                    placeholder="Enter password" class="form-control">
+
+                  <small *ngIf="userForm.get('password')?.hasError('required') && userForm.get('password')?.touched"
+                    class="error-message">
+                    Password is required
+                  </small>
+                </div>
               </div>
 
               <div class="form-actions">
