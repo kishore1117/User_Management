@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer';
 
 // 🟢 Create new user_access
 export const createUserAccess = async (req, res) => {
-  const { username, password, role, location_ids } = req.body;
+  const { username, password, role, location_ids,email } = req.body;
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -18,11 +18,11 @@ export const createUserAccess = async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO user_access (username, password, role, location_ids)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO user_access (username, password, role, email, location_ids)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *;
     `;
-    const result = await pool.query(query, [username, hashedPassword, role, location_ids]);
+    const result = await pool.query(query, [username, hashedPassword, role, email, location_ids]);
     res.status(201).json({ message: "User created successfully", user: result.rows[0] });
   } catch (err) {
     console.error("❌ Error creating user:", err);
