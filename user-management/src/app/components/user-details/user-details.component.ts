@@ -102,12 +102,51 @@ export class UserDetailsComponent implements OnInit {
       software: true,
       licence: true
     },
-    // 'Monitor': {
-    //   hardware: ['model', 'monitor_serial'],
-    //   network: [],
-    //   software: false,
-    //   licence: false
-    // },
+    'CCTV': {
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false,
+      licence: false
+    },
+      'Ilo': {
+      hardware: [],
+      network: ['ip_address1'],
+      software: false,
+      licence: false
+    },
+          'Airtel Static IP NAT': {
+      hardware: [],
+      network: ['ip_address1'],
+      software: false,
+      licence: false
+    },      'Sify Static IP NAT': {
+      hardware: [],
+      network: ['ip_address1'],
+      software: false,
+      licence: false
+    },
+              'Access Control': {
+      hardware: ['model'],
+      network: ['ip_address1'],
+      software: false,
+      licence: false
+    },      'Weighing Balance': {
+     hardware: ['model'],
+      network: ['ip_address1'],
+      software: false,
+      licence: false
+    },
+              'Epabx': {
+       hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
+      network: ['ip_address1'],
+      software: true,
+      licence: true
+    },      'Instrumentation': {
+      hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
+      network: ['ip_address1', 'ip_address2'],
+      software: true,
+      licence: true
+    },
     // 'Keyboard': {
     //   hardware: ['model'],
     //   network: [],
@@ -149,12 +188,6 @@ export class UserDetailsComponent implements OnInit {
       network: ['ip_address1'],
       software: false,
       licence: true
-    },
-    'CCTV':{
-      hardware: ['model'],
-      network: ['ip_address1'],
-      software: false,
-      licence: false
     },
     'Biomatric':{
       hardware: ['model'],
