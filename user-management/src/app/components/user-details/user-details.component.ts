@@ -141,7 +141,7 @@ export class UserDetailsComponent implements OnInit {
       network: ['ip_address1'],
       software: true,
       licence: true
-    },      'Instrumentation': {
+    },      'Instrument': {
       hardware: ['model', 'cpu_serial', 'processor', 'cpu_speed', 'ram', 'hdd', 'os', 'monitor', 'monitor_serial', 'keyboard', 'mouse'],
       network: ['ip_address1', 'ip_address2'],
       software: true,
